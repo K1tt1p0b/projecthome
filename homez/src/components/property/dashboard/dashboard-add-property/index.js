@@ -3,7 +3,8 @@ import PropertyDescription from "./property-description";
 import UploadMedia from "./upload-media";
 import LocationField from "./LocationField";
 import DetailsFiled from "./details-field";
-import Amenities from "./Amenities";
+import Checkdetailsandconfirm from "./check-details-and-confirm";
+//import Amenities from "./Amenities";
 
 const AddPropertyTabContent = () => {
   return (
@@ -82,7 +83,7 @@ const AddPropertyTabContent = () => {
           aria-labelledby="nav-item1-tab"
         >
           <div className="ps-widget bgc-white bdrs12 p30 overflow-hidden position-relative">
-            <h4 className="title fz17 mb30">Property Description</h4>
+            <h4 className="title fz17 mb30">หัวข้อทรัพย์</h4>
             <PropertyDescription />
           </div>
         </div>
@@ -105,7 +106,7 @@ const AddPropertyTabContent = () => {
           aria-labelledby="nav-item3-tab"
         >
           <div className="ps-widget bgc-white bdrs12 p30 overflow-hidden position-relative">
-            <h4 className="title fz17 mb30">Listing Location</h4>
+            <h4 className="title fz17 mb30">ที่อยู่ทรัพย์</h4>
             <LocationField />
           </div>
         </div>
@@ -118,7 +119,7 @@ const AddPropertyTabContent = () => {
           aria-labelledby="nav-item4-tab"
         >
           <div className="ps-widget bgc-white bdrs12 p30 overflow-hidden position-relative">
-            <h4 className="title fz17 mb30">Listing Details</h4>
+            <h4 className="title fz17 mb30">รายละเอียด</h4>
             <DetailsFiled />
           </div>
         </div>
@@ -131,9 +132,9 @@ const AddPropertyTabContent = () => {
           aria-labelledby="nav-item5-tab"
         >
           <div className="ps-widget bgc-white bdrs12 p30 overflow-hidden position-relative">
-            <h4 className="title fz17 mb30">Select Amenities</h4>
+            <h4 className="title fz17 mb30">ตรวจสอบและยืนยัน</h4>
             <div className="row">
-              <Amenities />
+              <Checkdetailsandconfirm />
             </div>
           </div>
         </div>
