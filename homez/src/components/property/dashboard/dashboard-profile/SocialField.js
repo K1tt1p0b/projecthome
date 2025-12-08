@@ -12,7 +12,7 @@ const SocialField = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="Your Name"
+              placeholder="Facebook Url"
               required
             />
           </div>
@@ -26,7 +26,7 @@ const SocialField = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="Your Name"
+              placeholder="Pinterest Url"
               required
             />
           </div>
@@ -40,7 +40,7 @@ const SocialField = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="Your Name"
+              placeholder="Instagram Url"
               required
             />
           </div>
@@ -54,7 +54,7 @@ const SocialField = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="Your Name"
+              placeholder="Twitter Url"
               required
             />
           </div>
@@ -68,7 +68,7 @@ const SocialField = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="Your Name"
+              placeholder="Linkedin Url"
               required
             />
           </div>
@@ -82,7 +82,7 @@ const SocialField = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="Your Name"
+              placeholder="Website Url"
             />
           </div>
         </div>
@@ -90,7 +90,7 @@ const SocialField = () => {
         <div className="col-md-12">
           <div className="text-end">
             <button type="submit" className="ud-btn btn-dark">
-              Update Social
+              อัปเดทข้อมูลโซเชียล
               <i className="fal fa-arrow-right-long" />
             </button>
           </div>

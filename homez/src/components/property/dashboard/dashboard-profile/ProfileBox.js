@@ -50,12 +50,12 @@ const ProfileBox = () => {
             style={{ display: "none" }}
           />
           <div className="ud-btn btn-white2 mb30">
-            Upload Profile Files
+            อัปโหลดรูปภาพโปรไฟล์
             <i className="fal fa-arrow-right-long" />
           </div>
         </label>
         <p className="text">
-          Photos must be JPEG or PNG format and at least 2048x768
+          รูปภาพต้องเป็นไฟล์ JPEG หรือ PNG ขนาด 2048x768 เท่านั้น
         </p>
       </div>
     </div>

@@ -54,7 +54,7 @@ const ChangePasswordForm = () => {
         <div className="col-md-12">
           <div className="text-end">
             <button type="submit" className="ud-btn btn-dark">
-              Change Password
+              เปลี่ยนรหัสผ่าน
               <i className="fal fa-arrow-right-long" />
             </button>
           </div>
