@@ -4,7 +4,7 @@ import UploadPhotoGallery from "./UploadPhotoGallery";
 const UploadMedia = () => {
   return (
     <div className="ps-widget bgc-white bdrs12 p30 overflow-hidden position-relative">
-      <h4 className="title fz17 mb30">อัปโหลดรูปภาพบ้าน/ที่ดินของคุณ</h4>
+      <h4 className="title fz17 mb30">อัปโหลดรูปภาพทรัพย์ของคุณ</h4>
       <form className="form-style1">
         <div className="row">
           <div className="col-lg-12">

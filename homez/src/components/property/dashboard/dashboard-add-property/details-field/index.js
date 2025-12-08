@@ -1,222 +1,228 @@
-import React from "react";
-import MultiSelectField from "./MultiSelectField";
-import StructureType from "./StructureType";
+"use client";
+import React, { useState, useEffect } from "react";
+import Select from "react-select";
 
 const DetailsFiled = () => {
+  // --- 1. เพิ่มส่วนนี้: เช็คว่าหน้าเว็บโหลดเสร็จหรือยัง (กัน Error) ---
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // --- 2. เตรียมข้อมูลตัวเลือก (Options) ---
+  const bedroomOptions = [
+    { value: "0", label: "Studio" },
+    { value: "1", label: "1" },
+    { value: "2", label: "2" },
+    { value: "3", label: "3" },
+    { value: "4", label: "4+" },
+  ];
+
+  const bathroomOptions = [
+    { value: "1", label: "1" },
+    { value: "2", label: "2" },
+    { value: "3", label: "3" },
+    { value: "4", label: "4+" },
+  ];
+
+  const parkingOptions = [
+    { value: "0", label: "ไม่มี" },
+    { value: "1", label: "1" },
+    { value: "2", label: "2" },
+    { value: "3", label: "3+" },
+  ];
+
+  const directionOptions = [
+    { value: "north", label: "ทิศเหนือ" },
+    { value: "south", label: "ทิศใต้" },
+    { value: "east", label: "ทิศตะวันออก" },
+    { value: "west", label: "ทิศตะวันตก" },
+  ];
+
+  const furnishOptions = [
+    { value: "fully", label: "แต่งครบ (Fully)" },
+    { value: "partly", label: "บางส่วน (Partly)" },
+    { value: "bare", label: "ห้องเปล่า (Bare)" },
+  ];
+
+  const customStyles = {
+    control: (provided) => ({
+      ...provided,
+      background: '#fff',
+      borderColor: '#e5e5e5',
+      borderRadius: '8px',
+      minHeight: '55px',
+      paddingLeft: '5px',
+      boxShadow: 'none',
+      '&:hover': { borderColor: '#ddd' }
+    }),
+    option: (styles, { isFocused, isSelected }) => ({
+      ...styles,
+      backgroundColor: isSelected ? '#eb6753' : isFocused ? '#fceceb' : undefined,
+      color: isSelected ? '#fff' : '#000',
+      cursor: 'pointer',
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      color: '#222',
+    }),
+    // สไตล์เพื่อให้เมนูลอยทับทุกอย่าง
+    menuPortal: (base) => ({
+      ...base,
+      zIndex: 9999
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 9999
+    })
+  };
+
   return (
     <form className="form-style1">
       <div className="row">
-        <div className="col-sm-6 col-xl-4">
+
+        {/* --- แถวที่ 1 --- */}
+
+        {/* 1. ห้องนอน */}
+        <div className="col-sm-6 col-md-3">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              Size in ft (only numbers)
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Your Name"
+            <label className="heading-color ff-heading fw600 mb10">ห้องนอน</label>
+            <Select
+              defaultValue={bedroomOptions[0]}
+              options={bedroomOptions}
+              styles={customStyles}
+              classNamePrefix="select"
+              isSearchable={false}
+              instanceId="bedrooms"
+              // เพิ่ม 2 บรรทัดนี้เพื่อให้ Dropdown ทะลุกรอบ
+              menuPosition="fixed"
+              menuPortalTarget={mounted ? document.body : null}
             />
           </div>
         </div>
-        {/* End .col-4 */}
 
-        <div className="col-sm-6 col-xl-4">
+        {/* 2. ห้องน้ำ */}
+        <div className="col-sm-6 col-md-3">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              Lot size in ft (only numbers)
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Your Name"
+            <label className="heading-color ff-heading fw600 mb10">ห้องน้ำ</label>
+            <Select
+              defaultValue={bathroomOptions[0]}
+              options={bathroomOptions}
+              styles={customStyles}
+              classNamePrefix="select"
+              isSearchable={false}
+              instanceId="bathrooms"
+              menuPosition="fixed"
+              menuPortalTarget={mounted ? document.body : null}
             />
           </div>
         </div>
-        {/* End .col-4 */}
 
-        <div className="col-sm-6 col-xl-4">
+        {/* 3. จำนวนชั้น */}
+        <div className="col-sm-6 col-md-3">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">Rooms</label>
+            <label className="heading-color ff-heading fw600 mb10">จำนวนชั้น</label>
             <input
               type="text"
               className="form-control"
-              placeholder="Your Name"
+              placeholder="เช่น 12A"
+              style={{ height: '55px' }}
             />
           </div>
         </div>
-        {/* End .col-4 */}
 
-        <div className="col-sm-6 col-xl-4">
+        {/* 4. ที่จอดรถ */}
+        <div className="col-sm-6 col-md-3">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              Bedrooms
-            </label>
+            <label className="heading-color ff-heading fw600 mb10">ที่จอดรถ (คัน)</label>
+            <Select
+              options={parkingOptions}
+              styles={customStyles}
+              classNamePrefix="select"
+              placeholder="ระบุ"
+              isSearchable={false}
+              instanceId="parking"
+              menuPosition="fixed"
+              menuPortalTarget={mounted ? document.body : null}
+            />
+          </div>
+        </div>
+
+        {/* --- แถวที่ 2 --- */}
+
+        {/* 5. ขนาดพื้นที่ */}
+        <div className="col-sm-6 col-md-3">
+          <div className="mb20">
+            <label className="heading-color ff-heading fw600 mb10">ขนาด (ตร.ม.)</label>
             <input
-              type="text"
+              type="number"
               className="form-control"
-              placeholder="Your Name"
+              placeholder="ระบุขนาด"
+              style={{ height: '55px' }}
             />
           </div>
         </div>
-        {/* End .col-4 */}
 
-        <div className="col-sm-6 col-xl-4">
+        {/* 6. ทิศหน้าทรัพย์ */}
+        <div className="col-sm-6 col-md-3">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              Bathrooms
-            </label>
+            <label className="heading-color ff-heading fw600 mb10">ทิศหน้าทรัพย์</label>
+            <Select
+              options={directionOptions}
+              styles={customStyles}
+              classNamePrefix="select"
+              placeholder="ระบุทิศ"
+              isSearchable={false}
+              instanceId="direction"
+              menuPosition="fixed"
+              menuPortalTarget={mounted ? document.body : null}
+            />
+          </div>
+        </div>
+
+        {/* 7. การตกแต่ง */}
+        <div className="col-sm-6 col-md-3">
+          <div className="mb20">
+            <label className="heading-color ff-heading fw600 mb10">การตกแต่ง</label>
+            <Select
+              options={furnishOptions}
+              styles={customStyles}
+              classNamePrefix="select"
+              placeholder="ระบุ"
+              isSearchable={false}
+              instanceId="furnishing"
+              menuPosition="fixed"
+              menuPortalTarget={mounted ? document.body : null}
+            />
+          </div>
+        </div>
+
+        {/* 8. ปีที่สร้างเสร็จ */}
+        <div className="col-sm-6 col-md-3">
+          <div className="mb20">
+            <label className="heading-color ff-heading fw600 mb10">ปีที่สร้าง (พ.ศ.)</label>
             <input
-              type="text"
+              type="number"
               className="form-control"
-              placeholder="Your Name"
+              placeholder="เช่น 2565"
+              style={{ height: '55px' }}
             />
           </div>
         </div>
-        {/* End .col-4 */}
 
-        <div className="col-sm-6 col-xl-4">
-          <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              Custom ID (text)
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Your Name"
-            />
-          </div>
-        </div>
-        {/* End .col-4 */}
-
-        <div className="col-sm-6 col-xl-4">
-          <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              Garages
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Your Name"
-            />
-          </div>
-        </div>
-        {/* End .col-4 */}
-
-        <div className="col-sm-6 col-xl-4">
-          <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              Garage size
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Your Name"
-            />
-          </div>
-        </div>
-        {/* End .col-4 */}
-
-        <div className="col-sm-6 col-xl-4">
-          <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              Year built (numeric)
-            </label>
-            <input type="text" className="form-control" />
-          </div>
-        </div>
-        {/* End .col-4 */}
-
-        <div className="col-sm-6 col-xl-4">
-          <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              Available from (date)
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="99.aa.yyyy"
-            />
-          </div>
-        </div>
-        {/* End .col-4 */}
-
-        <div className="col-sm-6 col-xl-4">
-          <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              Basement
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Your Name"
-            />
-          </div>
-        </div>
-        {/* End .col-4 */}
-
-        <div className="col-sm-6 col-xl-4">
-          <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              Extra details
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Your Name"
-            />
-          </div>
-        </div>
-        {/* End .col-4 */}
-
-        <div className="col-sm-6 col-xl-4">
-          <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              Roofing
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Your Name"
-            />
-          </div>
-        </div>
-        {/* End .col-4 */}
-
-        <div className="col-sm-6 col-xl-4">
-          <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              Exterior Material
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Your Name"
-            />
-          </div>
-        </div>
-        {/* End .col-4 */}
-
-        <StructureType />
-      </div>
-      {/* End .row */}
-
-      <div className="row">
-        <MultiSelectField />
-
+        {/* --- หมายเหตุ --- */}
         <div className="col-sm-12">
           <div className="mb20">
             <label className="heading-color ff-heading fw600 mb10">
-              Owner/ Agent nots (not visible on front end)
+              หมายเหตุ (สำหรับเจ้าของ/นายหน้า)
             </label>
             <textarea
-              cols={30}
+              className="form-control"
               rows={5}
-              placeholder="There are many variations of passages."
-              defaultValue={""}
+              placeholder="บันทึกช่วยจำ (ไม่แสดงหน้าเว็บ)"
             />
           </div>
         </div>
-        {/* End .col-12 */}
       </div>
     </form>
   );

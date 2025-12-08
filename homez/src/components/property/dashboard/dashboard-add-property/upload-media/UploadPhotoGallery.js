@@ -81,7 +81,7 @@ return (
             <div className="icon mb30">
               <span className="flaticon-upload" />
             </div>
-            <h4 className="title fz17 mb10">อัปโหลดรูปภาพบ้าน/ที่ดินของคุณที่นี้</h4>
+            <h4 className="title fz17 mb10">อัปโหลดรูปภาพทรัพย์ของคุณที่นี้</h4>
             <p className="text mb25">
               รูปภาพต้องเป็นไฟล์ JPEG หรือ PNG เท่านั้น (สูงสุดได้ {HARD_LIMIT} รูป)
             </p>
