@@ -1,13 +1,17 @@
+// Map.jsx
 import React from "react";
 
-const Map = () => {
+const Map = ({ lat = 13.9869, lng = 100.6184, zoom = 14 }) => {
+  const src = `https://maps.google.com/maps?q=${lat},${lng}&t=m&z=${zoom}&output=embed&iwloc=near`;
+
   return (
     <iframe
-      className="h550"
+      className="h550 w-100"
       loading="lazy"
-      src="https://maps.google.com/maps?q=London%20Eye%2C%20London%2C%20United%20Kingdom&t=m&z=14&output=embed&iwloc=near"
-      title="London Eye, London, United Kingdom"
-      aria-label="London Eye, London, United Kingdom"
+      src={src}
+      title={`Location ${lat}, ${lng}`}
+      aria-label={`Location ${lat}, ${lng}`}
+      style={{ border: 0 }}
     />
   );
 };
