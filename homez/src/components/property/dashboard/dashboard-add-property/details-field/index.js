@@ -3,8 +3,7 @@ import React, { useState, useEffect } from "react";
 import Select from "react-select";
 
 // =========================================================
-// 1. ย้ายข้อมูลออกมาไว้นอกฟังก์ชัน (Global Constants)
-//    เพื่อให้ข้อมูล "นิ่ง" ไม่หายเวลา Component รีเฟรช
+// 1. ข้อมูลคงที่ (Options / Amenities)
 // =========================================================
 
 const amenitiesData = {
@@ -75,57 +74,117 @@ const furnishOptions = [
 const customStyles = {
   control: (provided) => ({
     ...provided,
-    background: '#fff',
-    borderColor: '#e5e5e5',
-    borderRadius: '8px',
-    minHeight: '55px',
-    paddingLeft: '5px',
-    boxShadow: 'none',
-    '&:hover': { borderColor: '#ddd' }
+    background: "#fff",
+    borderColor: "#e5e5e5",
+    borderRadius: "8px",
+    minHeight: "55px",
+    paddingLeft: "5px",
+    boxShadow: "none",
+    "&:hover": { borderColor: "#ddd" },
   }),
   option: (styles, { isFocused, isSelected }) => ({
     ...styles,
-    backgroundColor: isSelected ? '#eb6753' : isFocused ? '#fceceb' : undefined,
-    color: isSelected ? '#fff' : '#000',
-    cursor: 'pointer',
+    backgroundColor: isSelected ? "#eb6753" : isFocused ? "#fceceb" : undefined,
+    color: isSelected ? "#fff" : "#000",
+    cursor: "pointer",
   }),
   singleValue: (provided) => ({
     ...provided,
-    color: '#222',
+    color: "#222",
   }),
-  // สไตล์เพื่อให้เมนูลอยทับทุกอย่าง
   menuPortal: (base) => ({
     ...base,
-    zIndex: 9999
+    zIndex: 9999,
   }),
   menu: (base) => ({
     ...base,
-    zIndex: 9999
-  })
+    zIndex: 9999,
+  }),
 };
 
 // =========================================================
-// 2. ตัว Component เริ่มตรงนี้ (ข้างในจะสะอาดมาก)
+// 2. Component
 // =========================================================
 
-const DetailsFiled = () => {
+const DetailsFiled = ({ onBack, onNext, onSaveDraft }) => {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  return (
-    <form className="form-style1">
-      <div className="row">
+  // ---- state หลัก ๆ ของรายละเอียดทรัพย์ ----
+  const [bedrooms, setBedrooms] = useState(bedroomOptions[0]);
+  const [bathrooms, setBathrooms] = useState(bathroomOptions[0]);
+  const [floors, setFloors] = useState("");
+  const [parking, setParking] = useState(null);
+  const [size, setSize] = useState("");
+  const [direction, setDirection] = useState(null);
+  const [furnishing, setFurnishing] = useState(null);
+  const [yearBuilt, setYearBuilt] = useState("");
+  const [note, setNote] = useState("");
 
+  const [error, setError] = useState("");
+
+  // รวม data เอาไปส่งให้ parent / save draft / summary
+  const buildFormData = () => ({
+    bedrooms,
+    bathrooms,
+    floors,
+    parking,
+    size,
+    direction,
+    furnishing,
+    yearBuilt,
+    note,
+    // ถ้าอยากเก็บ amenities แบบจริงจังค่อยเพิ่ม state ทีหลัง
+  });
+
+  const handleNext = () => {
+    // validate เบื้องต้น
+    if (!bedrooms || !bathrooms || !size.trim()) {
+      setError("กรุณาระบุอย่างน้อย ห้องนอน / ห้องน้ำ และขนาดพื้นที่ (ตร.ม.)");
+      return;
+    }
+    setError("");
+
+    const data = buildFormData();
+    if (onNext) {
+      onNext(data);
+    } else {
+      console.log("details next:", data);
+    }
+  };
+
+  const handleSaveDraft = () => {
+    const data = buildFormData();
+    if (onSaveDraft) {
+      onSaveDraft(data);
+    } else {
+      console.log("details draft:", data);
+    }
+    alert("บันทึกร่างรายละเอียดทรัพย์เรียบร้อย (mock)");
+  };
+
+  return (
+    <form
+      className="form-style1"
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleNext();
+      }}
+    >
+      <div className="row">
         {/* --- แถวที่ 1 --- */}
 
         {/* 1. ห้องนอน */}
         <div className="col-sm-6 col-md-3">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">ห้องนอน</label>
+            <label className="heading-color ff-heading fw600 mb10">
+              ห้องนอน *
+            </label>
             <Select
-              defaultValue={bedroomOptions[0]}
+              value={bedrooms}
+              onChange={setBedrooms}
               options={bedroomOptions}
               styles={customStyles}
               classNamePrefix="select"
@@ -140,9 +199,12 @@ const DetailsFiled = () => {
         {/* 2. ห้องน้ำ */}
         <div className="col-sm-6 col-md-3">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">ห้องน้ำ</label>
+            <label className="heading-color ff-heading fw600 mb10">
+              ห้องน้ำ *
+            </label>
             <Select
-              defaultValue={bathroomOptions[0]}
+              value={bathrooms}
+              onChange={setBathrooms}
               options={bathroomOptions}
               styles={customStyles}
               classNamePrefix="select"
@@ -157,12 +219,16 @@ const DetailsFiled = () => {
         {/* 3. จำนวนชั้น */}
         <div className="col-sm-6 col-md-3">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">จำนวนชั้น</label>
+            <label className="heading-color ff-heading fw600 mb10">
+              จำนวนชั้น
+            </label>
             <input
               type="text"
               className="form-control"
-              placeholder="เช่น 12A"
-              style={{ height: '55px' }}
+              placeholder="เช่น 2"
+              style={{ height: "55px" }}
+              value={floors}
+              onChange={(e) => setFloors(e.target.value)}
             />
           </div>
         </div>
@@ -170,8 +236,12 @@ const DetailsFiled = () => {
         {/* 4. ที่จอดรถ */}
         <div className="col-sm-6 col-md-3">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">ที่จอดรถ (คัน)</label>
+            <label className="heading-color ff-heading fw600 mb10">
+              ที่จอดรถ (คัน)
+            </label>
             <Select
+              value={parking}
+              onChange={setParking}
               options={parkingOptions}
               styles={customStyles}
               classNamePrefix="select"
@@ -189,12 +259,16 @@ const DetailsFiled = () => {
         {/* 5. ขนาดพื้นที่ */}
         <div className="col-sm-6 col-md-3">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">ขนาด (ตร.ม.)</label>
+            <label className="heading-color ff-heading fw600 mb10">
+              ขนาด (ตร.ม.) *
+            </label>
             <input
               type="number"
               className="form-control"
               placeholder="ระบุขนาด"
-              style={{ height: '55px' }}
+              style={{ height: "55px" }}
+              value={size}
+              onChange={(e) => setSize(e.target.value)}
             />
           </div>
         </div>
@@ -202,8 +276,12 @@ const DetailsFiled = () => {
         {/* 6. ทิศหน้าทรัพย์ */}
         <div className="col-sm-6 col-md-3">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">ทิศหน้าทรัพย์</label>
+            <label className="heading-color ff-heading fw600 mb10">
+              ทิศหน้าทรัพย์
+            </label>
             <Select
+              value={direction}
+              onChange={setDirection}
               options={directionOptions}
               styles={customStyles}
               classNamePrefix="select"
@@ -219,8 +297,12 @@ const DetailsFiled = () => {
         {/* 7. การตกแต่ง */}
         <div className="col-sm-6 col-md-3">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">การตกแต่ง</label>
+            <label className="heading-color ff-heading fw600 mb10">
+              การตกแต่ง
+            </label>
             <Select
+              value={furnishing}
+              onChange={setFurnishing}
               options={furnishOptions}
               styles={customStyles}
               classNamePrefix="select"
@@ -236,21 +318,22 @@ const DetailsFiled = () => {
         {/* 8. ปีที่สร้างเสร็จ */}
         <div className="col-sm-6 col-md-3">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">ปีที่สร้าง (พ.ศ.)</label>
+            <label className="heading-color ff-heading fw600 mb10">
+              ปีที่สร้าง (พ.ศ.)
+            </label>
             <input
               type="number"
               className="form-control"
               placeholder="เช่น 2565"
-              style={{ height: '55px' }}
+              style={{ height: "55px" }}
+              value={yearBuilt}
+              onChange={(e) => setYearBuilt(e.target.value)}
             />
           </div>
         </div>
-
       </div>
-      {/* จบส่วน Details */}
 
-
-      {/* ================= ส่วน Amenities (สิ่งอำนวยความสะดวก) ================= */}
+      {/* ================= สิ่งอำนวยความสะดวก ================= */}
       <div className="row">
         <div className="col-sm-12">
           <div className="mb20">
@@ -276,8 +359,7 @@ const DetailsFiled = () => {
         ))}
       </div>
 
-
-      {/* ================= ส่วนหมายเหตุ ================= */}
+      {/* ================= หมายเหตุ ================= */}
       <div className="row mt30">
         <div className="col-sm-12">
           <div className="mb20">
@@ -288,11 +370,52 @@ const DetailsFiled = () => {
               className="form-control"
               rows={5}
               placeholder="บันทึกช่วยจำ (ไม่แสดงหน้าเว็บ)"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
             />
           </div>
         </div>
       </div>
 
+      {/* error + ปุ่มล่าง */}
+      {error && (
+        <div className="row">
+          <div className="col-12">
+            <p className="text-danger mb10">{error}</p>
+          </div>
+        </div>
+      )}
+
+      <div className="row mt10">
+        <div className="col-12">
+          <div className="d-flex justify-content-between">
+            {onBack ? (
+              <button
+                type="button"
+                className="ud-btn btn-light"
+                onClick={onBack}
+              >
+                ย้อนกลับ
+              </button>
+            ) : (
+              <span />
+            )}
+
+            <div className="d-flex gap-2">
+              <button
+                type="button"
+                className="ud-btn btn-light"
+                onClick={handleSaveDraft}
+              >
+                บันทึกร่าง
+              </button>
+              <button type="submit" className="ud-btn btn-thm">
+                ถัดไป
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </form>
   );
 };
