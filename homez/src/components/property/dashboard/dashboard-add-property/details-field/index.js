@@ -3,41 +3,12 @@ import React, { useState, useEffect } from "react";
 import Select from "react-select";
 import Amenities from "../Amenities";
 
-
-const bedroomOptions = [
-  { value: "0", label: "Studio" },
-  { value: "1", label: "1" },
-  { value: "2", label: "2" },
-  { value: "3", label: "3" },
-  { value: "4", label: "4+" },
-];
-
-const bathroomOptions = [
-  { value: "1", label: "1" },
-  { value: "2", label: "2" },
-  { value: "3", label: "3" },
-  { value: "4", label: "4+" },
-];
-
-const parkingOptions = [
-  { value: "0", label: "ไม่มี" },
-  { value: "1", label: "1" },
-  { value: "2", label: "2" },
-  { value: "3", label: "3+" },
-];
-
-const directionOptions = [
-  { value: "north", label: "ทิศเหนือ" },
-  { value: "south", label: "ทิศใต้" },
-  { value: "east", label: "ทิศตะวันออก" },
-  { value: "west", label: "ทิศตะวันตก" },
-];
-
-const furnishOptions = [
-  { value: "fully", label: "แต่งครบ (Fully)" },
-  { value: "partly", label: "บางส่วน (Partly)" },
-  { value: "bare", label: "ห้องเปล่า (Bare)" },
-];
+// ✅ ดึง options จากไฟล์ JSON ในโฟลเดอร์เดียวกัน
+import bedroomOptions from "./bedroomOptions.json";
+import bathroomOptions from "./bathroomOptions.json";
+import parkingOptions from "./parkingOptions.json";
+import directionOptions from "./directionOptions.json";
+import furnishOptions from "./furnishOptions.json";
 
 const customStyles = {
   control: (provided) => ({
@@ -70,10 +41,6 @@ const customStyles = {
   }),
 };
 
-// =========================================================
-// 2. Component
-// =========================================================
-
 const DetailsFiled = ({ onBack, onNext, onSaveDraft }) => {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -81,8 +48,8 @@ const DetailsFiled = ({ onBack, onNext, onSaveDraft }) => {
   }, []);
 
   // ---- state หลัก ๆ ของรายละเอียดทรัพย์ ----
-  const [bedrooms, setBedrooms] = useState(bedroomOptions[0]);
-  const [bathrooms, setBathrooms] = useState(bathroomOptions[0]);
+  const [bedrooms, setBedrooms] = useState(bedroomOptions[0] || null);
+  const [bathrooms, setBathrooms] = useState(bathroomOptions[0] || null);
   const [floors, setFloors] = useState("");
   const [parking, setParking] = useState(null);
   const [size, setSize] = useState("");
@@ -93,7 +60,6 @@ const DetailsFiled = ({ onBack, onNext, onSaveDraft }) => {
 
   const [error, setError] = useState("");
 
-  // รวม data เอาไปส่งให้ parent / save draft / summary
   const buildFormData = () => ({
     bedrooms,
     bathrooms,
@@ -104,11 +70,9 @@ const DetailsFiled = ({ onBack, onNext, onSaveDraft }) => {
     furnishing,
     yearBuilt,
     note,
-    // ถ้าอยากเก็บ amenities แบบจริงจังค่อยเพิ่ม state ทีหลัง
   });
 
   const handleNext = () => {
-    // validate เบื้องต้น
     if (!bedrooms || !bathrooms || !size.trim()) {
       setError("กรุณาระบุอย่างน้อย ห้องนอน / ห้องน้ำ และขนาดพื้นที่ (ตร.ม.)");
       return;
@@ -142,8 +106,6 @@ const DetailsFiled = ({ onBack, onNext, onSaveDraft }) => {
       }}
     >
       <div className="row">
-        {/* --- แถวที่ 1 --- */}
-
         {/* 1. ห้องนอน */}
         <div className="col-sm-6 col-md-3">
           <div className="mb20">
@@ -222,7 +184,7 @@ const DetailsFiled = ({ onBack, onNext, onSaveDraft }) => {
           </div>
         </div>
 
-        {/* --- แถวที่ 2 --- */}
+        {/* แถวที่ 2 */}
 
         {/* 5. ขนาดพื้นที่ */}
         <div className="col-sm-6 col-md-3">
@@ -300,19 +262,18 @@ const DetailsFiled = ({ onBack, onNext, onSaveDraft }) => {
           </div>
         </div>
       </div>
+
+      {/* สิ่งอำนวยความสะดวก */}
       <div className="row">
         <div className="col-sm-12">
           <div className="mb20">
             <h4 className="title fz17 mb30">สิ่งอำนวยความสะดวก</h4>
           </div>
         </div>
-
-        {/* เรียกใช้ Component ที่เราแก้ภาษาไทยแล้ว */}
         <Amenities />
-
-
       </div>
 
+      {/* หมายเหตุ */}
       <div className="row mt30">
         <div className="col-sm-12">
           <div className="mb20">

@@ -1,15 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Select from "react-select";
 
-// 🔹 ดึงข้อมูลจาก geography.json ผ่าน data.js
-import {
-  provinceOptions,
-  districtOptions,
-  subdistrictOptions,
-  zipBySubdistrict,
-} from "./data";
+// ดึงข้อมูลจาก geography.json (วางไฟล์ไว้โฟลเดอร์เดียวกัน)
+import geography from "./geography.json";
 
 const customStyles = {
   control: (provided) => ({
@@ -52,17 +47,63 @@ const SelectMulitField = ({ value = {}, onChange }) => {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // auto fill ZIP จากตำบลทุกครั้งที่ subdistrict เปลี่ยน
+  // ------- สร้าง options จาก geography.json โดยตรง -------
+
+  // provinceOptions: รายชื่อจังหวัดไม่ซ้ำ
+  const provinceOptions = useMemo(() => {
+    const map = new Map();
+    geography.forEach((row) => {
+      const name = row.provinceNameTh;
+      if (!map.has(name)) {
+        map.set(name, { value: name, label: name });
+      }
+    });
+    return Array.from(map.values());
+  }, []);
+
+  // districtOptions: รายชื่ออำเภอตามจังหวัดที่เลือก
+  const districtOptions = useMemo(() => {
+    if (!province) return [];
+    const map = new Map();
+    geography
+      .filter((row) => row.provinceNameTh === province.value)
+      .forEach((row) => {
+        const name = row.districtNameTh;
+        if (!map.has(name)) {
+          map.set(name, { value: name, label: name });
+        }
+      });
+    return Array.from(map.values());
+  }, [province]);
+
+  // subdistrictOptions: รายชื่อตำบลตามอำเภอที่เลือก
+  const subdistrictOptions = useMemo(() => {
+    if (!district) return [];
+    const map = new Map();
+    geography
+      .filter((row) => row.districtNameTh === district.value)
+      .forEach((row) => {
+        const name = row.subdistrictNameTh;
+        if (!map.has(name)) {
+          map.set(name, { value: name, label: name });
+        }
+      });
+    return Array.from(map.values());
+  }, [district]);
+
+  // auto fill ZIP จากตำบล
   useEffect(() => {
     if (subdistrict) {
-      const code = zipBySubdistrict[subdistrict.value] || "";
-      setZipCode(code);
+      const row = geography.find(
+        (r) => r.subdistrictNameTh === subdistrict.value
+      );
+      setZipCode(row ? String(row.postalCode || "") : "");
     } else {
       setZipCode("");
     }
   }, [subdistrict]);
 
-  // ส่งค่ากลับไปให้ parent เวลา field ใด ๆ เปลี่ยน
+  // ส่งค่ากลับให้ parent
   useEffect(() => {
     if (!onChange) return;
     onChange({
@@ -75,20 +116,7 @@ const SelectMulitField = ({ value = {}, onChange }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [province, district, subdistrict, zipCode, neighborhood, mounted]);
 
-  // ดึง options จาก mapping ตามจังหวัด/อำเภอที่เลือก
-  const districtOptionsForSelect =
-    province && districtOptions[province.value]
-      ? districtOptions[province.value]
-      : [];
-
-  const subdistrictOptionsForSelect =
-    district && subdistrictOptions[district.value]
-      ? subdistrictOptions[district.value]
-      : [];
-
-  if (!mounted) {
-    return null;
-  }
+  if (!mounted) return null;
 
   return (
     <>
@@ -116,7 +144,7 @@ const SelectMulitField = ({ value = {}, onChange }) => {
         </div>
       </div>
 
-      {/* อำเภอ/เขต */}
+      {/* อำเภอ / เขต */}
       <div className="col-sm-6 col-xl-4">
         <div className="mb20">
           <label className="heading-color ff-heading fw600 mb10">
@@ -128,7 +156,7 @@ const SelectMulitField = ({ value = {}, onChange }) => {
               setDistrict(val);
               setSubdistrict(null);
             }}
-            options={districtOptionsForSelect}
+            options={districtOptions}
             styles={customStyles}
             classNamePrefix="select"
             placeholder="เลือกอำเภอ / เขต"
@@ -140,7 +168,7 @@ const SelectMulitField = ({ value = {}, onChange }) => {
         </div>
       </div>
 
-      {/* ตำบล/แขวง */}
+      {/* ตำบล / แขวง */}
       <div className="col-sm-6 col-xl-4">
         <div className="mb20">
           <label className="heading-color ff-heading fw600 mb10">
@@ -149,7 +177,7 @@ const SelectMulitField = ({ value = {}, onChange }) => {
           <Select
             value={subdistrict}
             onChange={setSubdistrict}
-            options={subdistrictOptionsForSelect}
+            options={subdistrictOptions}
             styles={customStyles}
             classNamePrefix="select"
             placeholder="เลือกตำบล / แขวง"
@@ -177,7 +205,7 @@ const SelectMulitField = ({ value = {}, onChange }) => {
         </div>
       </div>
 
-      {/* รหัสไปรษณีย์ (auto จากตำบล) */}
+      {/* รหัสไปรษณีย์ */}
       <div className="col-sm-6 col-xl-4">
         <div className="mb20">
           <label className="heading-color ff-heading fw600 mb10">

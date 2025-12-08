@@ -1,0 +1,6 @@
+[
+  { "value": "north", "label": "ทิศเหนือ" },
+  { "value": "south", "label": "ทิศใต้" },
+  { "value": "east", "label": "ทิศตะวันออก" },
+  { "value": "west", "label": "ทิศตะวันตก" }
+]
