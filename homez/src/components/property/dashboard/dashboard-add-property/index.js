@@ -20,19 +20,7 @@ const AddPropertyTabContent = () => {
             aria-controls="nav-item1"
             aria-selected="true"
           >
-            1. Description
-          </button>
-          <button
-            className="nav-link fw600"
-            id="nav-item2-tab"
-            data-bs-toggle="tab"
-            data-bs-target="#nav-item2"
-            type="button"
-            role="tab"
-            aria-controls="nav-item2"
-            aria-selected="false"
-          >
-            2. Media
+            1. หัวข้อทรัพย์
           </button>
           <button
             className="nav-link fw600"
@@ -44,7 +32,19 @@ const AddPropertyTabContent = () => {
             aria-controls="nav-item3"
             aria-selected="false"
           >
-            3. Location
+            2. ที่อยู่ทรัพย์
+          </button>
+          <button
+            className="nav-link fw600"
+            id="nav-item2-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#nav-item2"
+            type="button"
+            role="tab"
+            aria-controls="nav-item2"
+            aria-selected="false"
+          >
+            3. เพิ่มรูปทรัพย์
           </button>
           <button
             className="nav-link fw600"
@@ -56,7 +56,7 @@ const AddPropertyTabContent = () => {
             aria-controls="nav-item4"
             aria-selected="false"
           >
-            4. Detail
+            4. รายละเอียด
           </button>
           <button
             className="nav-link fw600"
@@ -68,7 +68,7 @@ const AddPropertyTabContent = () => {
             aria-controls="nav-item5"
             aria-selected="false"
           >
-            5. Amenities
+            5. ยืนยัน
           </button>
         </div>
       </nav>
