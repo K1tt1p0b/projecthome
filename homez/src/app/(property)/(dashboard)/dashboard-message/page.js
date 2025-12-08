@@ -40,7 +40,7 @@ const DashboardMessage = () => {
 
                 <div className="col-lg-12">
                   <div className="dashboard_title_area">
-                    <h2>Messages</h2>
+                    <h2>กล่องข้อความ</h2>
                     <p className="text">We are glad to see you again!</p>
                   </div>
                 </div>

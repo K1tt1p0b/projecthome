@@ -7,58 +7,58 @@ import { Tooltip as ReactTooltip } from "react-tooltip";
 const propertyData = [
   {
     id: 1,
-    title: "Equestrian Family Home",
+    title: "บ้านเดี่ยวสไตล์คันทรี",
     imageSrc: "/images/listings/list-1.jpg",
-    location: "California City, CA, USA",
-    price: "$14,000/mo",
-    datePublished: "December 31, 2022",
-    status: "Pending",
+    location: "แคลิฟอร์เนีย, สหรัฐอเมริกา",
+    price: "$14,000/เดือน",
+    datePublished: "31 ธันวาคม 2022",
+    status: "รอตรวจสอบ",
   },
   {
     id: 2,
-    title: "Luxury villa in Rego Park",
+    title: "วิลล่าหรู ย่านรีโกพาร์ค",
     imageSrc: "/images/listings/list-2.jpg",
-    location: "California City, CA, USA",
-    price: "$14,000/mo",
-    datePublished: "December 31, 2022",
-    status: "Published",
+    location: "แคลิฟอร์เนีย, สหรัฐอเมริกา",
+    price: "$14,000/เดือน",
+    datePublished: "31 ธันวาคม 2022",
+    status: "เผยแพร่แล้ว",
   },
   {
     id: 3,
-    title: "Villa on Hollywood Boulevard",
+    title: "วิลล่า บนถนนฮอลลีวูด",
     imageSrc: "/images/listings/list-3.jpg",
-    location: "California City, CA, USA",
-    price: "$14,000/mo",
-    datePublished: "December 31, 2022",
-    status: "Processing",
+    location: "แคลิฟอร์เนีย, สหรัฐอเมริกา",
+    price: "$14,000/เดือน",
+    datePublished: "31 ธันวาคม 2022",
+    status: "กำลังดำเนินการ",
   },
   {
     id: 4,
-    title: "Equestrian Family Home",
+    title: "บ้านเดี่ยวสไตล์คันทรี",
     imageSrc: "/images/listings/list-4.jpg",
-    location: "California City, CA, USA",
-    price: "$14,000/mo",
-    datePublished: "December 31, 2022",
-    status: "Pending",
+    location: "แคลิฟอร์เนีย, สหรัฐอเมริกา",
+    price: "$14,000/เดือน",
+    datePublished: "31 ธันวาคม 2022",
+    status: "รอตรวจสอบ",
   },
   {
     id: 5,
-    title: "Luxury villa in Rego Park",
+    title: "วิลล่าหรู ย่านรีโกพาร์ค",
     imageSrc: "/images/listings/list-5.jpg",
-    location: "California City, CA, USA",
-    price: "$14,000/mo",
-    datePublished: "December 31, 2022",
-    status: "Published",
+    location: "แคลิฟอร์เนีย, สหรัฐอเมริกา",
+    price: "$14,000/เดือน",
+    datePublished: "31 ธันวาคม 2022",
+    status: "เผยแพร่แล้ว",
   },
 ];
 
 const getStatusStyle = (status) => {
   switch (status) {
-    case "Pending":
+    case "รอตรวจสอบ":
       return "pending-style style1";
-    case "Published":
+    case "เผยแพร่แล้ว":
       return "pending-style style2";
-    case "Processing":
+    case "กำลังดำเนินการ":
       return "pending-style style3";
     default:
       return "";
@@ -70,11 +70,11 @@ const PropertyDataTable = () => {
     <table className="table-style3 table at-savesearch">
       <thead className="t-head">
         <tr>
-          <th scope="col">Listing title</th>
-          <th scope="col">Date Published</th>
-          <th scope="col">Status</th>
-          <th scope="col">View</th>
-          <th scope="col">Action</th>
+          <th scope="col">ชื่อประกาศ</th>
+          <th scope="col">วันที่ลงประกาศ</th>
+          <th scope="col">สถานะ</th>
+          <th scope="col">ยอดเข้าชม</th>
+          <th scope="col">จัดการ</th>
         </tr>
       </thead>
       <tbody className="t-body">
@@ -102,13 +102,15 @@ const PropertyDataTable = () => {
                 </div>
               </div>
             </th>
-            <td className="vam">{property.datePublished}</td>
+            <td className="vam"style={{ whiteSpace: "nowrap" }} >{property.datePublished}</td>
             <td className="vam">
-              <span className={getStatusStyle(property.status)}>
+              <span className={getStatusStyle(property.status)}
+              style={{ whiteSpace: "nowrap", padding: "5px 15px", display: "inline-block", fontSize: "13px" }}
+              >
                 {property.status}
               </span>
             </td>
-            <td className="vam">{property.datePublished}</td>
+            <td className="vam" style={{ whiteSpace: "nowrap" }} >{property.datePublished}</td>
             <td className="vam">
               <div className="d-flex">
                 <button
@@ -129,12 +131,12 @@ const PropertyDataTable = () => {
                 <ReactTooltip
                   id={`edit-${property.id}`}
                   place="top"
-                  content="Edi"
+                  content="แก้ไข"
                 />
                 <ReactTooltip
                   id={`delete-${property.id}`}
                   place="top"
-                  content="Delete"
+                  content="ลบ"
                 />
               </div>
             </td>

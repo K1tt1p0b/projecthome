@@ -24,10 +24,10 @@ const FilterHeader = () => {
             Sort by:
           </span>
           <select className="form-select show-tick">
-            <option>Best Seller</option>
-            <option>Best Match</option>
-            <option>Price Low</option>
-            <option>Price High</option>
+            <option>ขายดีที่สุด</option>
+            <option>ตรงใจที่สุด</option>
+            <option>ราคาต่ำสุดก่อน</option>
+            <option>ราคาสูงสุดก่อน</option>
           </select>
         </div>
       </div>
