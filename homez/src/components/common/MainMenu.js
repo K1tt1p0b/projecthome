@@ -85,6 +85,10 @@ const MainMenu = () => {
                       href={submenuItem.href}
                     >
                       {submenuItem.label}
+                      git config --global user.name "K1tt1p0b"
+                      git config --global user.email "kittipob.jir@rmutto.ac.th"
+
+
                     </Link>
                   </li>
                 ))}
