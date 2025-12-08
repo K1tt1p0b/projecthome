@@ -8,7 +8,7 @@ const FilterHeader = () => {
           <input
             type="text"
             className="form-control bdrs12"
-            placeholder="Search"
+            placeholder="ค้นหาทรัพย์สินของคุณ..."
             required
           />
           <label>
@@ -31,8 +31,8 @@ const FilterHeader = () => {
           </select>
         </div>
       </div>
-      <a href="#" className="ud-btn btn-thm">
-        Add New Property
+      <a href="./dashboard-add-property" className="ud-btn btn-thm">
+        เพิ่มที่อยู่ทรัพย์
         <i className="fal fa-arrow-right-long" />
       </a>
     </div>
