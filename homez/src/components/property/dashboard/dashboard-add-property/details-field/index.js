@@ -1,41 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Select from "react-select";
+import Amenities from "../Amenities";
 
-// =========================================================
-// 1. ย้ายข้อมูลออกมาไว้นอกฟังก์ชัน (Global Constants)
-//    เพื่อให้ข้อมูล "นิ่ง" ไม่หายเวลา Component รีเฟรช
-// =========================================================
-
-const amenitiesData = {
-  column1: [
-    { label: "ห้องใต้หลังคา", defaultChecked: false },
-    { label: "สนามบาส", defaultChecked: false },
-    { label: "เครื่องปรับอากาศ", defaultChecked: true },
-    { label: "สนามหญ้า", defaultChecked: true },
-    { label: "สระว่ายน้ำ", defaultChecked: false },
-    { label: "ลานบาร์บีคิว", defaultChecked: false },
-    { label: "ไมโครเวฟ", defaultChecked: false },
-  ],
-  column2: [
-    { label: "เคเบิลทีวี", defaultChecked: false },
-    { label: "เครื่องอบผ้า", defaultChecked: false },
-    { label: "ฝักบัวกลางแจ้ง", defaultChecked: false },
-    { label: "เครื่องซักผ้า", defaultChecked: true },
-    { label: "ฟิตเนส", defaultChecked: false },
-    { label: "วิวทะเล", defaultChecked: false },
-    { label: "พื้นที่ส่วนตัว", defaultChecked: false },
-  ],
-  column3: [
-    { label: "วิวทะเลสาบ", defaultChecked: false },
-    { label: "ห้องเก็บไวน์", defaultChecked: false },
-    { label: "สวนหน้าบ้าน", defaultChecked: true },
-    { label: "ตู้เย็น", defaultChecked: true },
-    { label: "WiFi", defaultChecked: true },
-    { label: "ห้องซักรีด", defaultChecked: false },
-    { label: "ซาวน่า", defaultChecked: false },
-  ],
-};
 
 const bedroomOptions = [
   { value: "0", label: "Studio" },
@@ -250,7 +217,6 @@ const DetailsFiled = () => {
       {/* จบส่วน Details */}
 
 
-      {/* ================= ส่วน Amenities (สิ่งอำนวยความสะดวก) ================= */}
       <div className="row">
         <div className="col-sm-12">
           <div className="mb20">
@@ -258,24 +224,10 @@ const DetailsFiled = () => {
           </div>
         </div>
 
-        {Object.keys(amenitiesData).map((columnKey, index) => (
-          <div key={index} className="col-sm-6 col-lg-4">
-            <div className="checkbox-style1">
-              {amenitiesData[columnKey].map((amenity, amenityIndex) => (
-                <label key={amenityIndex} className="custom_checkbox">
-                  {amenity.label}
-                  <input
-                    type="checkbox"
-                    defaultChecked={amenity.defaultChecked}
-                  />
-                  <span className="checkmark" />
-                </label>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+        {/* เรียกใช้ Component ที่เราแก้ภาษาไทยแล้ว */}
+        <Amenities />
 
+      </div>
 
       {/* ================= ส่วนหมายเหตุ ================= */}
       <div className="row mt30">
