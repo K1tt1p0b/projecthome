@@ -7,12 +7,12 @@ const ChangePasswordForm = () => {
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
             <label className="heading-color ff-heading fw600 mb10">
-              Old Password
+              รหัสผ่านเก่า
             </label>
             <input
               type="text"
               className="form-control"
-              placeholder="Your Name"
+              placeholder="รหัสผ่านเก่า"
               required
             />
           </div>
@@ -24,12 +24,12 @@ const ChangePasswordForm = () => {
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
             <label className="heading-color ff-heading fw600 mb10">
-              New Password
+              รหัสผ่านใหม่
             </label>
             <input
               type="text"
               className="form-control"
-              placeholder="Your Name"
+              placeholder="รหัสผ่านใหม่"
               required
             />
           </div>
@@ -39,12 +39,12 @@ const ChangePasswordForm = () => {
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
             <label className="heading-color ff-heading fw600 mb10">
-              Confirm New Password
+              ยืนยันรหัสผ่านใหม่
             </label>
             <input
               type="text"
               className="form-control"
-              placeholder="Your Name"
+              placeholder="ยืนยันรหัสผ่านใหม่"
               required
             />
           </div>
