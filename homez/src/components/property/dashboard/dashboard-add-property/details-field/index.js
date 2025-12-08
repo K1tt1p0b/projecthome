@@ -2,80 +2,117 @@
 import React, { useState, useEffect } from "react";
 import Select from "react-select";
 
+// =========================================================
+// 1. ย้ายข้อมูลออกมาไว้นอกฟังก์ชัน (Global Constants)
+//    เพื่อให้ข้อมูล "นิ่ง" ไม่หายเวลา Component รีเฟรช
+// =========================================================
+
+const amenitiesData = {
+  column1: [
+    { label: "ห้องใต้หลังคา", defaultChecked: false },
+    { label: "สนามบาส", defaultChecked: false },
+    { label: "เครื่องปรับอากาศ", defaultChecked: true },
+    { label: "สนามหญ้า", defaultChecked: true },
+    { label: "สระว่ายน้ำ", defaultChecked: false },
+    { label: "ลานบาร์บีคิว", defaultChecked: false },
+    { label: "ไมโครเวฟ", defaultChecked: false },
+  ],
+  column2: [
+    { label: "เคเบิลทีวี", defaultChecked: false },
+    { label: "เครื่องอบผ้า", defaultChecked: false },
+    { label: "ฝักบัวกลางแจ้ง", defaultChecked: false },
+    { label: "เครื่องซักผ้า", defaultChecked: true },
+    { label: "ฟิตเนส", defaultChecked: false },
+    { label: "วิวทะเล", defaultChecked: false },
+    { label: "พื้นที่ส่วนตัว", defaultChecked: false },
+  ],
+  column3: [
+    { label: "วิวทะเลสาบ", defaultChecked: false },
+    { label: "ห้องเก็บไวน์", defaultChecked: false },
+    { label: "สวนหน้าบ้าน", defaultChecked: true },
+    { label: "ตู้เย็น", defaultChecked: true },
+    { label: "WiFi", defaultChecked: true },
+    { label: "ห้องซักรีด", defaultChecked: false },
+    { label: "ซาวน่า", defaultChecked: false },
+  ],
+};
+
+const bedroomOptions = [
+  { value: "0", label: "Studio" },
+  { value: "1", label: "1" },
+  { value: "2", label: "2" },
+  { value: "3", label: "3" },
+  { value: "4", label: "4+" },
+];
+
+const bathroomOptions = [
+  { value: "1", label: "1" },
+  { value: "2", label: "2" },
+  { value: "3", label: "3" },
+  { value: "4", label: "4+" },
+];
+
+const parkingOptions = [
+  { value: "0", label: "ไม่มี" },
+  { value: "1", label: "1" },
+  { value: "2", label: "2" },
+  { value: "3", label: "3+" },
+];
+
+const directionOptions = [
+  { value: "north", label: "ทิศเหนือ" },
+  { value: "south", label: "ทิศใต้" },
+  { value: "east", label: "ทิศตะวันออก" },
+  { value: "west", label: "ทิศตะวันตก" },
+];
+
+const furnishOptions = [
+  { value: "fully", label: "แต่งครบ (Fully)" },
+  { value: "partly", label: "บางส่วน (Partly)" },
+  { value: "bare", label: "ห้องเปล่า (Bare)" },
+];
+
+const customStyles = {
+  control: (provided) => ({
+    ...provided,
+    background: '#fff',
+    borderColor: '#e5e5e5',
+    borderRadius: '8px',
+    minHeight: '55px',
+    paddingLeft: '5px',
+    boxShadow: 'none',
+    '&:hover': { borderColor: '#ddd' }
+  }),
+  option: (styles, { isFocused, isSelected }) => ({
+    ...styles,
+    backgroundColor: isSelected ? '#eb6753' : isFocused ? '#fceceb' : undefined,
+    color: isSelected ? '#fff' : '#000',
+    cursor: 'pointer',
+  }),
+  singleValue: (provided) => ({
+    ...provided,
+    color: '#222',
+  }),
+  // สไตล์เพื่อให้เมนูลอยทับทุกอย่าง
+  menuPortal: (base) => ({
+    ...base,
+    zIndex: 9999
+  }),
+  menu: (base) => ({
+    ...base,
+    zIndex: 9999
+  })
+};
+
+// =========================================================
+// 2. ตัว Component เริ่มตรงนี้ (ข้างในจะสะอาดมาก)
+// =========================================================
+
 const DetailsFiled = () => {
-  // --- 1. เพิ่มส่วนนี้: เช็คว่าหน้าเว็บโหลดเสร็จหรือยัง (กัน Error) ---
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // --- 2. เตรียมข้อมูลตัวเลือก (Options) ---
-  const bedroomOptions = [
-    { value: "0", label: "Studio" },
-    { value: "1", label: "1" },
-    { value: "2", label: "2" },
-    { value: "3", label: "3" },
-    { value: "4", label: "4+" },
-  ];
-
-  const bathroomOptions = [
-    { value: "1", label: "1" },
-    { value: "2", label: "2" },
-    { value: "3", label: "3" },
-    { value: "4", label: "4+" },
-  ];
-
-  const parkingOptions = [
-    { value: "0", label: "ไม่มี" },
-    { value: "1", label: "1" },
-    { value: "2", label: "2" },
-    { value: "3", label: "3+" },
-  ];
-
-  const directionOptions = [
-    { value: "north", label: "ทิศเหนือ" },
-    { value: "south", label: "ทิศใต้" },
-    { value: "east", label: "ทิศตะวันออก" },
-    { value: "west", label: "ทิศตะวันตก" },
-  ];
-
-  const furnishOptions = [
-    { value: "fully", label: "แต่งครบ (Fully)" },
-    { value: "partly", label: "บางส่วน (Partly)" },
-    { value: "bare", label: "ห้องเปล่า (Bare)" },
-  ];
-
-  const customStyles = {
-    control: (provided) => ({
-      ...provided,
-      background: '#fff',
-      borderColor: '#e5e5e5',
-      borderRadius: '8px',
-      minHeight: '55px',
-      paddingLeft: '5px',
-      boxShadow: 'none',
-      '&:hover': { borderColor: '#ddd' }
-    }),
-    option: (styles, { isFocused, isSelected }) => ({
-      ...styles,
-      backgroundColor: isSelected ? '#eb6753' : isFocused ? '#fceceb' : undefined,
-      color: isSelected ? '#fff' : '#000',
-      cursor: 'pointer',
-    }),
-    singleValue: (provided) => ({
-      ...provided,
-      color: '#222',
-    }),
-    // สไตล์เพื่อให้เมนูลอยทับทุกอย่าง
-    menuPortal: (base) => ({
-      ...base,
-      zIndex: 9999
-    }),
-    menu: (base) => ({
-      ...base,
-      zIndex: 9999
-    })
-  };
 
   return (
     <form className="form-style1">
@@ -94,7 +131,6 @@ const DetailsFiled = () => {
               classNamePrefix="select"
               isSearchable={false}
               instanceId="bedrooms"
-              // เพิ่ม 2 บรรทัดนี้เพื่อให้ Dropdown ทะลุกรอบ
               menuPosition="fixed"
               menuPortalTarget={mounted ? document.body : null}
             />
@@ -210,7 +246,39 @@ const DetailsFiled = () => {
           </div>
         </div>
 
-        {/* --- หมายเหตุ --- */}
+      </div>
+      {/* จบส่วน Details */}
+
+
+      {/* ================= ส่วน Amenities (สิ่งอำนวยความสะดวก) ================= */}
+      <div className="row">
+        <div className="col-sm-12">
+          <div className="mb20">
+            <h4 className="title fz17 mb30">สิ่งอำนวยความสะดวก</h4>
+          </div>
+        </div>
+
+        {Object.keys(amenitiesData).map((columnKey, index) => (
+          <div key={index} className="col-sm-6 col-lg-4">
+            <div className="checkbox-style1">
+              {amenitiesData[columnKey].map((amenity, amenityIndex) => (
+                <label key={amenityIndex} className="custom_checkbox">
+                  {amenity.label}
+                  <input
+                    type="checkbox"
+                    defaultChecked={amenity.defaultChecked}
+                  />
+                  <span className="checkmark" />
+                </label>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+
+      {/* ================= ส่วนหมายเหตุ ================= */}
+      <div className="row mt30">
         <div className="col-sm-12">
           <div className="mb20">
             <label className="heading-color ff-heading fw600 mb10">
@@ -224,6 +292,7 @@ const DetailsFiled = () => {
           </div>
         </div>
       </div>
+
     </form>
   );
 };
