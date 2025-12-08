@@ -3,6 +3,14 @@
 import React, { useEffect, useState } from "react";
 import Select from "react-select";
 
+// 🔹 ดึงข้อมูลจาก geography.json ผ่าน data.js
+import {
+  provinceOptions,
+  districtOptions,
+  subdistrictOptions,
+  zipBySubdistrict,
+} from "./data";
+
 const customStyles = {
   control: (provided) => ({
     ...provided,
@@ -32,47 +40,6 @@ const customStyles = {
     ...base,
     zIndex: 9999,
   }),
-};
-
-// ---------- MOCK DATA ----------
-const provinceOptions = [
-  { value: "กรุงเทพมหานคร", label: "กรุงเทพมหานคร" },
-  { value: "ปทุมธานี", label: "ปทุมธานี" },
-  { value: "นนทบุรี", label: "นนทบุรี" },
-];
-
-const districtOptionsMock = {
-  กรุงเทพมหานคร: [
-    { value: "เขตปทุมวัน", label: "เขตปทุมวัน" },
-    { value: "เขตจตุจักร", label: "เขตจตุจักร" },
-  ],
-  ปทุมธานี: [
-    { value: "คลองหลวง", label: "คลองหลวง" },
-    { value: "ธัญบุรี", label: "ธัญบุรี" },
-  ],
-  นนทบุรี: [
-    { value: "ปากเกร็ด", label: "ปากเกร็ด" },
-    { value: "เมืองนนทบุรี", label: "เมืองนนทบุรี" },
-  ],
-};
-
-const subdistrictOptionsMock = {
-  คลองหลวง: [
-    { value: "คลองหนึ่ง", label: "คลองหนึ่ง" },
-    { value: "คลองสอง", label: "คลองสอง" },
-  ],
-  ธัญบุรี: [
-    { value: "ประชาธิปัตย์", label: "ประชาธิปัตย์" },
-    { value: "รังสิต", label: "รังสิต" },
-  ],
-};
-
-// mapping ตำบล → รหัสไปรษณีย์ (ตัวอย่าง)
-const zipBySubdistrict = {
-  คลองหนึ่ง: "12120",
-  คลองสอง: "12121",
-  ประชาธิปัตย์: "12130",
-  รังสิต: "12110",
 };
 
 const SelectMulitField = ({ value = {}, onChange }) => {
@@ -105,21 +72,21 @@ const SelectMulitField = ({ value = {}, onChange }) => {
       zipCode,
       neighborhood,
     });
-    // อย่าใส่ onChange ใน dependency เดี๋ยว loop
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [province, district, subdistrict, zipCode, neighborhood, mounted]);
 
-  const districtOptions =
-    province && districtOptionsMock[province.value]
-      ? districtOptionsMock[province.value]
+  // ดึง options จาก mapping ตามจังหวัด/อำเภอที่เลือก
+  const districtOptionsForSelect =
+    province && districtOptions[province.value]
+      ? districtOptions[province.value]
       : [];
 
-  const subdistrictOptions =
-    district && subdistrictOptionsMock[district.value]
-      ? subdistrictOptionsMock[district.value]
+  const subdistrictOptionsForSelect =
+    district && subdistrictOptions[district.value]
+      ? subdistrictOptions[district.value]
       : [];
 
-      if (!mounted) {
+  if (!mounted) {
     return null;
   }
 
@@ -161,7 +128,7 @@ const SelectMulitField = ({ value = {}, onChange }) => {
               setDistrict(val);
               setSubdistrict(null);
             }}
-            options={districtOptions}
+            options={districtOptionsForSelect}
             styles={customStyles}
             classNamePrefix="select"
             placeholder="เลือกอำเภอ / เขต"
@@ -182,7 +149,7 @@ const SelectMulitField = ({ value = {}, onChange }) => {
           <Select
             value={subdistrict}
             onChange={setSubdistrict}
-            options={subdistrictOptions}
+            options={subdistrictOptionsForSelect}
             styles={customStyles}
             classNamePrefix="select"
             placeholder="เลือกตำบล / แขวง"
