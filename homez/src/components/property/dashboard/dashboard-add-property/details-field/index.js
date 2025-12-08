@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Select from "react-select";
+import Amenities from "../Amenities";
 
 // =========================================================
 // 1. ข้อมูลคงที่ (Options / Amenities)
@@ -332,8 +333,6 @@ const DetailsFiled = ({ onBack, onNext, onSaveDraft }) => {
           </div>
         </div>
       </div>
-
-      {/* ================= สิ่งอำนวยความสะดวก ================= */}
       <div className="row">
         <div className="col-sm-12">
           <div className="mb20">
@@ -341,25 +340,12 @@ const DetailsFiled = ({ onBack, onNext, onSaveDraft }) => {
           </div>
         </div>
 
-        {Object.keys(amenitiesData).map((columnKey, index) => (
-          <div key={index} className="col-sm-6 col-lg-4">
-            <div className="checkbox-style1">
-              {amenitiesData[columnKey].map((amenity, amenityIndex) => (
-                <label key={amenityIndex} className="custom_checkbox">
-                  {amenity.label}
-                  <input
-                    type="checkbox"
-                    defaultChecked={amenity.defaultChecked}
-                  />
-                  <span className="checkmark" />
-                </label>
-              ))}
-            </div>
-          </div>
-        ))}
+        {/* เรียกใช้ Component ที่เราแก้ภาษาไทยแล้ว */}
+        <Amenities />
+
+
       </div>
 
-      {/* ================= หมายเหตุ ================= */}
       <div className="row mt30">
         <div className="col-sm-12">
           <div className="mb20">
