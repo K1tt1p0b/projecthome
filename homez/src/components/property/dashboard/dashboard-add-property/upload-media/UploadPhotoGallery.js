@@ -59,64 +59,56 @@ const UploadPhotoGallery = () => {
     setUploadedImages(newImages);
   };
 
-  return (
+return (
     <>
       <div
         className="upload-img position-relative overflow-hidden bdrs12 text-center mb30 px-2"
-        style={{
-          border: isMinRequirementMet ? "1px solid #ddd" : "2px dashed red",
-          height: "auto",
-          minHeight: "200px"
+        style={{ 
+           border: isMinRequirementMet ? "1px solid #ddd" : "2px dashed red",
+           height: "auto", 
+           minHeight: "200px",
+           display: "flex",        // เพิ่ม flex เพื่อจัด layout
+           flexDirection: "column", // เรียงจากบนลงล่าง
+           justifyContent: "center" // จัดกึ่งกลางแนวตั้ง
         }}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
       >
-        <div className="icon mb30">
-          <span className="flaticon-upload" />
-        </div>
-        <h4 className="title fz17 mb10">อัปโหลดรูปภาพบ้าน/ที่ดินของคุณที่นี้</h4>
-        <p className="text mb25">
-          รูปภาพต้องเป็นไฟล์ JPEG หรือ PNG เท่านั้น (สูงสุดได้ {HARD_LIMIT} รูป)
-        </p>
+        
+        {/* --- ส่วนที่ 1: ไอคอนและข้อความ (แสดงเฉพาะตอนที่ "ยังไม่มีรูป") --- */}
+        {uploadedImages.length === 0 && (
+          <>
+            <div className="icon mb30">
+              <span className="flaticon-upload" />
+            </div>
+            <h4 className="title fz17 mb10">อัปโหลดรูปภาพบ้าน/ที่ดินของคุณที่นี้</h4>
+            <p className="text mb25">
+              รูปภาพต้องเป็นไฟล์ JPEG หรือ PNG เท่านั้น (สูงสุดได้ {HARD_LIMIT} รูป)
+            </p>
+          </>
+        )}
 
-        <label className="ud-btn btn-white mb30">
-          Browse Files
-          <input
-            ref={fileInputRef}
-            id="fileInput"
-            type="file"
-            multiple
-            className="ud-btn btn-white"
-            onChange={(e) => handleUpload(e.target.files)}
-            style={{ display: "none" }}
-          />
-        </label>
-
-        {/* --- ส่วนแสดงรูปภาพ (ปรับขนาดใหญ่ขึ้น) --- */}
+        {/* --- ส่วนที่ 2: แสดงรูปภาพ (แสดงเฉพาะตอนที่ "มีรูปแล้ว") --- */}
         {uploadedImages.length > 0 && (
-          // ใช้ row g-3 เพื่อจัดช่องไฟสวยๆ
-          <div className="row g-3 mt-2 pb-4 px-3">
+          <div className="row g-3 mb30 px-3 pt-4">
             {uploadedImages.map((imageData, index) => (
-              // col-6 = มือถือแถวละ 2 รูป | col-md-3 = จอคอมแถวละ 4 รูป
               <div key={index} className="col-6 col-sm-4 col-md-3">
                 <div style={{ position: "relative", height: "200px", width: "100%" }}>
                   <Image
-                    fill // สั่งให้รูปขยายเต็มพื้นที่ div แม่
+                    fill
                     sizes="(max-width: 768px) 50vw, 25vw"
                     className="bdrs12"
                     style={{ objectFit: "cover", border: "1px solid #eee" }}
                     src={imageData}
                     alt={`Uploaded Image ${index + 1}`}
                   />
-
-                  {/* ปุ่มลบ */}
                   <button
                     style={{
                       border: "none",
                       position: "absolute",
                       top: "5px",
                       right: "5px",
-                      background: "rgba(255, 0, 0, 0.8)", // สีแดงโปร่งแสงนิดๆ จะได้ดูแพง
+                      background: "rgba(255, 0, 0, 0.8)",
                       color: "white",
                       borderRadius: "50%",
                       width: "28px",
@@ -126,7 +118,7 @@ const UploadPhotoGallery = () => {
                       justifyContent: "center",
                       cursor: "pointer",
                       boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
-                      zIndex: 10 // มั่นใจว่าปุ่มอยู่บนสุด
+                      zIndex: 10
                     }}
                     title="Delete Image"
                     onClick={() => handleDelete(index)}
@@ -139,7 +131,23 @@ const UploadPhotoGallery = () => {
             ))}
           </div>
         )}
-        {/* --- จบส่วนแสดงรูปภาพ --- */}
+
+        {/* --- ส่วนที่ 3: ปุ่มกด (แสดงตลอดเวลา แต่อยู่ล่างสุด) --- */}
+        <div className="text-center w-100 mt-auto pb-4"> {/* mt-auto ดันปุ่มลงล่างถ้ากล่องสูง */}
+          <label className="ud-btn btn-white">
+            {/* เปลี่ยนข้อความปุ่มหน่อย เพื่อสื่อความหมาย */}
+            {uploadedImages.length > 0 ? "Add More Photos" : "Browse Files"}
+            <input
+              ref={fileInputRef}
+              id="fileInput"
+              type="file"
+              multiple
+              className="ud-btn btn-white"
+              onChange={(e) => handleUpload(e.target.files)}
+              style={{ display: "none" }}
+            />
+          </label>
+        </div>
 
       </div>
     </>
