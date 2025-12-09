@@ -70,6 +70,8 @@ const AddPropertyTabContent = () => {
       ทิศทางหน้าบ้าน: detailsForm.direction?.label ?? "",
       การตกแต่ง: detailsForm.furnishing?.label ?? "",
       ปีที่สร้าง: detailsForm.yearBuilt ?? "",
+      "หมายเหตุ(เจ้าของ/นายหน้า)": detailsForm.note ?? "",
+      amenities: detailsForm.amenities || [],
     };
   };
 
@@ -235,6 +237,7 @@ const AddPropertyTabContent = () => {
             <DetailsFiled
               onBack={goMedia}
               onNext={(data) => {
+                console.log("DETAILS FROM STEP:", data);
                 setDetailsForm(data);
                 goConfirm();
               }}

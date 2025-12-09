@@ -57,6 +57,7 @@ const DetailsFiled = ({ onBack, onNext, onSaveDraft }) => {
   const [furnishing, setFurnishing] = useState(null);
   const [yearBuilt, setYearBuilt] = useState("");
   const [note, setNote] = useState("");
+  const [amenities, setAmenities] = useState([]);
 
   const [error, setError] = useState("");
 
@@ -70,6 +71,7 @@ const DetailsFiled = ({ onBack, onNext, onSaveDraft }) => {
     furnishing,
     yearBuilt,
     note,
+    amenities,
   });
 
   const handleNext = () => {
@@ -80,6 +82,7 @@ const DetailsFiled = ({ onBack, onNext, onSaveDraft }) => {
     setError("");
 
     const data = buildFormData();
+    console.log("DETAILS NEXT DATA:", data);
     if (onNext) {
       onNext(data);
     } else {
@@ -268,9 +271,9 @@ const DetailsFiled = ({ onBack, onNext, onSaveDraft }) => {
         <div className="col-sm-12">
           <div className="mb20">
             <h4 className="title fz17 mb30">สิ่งอำนวยความสะดวก</h4>
+            <Amenities value={amenities} onChange={setAmenities} />
           </div>
         </div>
-        <Amenities />
       </div>
 
       {/* หมายเหตุ */}
@@ -278,7 +281,7 @@ const DetailsFiled = ({ onBack, onNext, onSaveDraft }) => {
         <div className="col-sm-12">
           <div className="mb20">
             <label className="heading-color ff-heading fw600 mb10">
-              หมายเหตุ (สำหรับเจ้าของ/นายหน้า)
+              หมายเหตุ (เจ้าของ/นายหน้า)
             </label>
             <textarea
               className="form-control"
