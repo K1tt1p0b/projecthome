@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const ForgotPassword = ({ onBackToLogin }) => {
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState(null); // { type: "success" | "error", text: "..." }
@@ -40,10 +42,7 @@ const ForgotPassword = ({ onBackToLogin }) => {
       const payload = { email };
       console.log("Forgot Password Request:", payload);
 
-      // TODO: ตรงนี้ไว้ต่อกับ API จริงทีหลัง
-      // const res = await fetch("https://your-backend/forgot-password", {...})
-
-      // mock success
+      // TODO: ต่อกับ API จริง
       setMessage({
         type: "success",
         text: "ส่งลิงก์รีเซ็ตรหัสผ่านไปที่อีเมลของคุณแล้ว (ตัวอย่าง/mock)",
@@ -56,6 +55,16 @@ const ForgotPassword = ({ onBackToLogin }) => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBackClick = () => {
+    if (typeof onBackToLogin === "function") {
+      // กรณีอยู่ใน modal → สลับแท็บ
+      onBackToLogin();
+    } else {
+      // กรณีอยู่ในหน้า /forgot-password → เด้งไป /login
+      router.push("/login");
     }
   };
 
@@ -101,14 +110,14 @@ const ForgotPassword = ({ onBackToLogin }) => {
         </button>
       </div>
 
-      {/* กลับไปหน้า login (ถ้าใช้ใน modal อาจจะเปลี่ยนเป็นสลับแท็บแทน) */}
+      {/* Back to login */}
       <p className="dark-color text-center mb0 mt10">
         Remembered your password?{" "}
         <button
-            type="button"
-            className="btn btn-link dark-color fw600 p-0"
-            onClick={onBackToLogin}
-            >
+          type="button"
+          className="btn btn-link dark-color fw600 p-0"
+          onClick={handleBackClick}
+        >
           Back to login
         </button>
       </p>

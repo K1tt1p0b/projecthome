@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const SignIn = ({ onForgotPassword }) => {
+const SignIn = ({ onForgotPassword, onGoRegister }) => {
+  const router = useRouter();
+
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -85,8 +88,29 @@ const SignIn = ({ onForgotPassword }) => {
     }
   };
 
+  const handleForgotClick = () => {
+    if (typeof onForgotPassword === "function") {
+      // อยู่ใน modal → สลับแท็บ
+      onForgotPassword();
+    } else {
+      // หน้า /login ปกติ → เด้งไป /forgot-password
+      router.push("/forgot-password");
+    }
+  };
+
+  const handleGoRegisterClick = () => {
+    if (typeof onGoRegister === "function") {
+      // อยู่ใน modal → สลับแท็บไป SignUp
+      onGoRegister();
+    } else {
+      // หน้า /login ปกติ → ไปหน้า /register
+      router.push("/register");
+    }
+  };
+
   return (
     <form className="form-style1" onSubmit={handleSignIn}>
+      {/* Global message */}
       {message && (
         <div
           className={`alert ${
@@ -131,7 +155,7 @@ const SignIn = ({ onForgotPassword }) => {
         )}
       </div>
 
-      {/* Remember + Forgot */}
+      {/* Remember me + Lost password */}
       <div className="checkbox-style1 d-block d-sm-flex align-items-center justify-content-between mb10">
         <label className="custom_checkbox fz14 ff-heading">
           Remember me
@@ -147,7 +171,7 @@ const SignIn = ({ onForgotPassword }) => {
         <button
           type="button"
           className="btn btn-link fz14 ff-heading p-0"
-          onClick={onForgotPassword}
+          onClick={handleForgotClick}
         >
           Lost your password?
         </button>
@@ -161,11 +185,22 @@ const SignIn = ({ onForgotPassword }) => {
         </button>
       </div>
 
+      {/* Create account */}
       <p className="dark-color text-center mb0 mt10">
         Not signed up?{" "}
-        <Link className="dark-color fw600" href="/register">
-          Create an account.
-        </Link>
+        {typeof onGoRegister === "function" ? (
+          <button
+            type="button"
+            className="btn btn-link dark-color fw600 p-0"
+            onClick={handleGoRegisterClick}
+          >
+            Create an account.
+          </button>
+        ) : (
+          <Link className="dark-color fw600" href="/register">
+            Create an account.
+          </Link>
+        )}
       </p>
     </form>
   );

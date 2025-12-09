@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const SignUp = () => {
+const SignUp = ({ onGoLogin }) => {
+  const router = useRouter();
+
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -22,7 +25,6 @@ const SignUp = () => {
       [name]: value,
     }));
 
-    // เคลียร์ error ของช่องนั้น ๆ ทิ้ง
     setErrors((prev) => ({
       ...prev,
       [name]: "",
@@ -76,25 +78,12 @@ const SignUp = () => {
 
       console.log("Form Data:", payload);
 
-      // TODO: ตรงนี้เอาไปต่อกับ API จริงทีหลังได้เลย
-      // const res = await fetch("https://your-backend/register", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(payload),
-      // });
-
-      // const data = await res.json();
-      // if (!res.ok) {
-      //   throw new Error(data.message || "สมัครสมาชิกไม่สำเร็จ");
-      // }
-
-      // mock ว่าสำเร็จ
+      // TODO: ต่อ API จริง
       setMessage({
         type: "success",
         text: "สร้างบัญชีสำเร็จ (mock)",
       });
 
-      // ถ้าอยากล้างฟอร์มหลังสำเร็จ
       setForm({
         email: "",
         password: "",
@@ -107,6 +96,16 @@ const SignUp = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoLoginClick = () => {
+    if (typeof onGoLogin === "function") {
+      // ใช้ใน modal → สลับแท็บไปหน้า SignIn
+      onGoLogin();
+    } else {
+      // ใช้ในหน้า /register ปกติ → ไปหน้า /login
+      router.push("/login");
     }
   };
 
@@ -188,9 +187,19 @@ const SignUp = () => {
 
       <p className="dark-color text-center mb0 mt10">
         Already Have an Account?{" "}
-        <Link className="dark-color fw600" href="/login">
-          Login
-        </Link>
+        {typeof onGoLogin === "function" ? (
+          <button
+            type="button"
+            className="btn btn-link dark-color fw600 p-0"
+            onClick={handleGoLoginClick}
+          >
+            Login
+          </button>
+        ) : (
+          <Link className="dark-color fw600" href="/login">
+            Login
+          </Link>
+        )}
       </p>
     </form>
   );

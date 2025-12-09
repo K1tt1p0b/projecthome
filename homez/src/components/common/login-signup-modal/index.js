@@ -58,12 +58,14 @@ const LoginSignupModal = () => {
             <div className="tab-content" id="nav-tabContent2">
               {/* Sign In */}
               <div className={paneClass("signin")} id="nav-home">
-                <SignIn onForgotPassword ={() => handleChangeTab("forgot")} />
+                <SignIn onForgotPassword ={() => handleChangeTab("forgot")}
+                onGoRegister={() => setActiveTab("signup")}
+                />
               </div>
 
               {/* Sign Up */}
               <div className={paneClass("signup")} id="nav-profile">
-                <SignUp />
+                <SignUp onGoLogin={() => setActiveTab("signin")} />
               </div>
 
               {/* Forgot Password */}
