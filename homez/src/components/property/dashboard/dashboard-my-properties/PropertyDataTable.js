@@ -105,7 +105,16 @@ const PropertyDataTable = () => {
             <td className="vam"style={{ whiteSpace: "nowrap" }} >{property.datePublished}</td>
             <td className="vam">
               <span className={getStatusStyle(property.status)}
-              style={{ whiteSpace: "nowrap", padding: "5px 15px", display: "inline-block", fontSize: "13px" }}
+              style={{
+                    padding: "8px 16px",        // ระยะห่างในปุ่ม
+                    borderRadius: "20px",       // ความมน
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    display: "inline-block",    // ให้เป็นก้อน
+                    whiteSpace: "nowrap",       // ห้ามตัดคำ!
+                    minWidth: "110px",          // ความกว้างขั้นต่ำ
+                    textAlign: "center"
+                  }}
               >
                 {property.status}
               </span>

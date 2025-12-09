@@ -125,10 +125,146 @@ const DashboardHeader = () => {
                     </li>
                     {/* End email box */}
 
+                    {/* เริ่มต้นส่วนกระดิ่ง (Notification Bell) - แก้ CSS ตีกันสำเร็จ 100% */}
                     <li className="d-none d-sm-block">
-                      <a className="text-center mr20 notif" href="#">
-                        <span className="flaticon-bell" />
-                      </a>
+                      <div className="dropdown">
+
+                        {/* 1. ปุ่มกระดิ่ง (อันนี้ยังใช้ style เดิมได้ เพราะเป็นปุ่มกลม) */}
+                        <a
+                          className="text-center mr20 notif position-relative"
+                          href="#"
+                          data-bs-toggle="dropdown"
+                        >
+                          <span className="flaticon-bell" style={{ fontSize: '22px' }} />
+                          <span
+                            className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                            style={{ fontSize: '10px', marginTop: '5px' }}
+                          >
+                            2
+                          </span>
+                        </a>
+
+                        {/* 2. กล่อง Dropdown */}
+                        <div
+                          className="dropdown-menu dropdown-menu-end shadow border-0 p-0"
+                          style={{ width: '400px', minWidth: '400px', borderRadius: '12px', overflow: 'hidden', marginTop: '10px' }}
+                        >
+
+                          {/* 2.1 หัวข้อ */}
+                          <div className="d-flex justify-content-between align-items-center px-4 py-3 bg-white border-bottom">
+                            <h6 className="m-0 fw-bold text-dark" style={{ fontSize: '16px' }}>การแจ้งเตือน</h6>
+                            <span className="text-primary" style={{ cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>อ่านทั้งหมด</span>
+                          </div>
+
+                          {/* 2.2 รายการแจ้งเตือน */}
+                          <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+
+                            {/* รายการที่ 1 */}
+                            <Link
+                              href="/dashboard-message"
+                              className="dropdown-item border-bottom"
+                              // ⚠️ จุดแก้สำคัญที่สุด (Antidote): ลบล้างค่าที่มาจาก .header_right_widgets a
+                              style={{
+                                height: 'auto',       // ยกเลิกความสูง 44px
+                                width: '100%',        // ยกเลิกความกว้าง 44px
+                                lineHeight: 'normal', // ยกเลิก line-height 44px
+                                whiteSpace: 'normal', // ให้ตัดบรรทัดได้
+                                padding: '15px 20px',
+                                display: 'block',
+                                backgroundColor: '#fff'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'flex-start', width: '100%' }}>
+
+                                {/* ไอคอน */}
+                                <div style={{
+                                  flexShrink: 0, width: '45px', height: '45px',
+                                  backgroundColor: '#eef2ff', color: '#4f46e5',
+                                  borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  marginRight: '15px'
+                                }}>
+                                  <i className="flaticon-chat-1" style={{ fontSize: '20px' }} />
+                                </div>
+
+                                {/* เนื้อหา */}
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
+                                    <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#333' }}>มีข้อความใหม่!</span>
+                                    <span style={{ fontSize: '11px', color: '#999', whiteSpace: 'nowrap' }}>2 นาที</span>
+                                  </div>
+
+                                  <p style={{
+                                    fontSize: '13px',
+                                    lineHeight: '1.6', // จัดระยะบรรทัดใหม่ให้สวย
+                                    color: '#666',
+                                    margin: 0,
+                                    wordBreak: 'break-word'
+                                  }}>
+                                    ลูกค้าสนใจบ้านเดี่ยว พระราม 9 (ติดต่อด่วน)
+                                  </p>
+                                </div>
+                              </div>
+                            </Link>
+
+                            {/* รายการที่ 2 */}
+                            <Link
+                              href="/dashboard-my-properties"
+                              className="dropdown-item"
+                              // ⚠️ จุดแก้สำคัญ (ใส่เหมือนกัน)
+                              style={{
+                                height: 'auto',
+                                width: '100%',
+                                lineHeight: 'normal',
+                                whiteSpace: 'normal',
+                                padding: '15px 20px',
+                                display: 'block',
+                                backgroundColor: '#fff'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'flex-start', width: '100%' }}>
+                                <div style={{
+                                  flexShrink: 0, width: '45px', height: '45px',
+                                  backgroundColor: '#ecfdf5', color: '#10b981',
+                                  borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  marginRight: '15px'
+                                }}>
+                                  <i className="flaticon-home" style={{ fontSize: '20px' }} />
+                                </div>
+
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
+                                    <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#333' }}>อนุมัติประกาศแล้ว</span>
+                                    <span style={{ fontSize: '11px', color: '#999', whiteSpace: 'nowrap' }}>1 ชม.</span>
+                                  </div>
+
+                                  <p style={{
+                                    fontSize: '13px',
+                                    lineHeight: '1.6',
+                                    color: '#666',
+                                    margin: 0,
+                                    wordBreak: 'break-word'
+                                  }}>
+                                    คอนโด สุขุมวิท 24 ออนไลน์แล้ว
+                                  </p>
+                                </div>
+                              </div>
+                            </Link>
+
+                          </div>
+
+                          {/* 2.3 Footer */}
+                          <div className="p-3 text-center border-top bg-white">
+                            <Link
+                              href="/dashboard-message"
+                              className="text-decoration-none text-primary fw-bold"
+                              style={{ fontSize: '14px', height: 'auto', width: 'auto', lineHeight: 'normal' }} // แก้ Footer ด้วย
+                            >
+                              ดูการแจ้งเตือนทั้งหมด
+                            </Link>
+                          </div>
+
+                        </div>
+                      </div>
                     </li>
                     {/* End notification icon */}
 
@@ -147,18 +283,16 @@ const DashboardHeader = () => {
                             {menuItems.map((section, sectionIndex) => (
                               <div key={sectionIndex}>
                                 <p
-                                  className={`fz15 fw400 ff-heading ${
-                                    sectionIndex === 0 ? "mb20" : "mt30"
-                                  }`}
+                                  className={`fz15 fw400 ff-heading ${sectionIndex === 0 ? "mb20" : "mt30"
+                                    }`}
                                 >
                                   {section.title}
                                 </p>
                                 {section.items.map((item, itemIndex) => (
                                   <Link
                                     key={itemIndex}
-                                    className={`dropdown-item ${
-                                      pathname == item.href ? "-is-active" : ""
-                                    } `}
+                                    className={`dropdown-item ${pathname == item.href ? "-is-active" : ""
+                                      } `}
                                     href={item.href}
                                   >
                                     <i className={`${item.icon} mr10`} />
