@@ -1,0 +1,5 @@
+[
+  { "value": "fully", "label": "แต่งครบ (Fully)" },
+  { "value": "partly", "label": "บางส่วน (Partly)" },
+  { "value": "bare", "label": "ห้องเปล่า (Bare)" }
+]

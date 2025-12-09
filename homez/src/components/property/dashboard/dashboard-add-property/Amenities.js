@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 
 const amenitiesData = {
@@ -30,18 +31,34 @@ const amenitiesData = {
   ],
 };
 
-const Amenities = () => {
+/**
+ * props:
+ *  - value: string[] (ชื่อ amenity ที่เลือก เช่น ["สระว่ายน้ำ", "WiFi"])
+ *  - onChange: (newValue: string[]) => void
+ */
+const Amenities = ({ value = [], onChange }) => {
+  const handleToggle = (label) => {
+    let newValue;
+    if (value.includes(label)) {
+      newValue = value.filter((item) => item !== label);
+    } else {
+      newValue = [...value, label];
+    }
+    onChange?.(newValue);
+  };
+
   return (
     <div className="row">
-      {Object.keys(amenitiesData).map((columnKey, index) => (
-        <div key={index} className="col-sm-6 col-lg-3 col-xxl-2">
+      {Object.keys(amenitiesData).map((columnKey) => (
+        <div key={columnKey} className="col-sm-6 col-lg-3 col-xxl-2">
           <div className="checkbox-style1">
-            {amenitiesData[columnKey].map((amenity, amenityIndex) => (
-              <label key={amenityIndex} className="custom_checkbox">
+            {amenitiesData[columnKey].map((amenity) => (
+              <label key={amenity.label} className="custom_checkbox">
                 {amenity.label}
                 <input
                   type="checkbox"
-                  defaultChecked={amenity.defaultChecked}
+                  checked={value.includes(amenity.label)} // ✅ ใช้ value จาก props
+                  onChange={() => handleToggle(amenity.label)}
                 />
                 <span className="checkmark" />
               </label>

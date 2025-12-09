@@ -1,0 +1,7 @@
+[
+  { "value": "house-and-land", "label": "บ้านและที่ดิน" },
+  { "value": "land", "label": "ที่ดินเปล่า" },
+  { "value": "condo", "label": "คอนโด" },
+  { "value": "room-rent", "label": "ห้องเช่า" },
+  { "value": "business-sale", "label": "เซ้งกิจการ" }
+]

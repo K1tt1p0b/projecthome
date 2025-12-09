@@ -2,36 +2,13 @@
 import { useEffect, useState } from "react";
 import Select from "react-select";
 
+// ✅ import options จากไฟล์ JSON ในโฟลเดอร์เดียวกัน
+import announcerStatusOptions from "./announcerStatusOptions.json";
+import listingTypeOptions from "./listingTypeOptions.json";
+import propertyConditionOptions from "./propertyConditionOptions.json";
+import propertyTypeOptions from "./propertyTypeOptions.json";
+
 const PropertyDescription = ({ onNext, onSaveDraft }) => {
-  // ==========================
-  // Options
-  // ==========================
-  const propertyCondition = [
-    { value: "New", label: "ใหม่" },
-    { value: "Like New", label: "เหมือนใหม่" },
-    { value: "Renovated", label: "ปรับปรุงใหม่" },
-    { value: "Used", label: "มือสอง" },
-  ];
-
-  const announcerStatusOptions = [
-    { value: "owner", label: "เจ้าของทรัพย์" },
-    { value: "agent", label: "นายหน้า" },
-  ];
-
-  const listingTypeOptions = [
-    { value: "sell", label: "ขาย" },
-    { value: "rent", label: "เช่า" },
-    { value: "supply", label: "จัดหา" },
-  ];
-
-  const propertyTypeOptions = [
-    { value: "house and land", label: "บ้านและที่ดิน" },
-    { value: "land", label: "ที่ดินเปล่า" },
-    { value: "condo", label: "คอนโด" },
-    { value: "room for rent", label: "ห้องเช่า" },
-    { value: "business for sale", label: "เซ้งกิจการ" },
-  ];
-
   // ==========================
   // Custom Styles
   // ==========================
@@ -106,7 +83,6 @@ const PropertyDescription = ({ onNext, onSaveDraft }) => {
     setError("");
 
     const data = buildFormData();
-    // ส่งข้อมูลให้ parent ถ้าส่ง callback มาด้วย
     if (onNext) {
       onNext(data);
     } else {
@@ -121,7 +97,6 @@ const PropertyDescription = ({ onNext, onSaveDraft }) => {
     } else {
       console.log("Save draft with data:", data);
     }
-    // จะโชว์ข้อความแจ้งเตือนก็เพิ่ม Toast / alert ได้
     alert("บันทึกร่างประกาศเรียบร้อย (mock)");
   };
 
@@ -251,7 +226,7 @@ const PropertyDescription = ({ onNext, onSaveDraft }) => {
                 <Select
                   value={condition}
                   onChange={setCondition}
-                  options={propertyCondition}
+                  options={propertyConditionOptions}
                   styles={customStyles}
                   menuPortalTarget={document.body}
                   className="select-custom pl-0"
@@ -296,10 +271,7 @@ const PropertyDescription = ({ onNext, onSaveDraft }) => {
             >
               บันทึกร่าง
             </button>
-            <button
-              type="submit"
-              className="ud-btn btn-thm"
-            >
+            <button type="submit" className="ud-btn btn-thm">
               ถัดไป
             </button>
           </div>

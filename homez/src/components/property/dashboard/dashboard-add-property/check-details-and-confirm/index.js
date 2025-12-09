@@ -2,59 +2,11 @@
 import React from "react";
 import Map from "./Map";
 
-// ============================
-// MOCK DATA (fallback ถ้า parent ไม่ส่ง props)
-// ============================
-const mockBasicInfo = {
-  title: "ขายบ้านเดี่ยว 2 ชั้น หมู่บ้านฟิวเจอร์วิลล์ รังสิต",
-  description:
-    "บ้านเดี่ยว 2 ชั้น ใกล้ฟิวเจอร์พาร์ครังสิต รีโนเวทใหม่ทั้งหลัง พร้อมเข้าอยู่ได้ทันที พื้นที่ใช้สอยเยอะ เหมาะกับครอบครัวขนาดกลางถึงใหญ่",
-  price: 3250000,
-  listingType: "ขาย",
-  propertyType: "บ้านเดี่ยว",
-  condition: "ปรับปรุงใหม่",
-};
-
-const mockLocation = {
-  address: "99/12 หมู่บ้านฟิวเจอร์วิลล์ ถนนรังสิต-นครนายก",
-  province: "ปทุมธานี",
-  district: "อำเภอคลองหลวง",
-  subdistrict: "ตำบลคลองหนึ่ง",
-  zipCode: "12120",
-  latitude: 13.9869,
-  longitude: 100.6184,
-};
-
-const mockImages = [
-  "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2",
-  "https://images.unsplash.com/photo-1570129477492-45c003edd2be",
-  "https://images.unsplash.com/photo-1502005097973-6a7082348e28",
-  "https://images.unsplash.com/photo-1599423300746-b62533397364",
-  "https://images.unsplash.com/photo-1599423300746-b62533397364",
-  "https://images.unsplash.com/photo-1599423300746-b62533397364",
-  "https://images.unsplash.com/photo-1599423300746-b62533397364",
-  "https://images.unsplash.com/photo-1599423300746-b62533397364",
-];
-
-const mockDetails = {
-  ห้องนอน: "3",
-  ห้องน้ำ: "2",
-  จำนวนชั้น: "2",
-  ที่จอดรถ: "2",
-  "ขนาดที่ดิน (ตร.ม)": "50",
-  ทิศทางหน้าบ้าน: "ทิศใต้",
-  การตกแต่ง: "แต่งครบ",
-  ปีที่สร้าง: "2015",
-};
-
-// ============================
-// COMPONENT แสดงผล Summary
-// ============================
 const PropertySummary = ({
-  basicInfo = mockBasicInfo,
-  location = mockLocation,
-  images = mockImages,
-  details = mockDetails,
+  basicInfo,
+  location,
+  images,
+  details,
   onEditBasic,
   onEditLocation,
   onEditImages,
@@ -76,162 +28,193 @@ const PropertySummary = ({
     fontSize: 12,
   };
 
+  const safeBasic = basicInfo || {};
+  const safeLocation = location || {};
+  const safeImages = images || [];
+  const safeDetails = details || {};
+  const amenities = safeDetails.amenities || [];
+
+  const isEmptyObject = (obj) => !obj || Object.keys(obj).length === 0;
+
   const handleSaveDraft = () => {
-    const payload = { basicInfo, location, images, details };
-    if (onSaveDraft) {
-      onSaveDraft(payload);
-    } else {
-      console.log("SAVE DRAFT (summary):", payload);
-      alert("บันทึกร่างประกาศเรียบร้อย (mock)");
-    }
+    const payload = {
+      basicInfo: safeBasic,
+      location: safeLocation,
+      images: safeImages,
+      details: safeDetails,
+    };
+    onSaveDraft?.(payload);
   };
 
   const handleSubmit = () => {
-    const payload = { basicInfo, location, images, details };
-    if (onSubmit) {
-      onSubmit(payload);
-    } else {
-      console.log("SUBMIT (summary):", payload);
-      alert("ส่งประกาศขึ้นระบบ (mock)");
-    }
+    const payload = {
+      basicInfo: safeBasic,
+      location: safeLocation,
+      images: safeImages,
+      details: safeDetails,
+    };
+    onSubmit?.(payload);
   };
 
   return (
     <div className="row">
-      {/* ข้อมูลทรัพย์สิน */}
+      {/* --------------------
+          ข้อมูลทรัพย์สิน
+      -------------------- */}
       <div className="col-12 mb25">
         <div className="d-flex justify-content-between align-items-center mb10">
           <h4 className="ff-heading fw600 mb0">ข้อมูลทรัพย์สิน</h4>
+
           {onEditBasic && (
             <button
               type="button"
               style={editButtonStyle}
               onClick={onEditBasic}
             >
-              แก้ไข
+              {isEmptyObject(safeBasic) ? "เพิ่มข้อมูล" : "แก้ไข"}
             </button>
           )}
         </div>
+
         <div style={cardStyle}>
-          <p className="mb5">
-            <strong>หัวข้อประกาศ: </strong>
-            {basicInfo.title || "-"}
-          </p>
-          <p className="mb5">
-            <strong>ประเภทประกาศ: </strong>
-            {basicInfo.listingType || "-"}
-          </p>
-          <p className="mb5">
-            <strong>ประเภททรัพย์: </strong>
-            {basicInfo.propertyType || "-"}
-          </p>
-          <p className="mb5">
-            <strong>สภาพทรัพย์: </strong>
-            {basicInfo.condition || "-"}
-          </p>
-          <p className="mb5">
-            <strong>ราคา: </strong>
-            {basicInfo.price
-              ? `${basicInfo.price.toLocaleString()} บาท`
-              : "-"}
-          </p>
-          <p className="mt10 mb0">
-            <strong>รายละเอียดประกาศ</strong>
-            <br />
-            {basicInfo.description || "ยังไม่ได้กรอกรายละเอียด"}
-          </p>
+          {isEmptyObject(safeBasic) ? (
+            <p className="text-muted mb0">ยังไม่มีข้อมูลทรัพย์สิน</p>
+          ) : (
+            <>
+              <p>
+                <strong>หัวข้อประกาศ:</strong> {safeBasic.title || "-"}
+              </p>
+              <p>
+                <strong>ประเภทประกาศ:</strong> {safeBasic.listingType || "-"}
+              </p>
+              <p>
+                <strong>ประเภททรัพย์:</strong> {safeBasic.propertyType || "-"}
+              </p>
+              <p>
+                <strong>สภาพทรัพย์:</strong> {safeBasic.condition || "-"}
+              </p>
+              <p>
+                <strong>ราคา:</strong>{" "}
+                {safeBasic.price
+                  ? safeBasic.price.toLocaleString() + " บาท"
+                  : "-"}
+              </p>
+              <p className="mt10">
+                <strong>รายละเอียดประกาศ:</strong>
+                <br />
+                {safeBasic.description || "-"}
+              </p>
+            </>
+          )}
         </div>
       </div>
 
-      {/* ที่อยู่ทรัพย์สิน */}
+      {/* --------------------
+          ที่อยู่ทรัพย์สิน
+      -------------------- */}
       <div className="col-12 mb25">
         <div className="d-flex justify-content-between align-items-center mb10">
           <h4 className="ff-heading fw600 mb0">ที่อยู่ทรัพย์สิน</h4>
+
           {onEditLocation && (
             <button
               type="button"
               style={editButtonStyle}
               onClick={onEditLocation}
             >
-              แก้ไข
+              {isEmptyObject(safeLocation) ? "เพิ่มข้อมูล" : "แก้ไข"}
             </button>
           )}
         </div>
+
         <div style={cardStyle}>
-          <p className="mb5">
-            <strong>ที่อยู่: </strong>
-            {location.address || "-"}
-          </p>
-          <p className="mb5">
-            <strong>จังหวัด: </strong>
-            {location.province || "-"}
-          </p>
-          <p className="mb5">
-            <strong>อำเภอ/เขต: </strong>
-            {location.district || "-"}
-          </p>
-          <p className="mb5">
-            <strong>ตำบล/แขวง: </strong>
-            {location.subdistrict || "-"}
-          </p>
-          <p className="mb5">
-            <strong>รหัสไปรษณีย์: </strong>
-            {location.zipCode || "-"}
-          </p>
-          <p className="mb0">
-            <strong>พิกัด (Lat, Lng): </strong>
-            {location.latitude && location.longitude
-              ? `${location.latitude}, ${location.longitude}`
-              : "-"}
-          </p>
+          {isEmptyObject(safeLocation) ? (
+            <p className="text-muted mb0">ยังไม่มีข้อมูลที่อยู่ทรัพย์สิน</p>
+          ) : (
+            <>
+              <p>
+                <strong>ที่อยู่:</strong> {safeLocation.address || "-"}
+              </p>
+              <p>
+                <strong>จังหวัด:</strong> {safeLocation.province || "-"}
+              </p>
+              <p>
+                <strong>อำเภอ/เขต:</strong> {safeLocation.district || "-"}
+              </p>
+              <p>
+                <strong>ตำบล/แขวง:</strong> {safeLocation.subdistrict || "-"}
+              </p>
+              <p>
+                <strong>รหัสไปรษณีย์:</strong> {safeLocation.zipCode || "-"}
+              </p>
+              <p>
+                <strong>พิกัด:</strong>{" "}
+                {safeLocation.latitude && safeLocation.longitude
+                  ? `${safeLocation.latitude}, ${safeLocation.longitude}`
+                  : "-"}
+              </p>
+            </>
+          )}
         </div>
       </div>
 
-      {/* ตำแหน่งบนแผนที่ */}
+      {/* --------------------
+          ตำแหน่งบนแผนที่
+      -------------------- */}
       <div className="col-12 mb25">
         <div className="d-flex justify-content-between align-items-center mb10">
           <h4 className="ff-heading fw600 mb0">ตำแหน่งบนแผนที่</h4>
+
           {onEditLocation && (
             <button
               type="button"
               style={editButtonStyle}
               onClick={onEditLocation}
             >
-              แก้ไข
+              {safeLocation.latitude && safeLocation.longitude
+                ? "แก้ไข"
+                : "เพิ่มข้อมูล"}
             </button>
           )}
         </div>
+
         <div style={cardStyle}>
-          {location.latitude && location.longitude ? (
+          {safeLocation.latitude && safeLocation.longitude ? (
             <Map
-              lat={Number(location.latitude)}
-              lng={Number(location.longitude)}
+              lat={Number(safeLocation.latitude)}
+              lng={Number(safeLocation.longitude)}
               zoom={16}
             />
           ) : (
-            <p className="mb0 text-muted">ยังไม่ได้ระบุพิกัดแผนที่</p>
+            <p className="text-muted mb0">ยังไม่ได้ระบุพิกัดแผนที่</p>
           )}
         </div>
       </div>
 
-      {/* รูปภาพทรัพย์สิน */}
+      {/* --------------------
+          รูปภาพทรัพย์สิน
+      -------------------- */}
       <div className="col-12 mb25">
         <div className="d-flex justify-content-between align-items-center mb10">
           <h4 className="ff-heading fw600 mb0">รูปภาพทรัพย์สิน</h4>
+
           {onEditImages && (
             <button
               type="button"
               style={editButtonStyle}
               onClick={onEditImages}
             >
-              แก้ไข
+              {safeImages.length === 0 ? "เพิ่มข้อมูล" : "แก้ไข"}
             </button>
           )}
         </div>
+
         <div style={cardStyle}>
-          {images && images.length > 0 ? (
+          {safeImages.length === 0 ? (
+            <p className="text-muted mb0">ยังไม่ได้อัปโหลดรูปภาพ</p>
+          ) : (
             <div className="row g-2">
-              {images.map((img, idx) => (
+              {safeImages.map((img, idx) => (
                 <div className="col-6 col-md-3" key={idx}>
                   <div
                     style={{
@@ -242,53 +225,87 @@ const PropertySummary = ({
                   >
                     <img
                       src={img}
-                      alt={`property-${idx}`}
                       className="w-100"
-                      style={{ objectFit: "cover", height: 130 }}
+                      style={{ height: 130, objectFit: "cover" }}
                     />
                   </div>
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="mb0 text-muted">ยังไม่ได้อัปโหลดรูปภาพ</p>
           )}
         </div>
       </div>
 
-      {/* รายละเอียดทรัพย์เพิ่มเติม */}
+      {/* --------------------
+          รายละเอียดทรัพย์เพิ่มเติม + สิ่งอำนวยความสะดวก
+      -------------------- */}
       <div className="col-12 mb25">
         <div className="d-flex justify-content-between align-items-center mb10">
           <h4 className="ff-heading fw600 mb0">รายละเอียดทรัพย์เพิ่มเติม</h4>
+
           {onEditDetails && (
             <button
               type="button"
               style={editButtonStyle}
               onClick={onEditDetails}
             >
-              แก้ไข
+              {isEmptyObject(safeDetails) && amenities.length === 0
+                ? "เพิ่มข้อมูล"
+                : "แก้ไข"}
             </button>
           )}
         </div>
+
         <div style={cardStyle}>
-          {details && Object.keys(details).length > 0 ? (
-            <div className="row">
-              {Object.entries(details).map(([key, value]) => (
-                <div className="col-sm-6 col-md-3 mb10" key={key}>
-                  <p className="mb0">
-                    <strong>{key}: </strong>
-                    {value || "-"}
-                  </p>
-                </div>
-              ))}
-            </div>
+          {isEmptyObject(safeDetails) && amenities.length === 0 ? (
+            <p className="text-muted mb0">ยังไม่ได้กรอกรายละเอียดเพิ่มเติม</p>
           ) : (
-            <p className="mb0 text-muted">ยังไม่ได้กรอกรายละเอียดเพิ่มเติม</p>
+            <>
+              {/* รายละเอียดอื่น ๆ (ตัด amenities ออกไม่ให้ซ้ำ) */}
+              {!isEmptyObject(safeDetails) && (
+                <div className="row">
+                  {Object.entries(safeDetails)
+                    .filter(([key]) => key !== "amenities")
+                    .map(([key, value], idx) => (
+                      <div className="col-sm-6 col-md-3 mb10" key={idx}>
+                        <p className="mb0">
+                          <strong>{key}:</strong> {value || "-"}
+                        </p>
+                      </div>
+                    ))}
+                </div>
+              )}
+
+              {/* สิ่งอำนวยความสะดวก */}
+              {amenities.length > 0 && (
+                <div className="mt10">
+                  <strong>สิ่งอำนวยความสะดวก:</strong>
+                  <div className="d-flex flex-wrap gap-2 mt5">
+                    {amenities.map((label, idx) => (
+                      <span
+                        key={idx}
+                        className="badge bg-light text-dark"
+                        style={{
+                          borderRadius: 999,
+                          border: "1px solid #ddd",
+                          padding: "4px 10px",
+                          fontSize: 12,
+                        }}
+                      >
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
 
-      {/* ปุ่มล่าง: บันทึกร่าง / ยืนยันลงประกาศ */}
+      {/* --------------------
+          ปุ่มล่าง
+      -------------------- */}
       <div className="col-12 mt10">
         <div className="d-flex justify-content-between">
           <button
