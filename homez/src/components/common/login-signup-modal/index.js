@@ -1,12 +1,28 @@
+"use client";
+
+import { useState } from "react";
 import SignIn from "./SignIn";
 import SignUp from "./SignUp";
+import ForgotPassword from "./ForgotPassword";
 
 const LoginSignupModal = () => {
+  const [activeTab, setActiveTab] = useState("signin"); // signin | signup | forgot
+
+  const handleChangeTab = (tab) => {
+    setActiveTab(tab);
+  };
+
+  const isActive = (tab) =>
+    tab === activeTab ? "nav-link active fw600" : "nav-link fw600";
+
+  const paneClass = (tab) =>
+    `tab-pane fade fz15 ${activeTab === tab ? "show active" : ""}`;
+
   return (
     <div className="modal-content">
       <div className="modal-header">
         <h5 className="modal-title" id="exampleModalToggleLabel">
-          Welcome to LandX
+          {activeTab === "forgot" ? "Reset your password" : "Welcome to LandX"}
         </h5>
         <button
           type="button"
@@ -15,7 +31,6 @@ const LoginSignupModal = () => {
           aria-label="Close"
         />
       </div>
-      {/* End header */}
 
       <div className="modal-body">
         <div className="log-reg-form">
@@ -23,53 +38,38 @@ const LoginSignupModal = () => {
             <nav>
               <div className="nav nav-tabs mb20" id="nav-tab" role="tablist">
                 <button
-                  className="nav-link active fw600"
-                  id="nav-home-tab"
-                  data-bs-toggle="tab"
-                  data-bs-target="#nav-home"
+                  className={isActive("signin")}
                   type="button"
-                  role="tab"
-                  aria-controls="nav-home"
-                  aria-selected="true"
+                  onClick={() => handleChangeTab("signin")}
                 >
                   Sign In
                 </button>
+
                 <button
-                  className="nav-link fw600"
-                  id="nav-profile-tab"
-                  data-bs-toggle="tab"
-                  data-bs-target="#nav-profile"
+                  className={isActive("signup")}
                   type="button"
-                  role="tab"
-                  aria-controls="nav-profile"
-                  aria-selected="false"
+                  onClick={() => handleChangeTab("signup")}
                 >
                   New Account
                 </button>
               </div>
             </nav>
-            {/* End nav tab items */}
 
             <div className="tab-content" id="nav-tabContent2">
-              <div
-                className="tab-pane fade show active fz15"
-                id="nav-home"
-                role="tabpanel"
-                aria-labelledby="nav-home-tab"
-              >
-                <SignIn />
+              {/* Sign In */}
+              <div className={paneClass("signin")} id="nav-home">
+                <SignIn onForgotPassword ={() => handleChangeTab("forgot")} />
               </div>
-              {/* End signin content */}
 
-              <div
-                className="tab-pane fade fz15"
-                id="nav-profile"
-                role="tabpanel"
-                aria-labelledby="nav-profile-tab"
-              >
+              {/* Sign Up */}
+              <div className={paneClass("signup")} id="nav-profile">
                 <SignUp />
               </div>
-              {/* End signup content */}
+
+              {/* Forgot Password */}
+              <div className={paneClass("forgot")} id="nav-forgot">
+                <ForgotPassword onBackToLogin={() => handleChangeTab("signin")} />
+              </div>
             </div>
           </div>
         </div>
