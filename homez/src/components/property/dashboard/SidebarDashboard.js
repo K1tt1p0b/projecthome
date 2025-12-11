@@ -60,6 +60,12 @@ const SidebarDashboard = () => {
           icon: "flaticon-protection",
           text: "My Package",
         },
+        // ✅ เมนูใหม่: เติมพอยต์
+        {
+          href: "/dashboard-points",
+          icon: "flaticon-diamond",
+          text: "เติมพอยต์",
+        },
         {
           href: "/dashboard-my-profile",
           icon: "flaticon-user",
@@ -90,9 +96,9 @@ const SidebarDashboard = () => {
               <div key={itemIndex} className="sidebar_list_item">
                 <Link
                   href={item.href}
-                  className={`items-center   ${
-                    pathname == item.href ? "-is-active" : ""
-                  } `}
+                  className={`items-center ${
+                    pathname === item.href ? "-is-active" : ""
+                  }`}
                 >
                   <i className={`${item.icon} mr15`} />
                   {item.text}
