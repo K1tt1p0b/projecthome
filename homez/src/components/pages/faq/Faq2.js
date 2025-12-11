@@ -1,61 +1,66 @@
 const Faq2 = () => {
+  const accordionId = "accordionRenting";
+
   const faqItems = [
     {
-      id: "headingOne",
-      question: "Can a home depreciate in value?",
+      question: "ต้องสมัครสมาชิกก่อนถึงจะลงประกาศได้ไหม?",
       answer:
-        "It doesn’t matter how organized you are — a surplus of toys will always ensure your house",
+        "ผู้ใช้ต้องสมัครสมาชิกและยืนยันตัวตนก่อน เพื่อความน่าเชื่อถือของประกาศและความปลอดภัยของผู้ใช้งานคนอื่น",
     },
     {
-      id: "headingTwo",
-      question: "Is an older home as good a value as a new home?",
+      question: "ประกาศต้องรออนุมัติก่อนขึ้นหน้าเว็บหรือไม่?",
       answer:
-        "It doesn’t matter how organized you are — a surplus of toys will always ensure your house",
+        "ใช่ ทุกประกาศจะผ่านการตรวจสอบความถูกต้องและความเหมาะสมของเนื้อหา ก่อนแสดงผลบนหน้าเว็บ",
     },
     {
-      id: "headingThree",
-      question: "What is a broker?",
+      question: "ระบบแนะนำที่ดินใกล้ฉันทำงานอย่างไร?",
       answer:
-        "It doesn’t matter how organized you are — a surplus of toys will always ensure your house is a mess waiting to happen. Fortunately, getting kids on board with the idea of ditching their stuff is a lot easier than it sounds. <br /><br /> The trick is to make it an opportunity for them to define themselves and their interests. Encourage kids to make a pile of ”baby toys” to donate, and have them set aside any toys that no longer interest them, such as action figures from a forgotten TV show. Separating these toys will help them appreciate how much they’ve grown and rediscover the toys they love.",
+        "ระบบจะใช้ตำแหน่ง GPS ของผู้ใช้ (เมื่อได้รับอนุญาต) เพื่อค้นหาประกาศที่อยู่ในระยะใกล้เคียง โดยไม่เก็บข้อมูลตำแหน่งถาวรเพื่อความเป็นส่วนตัว",
     },
     {
-      id: "headingFour",
-      question: "Can I pay my own taxes and insurance?",
+      question: "สามารถแก้ไขข้อมูลประกาศหลังโพสต์ได้ไหม?",
       answer:
-        "It doesn’t matter how organized you are — a surplus of toys will always ensure your house",
+        "สามารถแก้ไขข้อมูล รายละเอียด ราคา และรูปภาพของประกาศได้ แต่บางครั้งอาจต้องผ่านการตรวจสอบใหม่ก่อนแสดงผลอีกครั้ง",
     },
   ];
 
   return (
-    <div className="accordion" id="accordionExample2">
-      {faqItems.map((item, index) => (
-        <div className="accordion-item" key={index}>
-          <h2 className="accordion-header" id={item.id}>
-            <button
-              className={`accordion-button ${index === 2 ? "" : "collapsed"}`}
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target={`#collapse${index + 1}`}
-              aria-expanded={index === 2 ? "true" : "false"}
-              aria-controls={`collapse${index + 1}`}
+    <div className="accordion" id={accordionId}>
+      {faqItems.map((item, index) => {
+        const headingId = `${accordionId}-heading-${index}`;
+        const collapseId = `${accordionId}-collapse-${index}`;
+        const isFirst = index === 0;
+
+        return (
+          <div className="accordion-item" key={collapseId}>
+            <h2 className="accordion-header" id={headingId}>
+              <button
+                className={`accordion-button ${isFirst ? "" : "collapsed"} fw-semibold`}
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target={`#${collapseId}`}
+                aria-expanded={isFirst ? "true" : "false"}
+                aria-controls={collapseId}
+              >
+                {item.question}
+              </button>
+            </h2>
+
+            <div
+              id={collapseId}
+              className={`accordion-collapse collapse ${isFirst ? "show" : ""}`}
+              aria-labelledby={headingId}
+              data-bs-parent={`#${accordionId}`}
             >
-              {item.question}
-            </button>
-          </h2>
-          <div
-            id={`collapse${index + 1}`}
-            className={`accordion-collapse collapse ${
-              index === 2 ? "show" : ""
-            }`}
-            aria-labelledby={item.id}
-            data-parent="#accordionExample2"
-          >
-            <div className="accordion-body">
-              <p>{item.answer}</p>
+              <div className="accordion-body">
+                <p className="mb-0">
+                  {item.answer}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

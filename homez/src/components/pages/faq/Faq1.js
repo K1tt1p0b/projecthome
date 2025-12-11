@@ -1,61 +1,66 @@
 const Faq1 = () => {
+  const accordionId = "accordionSelling";
+
   const faqItems = [
     {
-      id: "headingOne",
-      question: "Can a home depreciate in value?",
+      question: "ที่ดินสามารถลดมูลค่าได้หรือไม่?",
       answer:
-        "It doesn’t matter how organized you are — a surplus of toys will always ensure your house",
+        "โดยทั่วไปที่ดินมักเพิ่มมูลค่าตามกาลเวลา แต่ขึ้นอยู่กับทำเล การพัฒนาเมือง และสภาพแวดล้อม หากอยู่ในพื้นที่ที่ขาดการพัฒนา มูลค่าอาจไม่เพิ่มได้",
     },
     {
-      id: "headingTwo",
-      question: "Is an older home as good a value as a new home?",
+      question: "ซื้อที่ดินเก่า / ยังไม่ถมดีหรือไม่?",
       answer:
-        "It doesn’t matter how organized you are — a surplus of toys will always ensure your house",
+        "ที่ดินเก่าหรือที่ยังไม่ถมมักมีราคาถูกกว่า แต่ควรคำนึงถึงค่าถมดิน ค่าปรับพื้นที่ รวมถึงความเสี่ยงเรื่องน้ำท่วมก่อนตัดสินใจ",
     },
     {
-      id: "headingThree",
-      question: "What is a broker?",
+      question: "นายหน้าคืออะไร และช่วยอะไรได้บ้าง?",
       answer:
-        "It doesn’t matter how organized you are — a surplus of toys will always ensure your house is a mess waiting to happen. Fortunately, getting kids on board with the idea of ditching their stuff is a lot easier than it sounds. <br /><br /> The trick is to make it an opportunity for them to define themselves and their interests. Encourage kids to make a pile of ”baby toys” to donate, and have them set aside any toys that no longer interest them, such as action figures from a forgotten TV show. Separating these toys will help them appreciate how much they’ve grown and rediscover the toys they love.",
+        "นายหน้าช่วยอำนวยความสะดวกในการซื้อขาย เช่น หาทำเล ประเมินราคา ประสานงานผู้ซื้อ–ผู้ขาย และจัดการเอกสารต่าง ๆ",
     },
     {
-      id: "headingFour",
-      question: "Can I pay my own taxes and insurance?",
+      question: "สามารถโอนกรรมสิทธิ์เองโดยไม่ผ่านนายหน้าได้ไหม?",
       answer:
-        "It doesn’t matter how organized you are — a surplus of toys will always ensure your house",
+        "สามารถทำได้ ผู้ซื้อและผู้ขายสามารถไปดำเนินการที่สำนักงานที่ดินด้วยตนเอง แต่หากไม่สะดวก อาจใช้นายหน้าช่วยดูแลขั้นตอนต่าง ๆ",
     },
   ];
 
   return (
-    <div className="accordion" id="accordionExample">
-      {faqItems.map((item, index) => (
-        <div className="accordion-item" key={index}>
-          <h2 className="accordion-header" id={item.id}>
-            <button
-              className={`accordion-button ${index === 2 ? "" : "collapsed"}`}
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target={`#collapse${index + 1}`}
-              aria-expanded={index === 2 ? "true" : "false"}
-              aria-controls={`collapse${index + 1}`}
+    <div className="accordion" id={accordionId}>
+      {faqItems.map((item, index) => {
+        const headingId = `${accordionId}-heading-${index}`;
+        const collapseId = `${accordionId}-collapse-${index}`;
+        const isFirst = index === 0; // ให้อันแรกเปิดอยู่ตอนโหลดหน้า
+
+        return (
+          <div className="accordion-item" key={collapseId}>
+            <h2 className="accordion-header" id={headingId}>
+              <button
+                className={`accordion-button ${isFirst ? "" : "collapsed"} fw-semibold`}
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target={`#${collapseId}`}
+                aria-expanded={isFirst ? "true" : "false"}
+                aria-controls={collapseId}
+              >
+                {item.question}
+              </button>
+            </h2>
+
+            <div
+              id={collapseId}
+              className={`accordion-collapse collapse ${isFirst ? "show" : ""}`}
+              aria-labelledby={headingId}
+              data-bs-parent={`#${accordionId}`}
             >
-              {item.question}
-            </button>
-          </h2>
-          <div
-            id={`collapse${index + 1}`}
-            className={`accordion-collapse collapse ${
-              index === 2 ? "show" : ""
-            }`}
-            aria-labelledby={item.id}
-            data-parent="#accordionExample"
-          >
-            <div className="accordion-body">
-              <p>{item.answer}</p>
+              <div className="accordion-body">
+                <p className="mb-0">
+                  {item.answer}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
