@@ -14,7 +14,7 @@ const MenuWidget = () => {
     {
       title: "Quick Links",
       links: [
-        { label: "Terms of Use", href: "#" },
+        { label: "Terms of Use", href: "/Terms-of-use" },
         { label: "Privacy Policy", href: "#" },
         { label: "Pricing Plans", href: "#" },
         { label: "Our Services", href: "#" },
