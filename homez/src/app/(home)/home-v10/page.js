@@ -138,7 +138,7 @@ const Home_V10 = () => {
                 </p>
               </div>
             </div>
-            <div className="col-lg-3">
+            <div className="col-lg-3" data-aos="fade-up" data-aos-delay="100">
               <div className="text-start text-lg-end mb-3">
                 <Link className="ud-btn2" href="/blog-list-v1">
                   ดูบทความทั้งหมด
