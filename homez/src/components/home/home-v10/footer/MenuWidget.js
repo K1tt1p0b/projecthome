@@ -20,7 +20,7 @@ const MenuWidget = () => {
         { label: "Our Services", href: "#" },
         { label: "Contact Support", href: "#" },
         { label: "Careers", href: "#" },
-        { label: "FAQs", href: "#" },
+        { label: "FAQs", href: "/faq" },
       ],
     },
     {
