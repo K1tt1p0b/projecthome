@@ -1,4 +1,3 @@
-// src/app/download-documents/DownloadDocumentsClient.jsx
 "use client";
 
 import { useState } from "react";
@@ -15,17 +14,18 @@ import {
 const DownloadDocumentsClient = () => {
   const [activeTab, setActiveTab] = useState("user");
 
+  // state สำหรับค้นหา + filter
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");  // category
+  const [usageFilter, setUsageFilter] = useState(""); // usage
+
   return (
     <>
-      {/* Main Header Nav */}
+      {/* Main Header */}
       <Header />
-      {/* End Main Header Nav */}
-
-      {/* Mobile Nav */}
       <MobileMenu />
-      {/* End Mobile Nav */}
 
-      {/* Hero / Page Title */}
+      {/* Page Title */}
       <section className="inner-page-hero bgc-f7 pb40 pt40">
         <div className="container">
           <div className="row align-items-center" data-aos="fade-up">
@@ -35,7 +35,7 @@ const DownloadDocumentsClient = () => {
                   <h2 className="title">ดาวน์โหลดเอกสาร</h2>
                   <p className="paragraph mb-0">
                     เอกสารสัญญา แบบฟอร์ม และคู่มือที่เกี่ยวข้องกับการซื้อขาย/เช่าที่ดิน
-                    ทั้งสำหรับผู้ใช้ทั่วไปและตัวแทน / นายหน้า
+                    ทั้งผู้ใช้ทั่วไปและตัวแทน/นายหน้า
                   </p>
                 </div>
               </div>
@@ -43,11 +43,11 @@ const DownloadDocumentsClient = () => {
           </div>
         </div>
       </section>
-      {/* End Hero */}
 
       {/* Main Content */}
       <section className="pb90 pb20-md">
         <div className="container">
+
           {/* Tabs */}
           <div className="row" data-aos="fade-up" data-aos-delay="50">
             <div className="col-lg-12">
@@ -55,52 +55,98 @@ const DownloadDocumentsClient = () => {
             </div>
           </div>
 
-          {/* Search + Filters */}
+          {/* Search + Filters + Clear Button */}
           <div
             className="row align-items-center mb30"
             data-aos="fade-up"
             data-aos-delay="100"
           >
-            <div className="col-md-6 mb-2 mb-md-0">
-              <div className="form-group mb-0">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="ค้นหาชื่อเอกสาร..."
-                />
-              </div>
+            {/* Search */}
+            <div className="col-md-4 mb-2 mb-md-0">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="ค้นหาชื่อเอกสาร..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
+
+            {/* ประเภทเอกสาร */}
             <div className="col-md-3 mb-2 mb-md-0">
-              <div className="form-group mb-0">
-                <select className="form-select">
-                  <option value="">ประเภทเอกสาร (ทั้งหมด)</option>
-                  <option value="contract">สัญญา</option>
-                  <option value="form">แบบฟอร์ม</option>
-                  <option value="guide">คู่มือ/แนวทาง</option>
-                </select>
-              </div>
+              <select
+                className="form-select"
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+              >
+                <option value="">ประเภทเอกสาร (ทั้งหมด)</option>
+                <option value="สัญญา">สัญญา</option>
+                <option value="แบบฟอร์ม">แบบฟอร์ม</option>
+                <option value="คู่มือ">คู่มือ</option>
+              </select>
             </div>
-            <div className="col-md-3">
-              <div className="form-group mb-0">
-                <select className="form-select">
-                  <option value="">การใช้งาน (ทั้งหมด)</option>
-                  <option value="sale">ซื้อขาย</option>
-                  <option value="rent">เช่า</option>
-                  <option value="authorize">มอบอำนาจ</option>
-                </select>
-              </div>
+
+            {/* การใช้งาน */}
+            <div className="col-md-3 mb-2 mb-md-0">
+              <select
+                className="form-select"
+                value={usageFilter}
+                onChange={(e) => setUsageFilter(e.target.value)}
+              >
+                <option value="">การใช้งาน (ทั้งหมด)</option>
+                <option value="ซื้อขาย">ซื้อขาย</option>
+                <option value="เช่า">เช่า</option>
+                <option value="ทั่วไป">ทั่วไป</option>
+                <option value="รับทรัพย์">รับทรัพย์</option>
+              </select>
+            </div>
+
+            {/* Clear button */}
+            <div className="col-md-2 text-md-end mt-2 mt-md-0">
+              <button
+                className="ud-btn btn-light"
+                onClick={() => {
+                  setSearchTerm("");
+                  setTypeFilter("");
+                  setUsageFilter("");
+                }}
+                style={{
+                  padding: "8px 20px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "100%",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <i className="far fa-trash-alt me-2"></i> ล้างตัวกรอง
+              </button>
             </div>
           </div>
 
-          {/* Document List ตาม tab */}
+          {/* Document List */}
           <div data-aos="fade-up" data-aos-delay="150">
-            {activeTab === "user" && <UserDocumentList />}
-            {activeTab === "agent" && <AgentDocumentList />}
+            {activeTab === "user" && (
+              <UserDocumentList
+                searchTerm={searchTerm}
+                typeFilter={typeFilter}
+                usageFilter={usageFilter}
+              />
+            )}
+
+            {activeTab === "agent" && (
+              <AgentDocumentList
+                searchTerm={searchTerm}
+                typeFilter={typeFilter}
+                usageFilter={usageFilter}
+              />
+            )}
           </div>
+
         </div>
       </section>
 
-      {/* Footer Style เหมือนหน้า Home_v10 */}
+      {/* Footer */}
       <section className="footer-style1 pt60 pb-0">
         <Footer />
       </section>
