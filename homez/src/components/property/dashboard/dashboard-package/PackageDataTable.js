@@ -1,38 +1,67 @@
 import React from "react";
 import Link from "next/link";
-import packageData from "./packageData.json";
+import pointHistoryData from "./pointHistory.json";
 
-const PackageDataTable = () => {
+const PointHistoryTable = () => {
+  const history = pointHistoryData.history || pointHistoryData;
+
+  // ถ้า JSON มี pointsBalance ให้ใช้, ถ้าไม่ให้ใช้ balanceAfter ของรายการแรก
+  const pointsBalance =
+    pointHistoryData.pointsBalance ??
+    (history.length > 0 ? history[0].balanceAfter : 0);
+
   return (
     <div>
-      {/* ปุ่มไปหน้าพอยต์ */}
+      {/* ปุ่มไปหน้าเติมพอยต์ */}
       <div className="d-flex justify-content-end mb-3">
         <Link href="/dashboard-points" className="ud-btn btn-thm">
-          จัดการพอยต์
+          เติม/จัดการพอยต์
           <i className="fal fa-arrow-right-long" />
         </Link>
       </div>
 
+      {/* การ์ดแสดงพอยต์คงเหลือ */}
+      <div className="ps-widget bgc-white bdrs12 p20 mb20 default-box-shadow2">
+        <h4 className="fw600 mb5">พอยต์คงเหลือปัจจุบัน</h4>
+        <div className="d-inline-block px-3 py-2 bgc-f7 bdrs12 fw600 text-thm">
+          ⭐ {pointsBalance.toLocaleString()} พอยต์
+        </div>
+      </div>
+
+      {/* ตารางประวัติพอยต์ */}
       <table className="table-style3 table">
         <thead className="t-head">
           <tr>
-            <th scope="col">Current Package</th>
-            <th scope="col">Properties remaining</th>
-            <th scope="col">Featured remaining</th>
-            <th scope="col">Renewal remaining</th>
-            <th scope="col">Storage Space</th>
-            <th scope="col">Expiry Date</th>
+            <th scope="col">วันที่</th>
+            <th scope="col">รายการ</th>
+            <th scope="col">รายละเอียด</th>
+            <th scope="col">พอยต์ที่เปลี่ยนแปลง</th>
+            <th scope="col">พอยต์คงเหลือหลังรายการ</th>
+            <th scope="col">หมายเหตุ</th>
           </tr>
         </thead>
+
         <tbody className="t-body">
-          {packageData.map((packageItem, index) => (
+          {history.map((item, index) => (
             <tr key={index}>
-              <th scope="row">{packageItem.type}</th>
-              <td>{packageItem.propertiesRemaining}</td>
-              <td>{packageItem.featuredRemaining}</td>
-              <td>{packageItem.renewalRemaining}</td>
-              <td>{packageItem.storageSpace}</td>
-              <td>{packageItem.expiryDate}</td>
+              <td>{item.date}</td>
+              <td>{item.type}</td>
+              <td>{item.detail}</td>
+
+              {/* สีเขียว = เพิ่มพอยต์ / สีแดง = ลดพอยต์ */}
+              <td
+                style={{
+                  color: item.pointsChange > 0 ? "green" : "red",
+                  fontWeight: 600,
+                }}
+              >
+                {item.pointsChange > 0
+                  ? `+${item.pointsChange}`
+                  : item.pointsChange}
+              </td>
+
+              <td>{item.balanceAfter}</td>
+              <td>{item.note || "-"}</td>
             </tr>
           ))}
         </tbody>
@@ -41,4 +70,4 @@ const PackageDataTable = () => {
   );
 };
 
-export default PackageDataTable;
+export default PointHistoryTable;

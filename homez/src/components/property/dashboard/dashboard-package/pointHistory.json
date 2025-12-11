@@ -1,0 +1,21 @@
+{
+  "pointsBalance": 1100,
+  "history": [
+    {
+      "date": "10 ธันวาคม 2568",
+      "type": "เติมพอยต์",
+      "detail": "เติมพอยต์ 300 พอยต์",
+      "pointsChange": 300,
+      "balanceAfter": 1250,
+      "note": "สลิป #12345"
+    },
+    {
+      "date": "11 ธันวาคม 2568",
+      "type": "โปรโมตประกาศ",
+      "detail": "โปรโมต 3 วัน ประกาศ #101",
+      "pointsChange": -150,
+      "balanceAfter": 1100,
+      "note": ""
+    }
+  ]
+}

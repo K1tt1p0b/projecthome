@@ -8,22 +8,22 @@ const SidebarDashboard = () => {
 
   const sidebarItems = [
     {
-      title: "MAIN",
+      title: "เมนูหลัก",
       items: [
         {
           href: "/dashboard-home",
           icon: "flaticon-discovery",
-          text: "Dashboard",
+          text: "หน้าแดชบอร์ด",
         },
         {
           href: "/dashboard-message",
           icon: "flaticon-chat-1",
-          text: "Message",
+          text: "ข้อความ",
         },
       ],
     },
     {
-      title: "MANAGE LISTINGS",
+      title: "การจัดการทรัพย์สิน",
       items: [
         {
           href: "/dashboard-add-property",
@@ -34,47 +34,31 @@ const SidebarDashboard = () => {
           href: "/dashboard-my-properties",
           icon: "flaticon-home",
           text: "ทรัพย์สินของฉัน",
-        },
-        {
-          href: "/dashboard-my-favourites",
-          icon: "flaticon-like",
-          text: "My Favorites",
-        },
-        {
-          href: "/dashboard-saved-search",
-          icon: "flaticon-search-2",
-          text: "Saved Search",
-        },
-        {
-          href: "/dashboard-reviews",
-          icon: "flaticon-review",
-          text: "Reviews",
-        },
+        }
       ],
     },
     {
-      title: "MANAGE ACCOUNT",
+      title: "การตั้งค่าบัญชี",
       items: [
         {
-          href: "/dashboard-my-package",
-          icon: "flaticon-protection",
-          text: "My Package",
-        },
-        // ✅ เมนูใหม่: เติมพอยต์
-        {
           href: "/dashboard-points",
-          icon: "flaticon-diamond",
+          icon: "flaticon-like",
           text: "เติมพอยต์",
+        },
+        {
+          href: "/dashboard-my-package",
+          icon: "flaticon-review",
+          text: "ประวัติพอยต์",
         },
         {
           href: "/dashboard-my-profile",
           icon: "flaticon-user",
-          text: "My Profile",
+          text: "โปรไฟล์ของฉัน",
         },
         {
           href: "/login",
           icon: "flaticon-logout",
-          text: "Logout",
+          text: "ออกจากระบบ",
         },
       ],
     },
