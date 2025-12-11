@@ -10,7 +10,7 @@ import { usePathname } from "next/navigation";
 const DashboardHeader = () => {
   const pathname = usePathname();
 
-
+  // 🔥 ปรับให้ตรงกับ SidebarDashboard (ภาษาไทย + ลิงก์ตรงกัน)
   const menuItems = [
     {
       title: "เมนูหลัก",
@@ -39,7 +39,7 @@ const DashboardHeader = () => {
           icon: "flaticon-home",
           text: "ทรัพย์สินของฉัน",
           href: "/dashboard-my-properties",
-        }
+        },
       ],
     },
     {
@@ -87,13 +87,14 @@ const DashboardHeader = () => {
                       />
                     </Link>
                   </div>
+                  {/* End Logo */}
 
-                  {/* ปุ่มเปิด Sidebar Panel (มือถือ) */}
                   <a
                     className="dashboard_sidebar_toggle_icon text-thm1 vam"
                     href="#"
                     data-bs-toggle="offcanvas"
                     data-bs-target="#SidebarPanel"
+                    aria-controls="SidebarPanelLabel"
                   >
                     <Image
                       width={25}
@@ -105,25 +106,25 @@ const DashboardHeader = () => {
                   </a>
                 </div>
               </div>
+              {/* End .col-auto */}
 
-              {/* เมนูหลักบน Desktop */}
               <div className="d-none d-lg-block col-lg-auto">
                 <MainMenu />
+                {/* End Main Menu */}
               </div>
+              {/* End d-none d-lg-block */}
 
-              {/* ส่วนไอคอนด้านขวา */}
               <div className="col-6 col-lg-auto">
                 <div className="text-center text-lg-end header_right_widgets">
                   <ul className="mb0 d-flex justify-content-center justify-content-sm-end p-0">
-
-                    {/* ไอคอนข้อความ */}
                     <li className="d-none d-sm-block">
-                      <Link className="text-center mr15" href="/dashboard-message">
+                      <Link className="text-center mr15" href="/login">
                         <span className="flaticon-email" />
                       </Link>
                     </li>
+                    {/* End email box */}
 
-                    {/* 🌟 กระดิ่งแจ้งเตือน — (ปรับแล้ว) */}
+                    {/* 🎯 กระดิ่งแจ้งเตือน — คงไว้เหมือนเดิมทุกอย่าง */}
                     <li className="d-none d-sm-block">
                       <div className="dropdown">
                         <a
@@ -131,7 +132,10 @@ const DashboardHeader = () => {
                           href="#"
                           data-bs-toggle="dropdown"
                         >
-                          <span className="flaticon-bell" style={{ fontSize: "22px" }} />
+                          <span
+                            className="flaticon-bell"
+                            style={{ fontSize: "22px" }}
+                          />
                           <span
                             className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                             style={{ fontSize: "10px", marginTop: "5px" }}
@@ -140,7 +144,6 @@ const DashboardHeader = () => {
                           </span>
                         </a>
 
-                        {/* Dropdown รายการแจ้งเตือน */}
                         <div
                           className="dropdown-menu dropdown-menu-end shadow border-0 p-0"
                           style={{
@@ -152,53 +155,216 @@ const DashboardHeader = () => {
                           }}
                         >
                           <div className="d-flex justify-content-between align-items-center px-4 py-3 bg-white border-bottom">
-                            <h6 className="m-0 fw-bold text-dark">การแจ้งเตือน</h6>
-                            <span className="text-primary" style={{ cursor: "pointer" }}>
+                            <h6
+                              className="m-0 fw-bold text-dark"
+                              style={{ fontSize: "16px" }}
+                            >
+                              การแจ้งเตือน
+                            </h6>
+                            <span
+                              className="text-primary"
+                              style={{
+                                cursor: "pointer",
+                                fontSize: "13px",
+                                fontWeight: "500",
+                              }}
+                            >
                               อ่านทั้งหมด
                             </span>
                           </div>
 
-                          <div style={{ maxHeight: "350px", overflowY: "auto" }}>
-                            {/* รายการแจ้งเตือนตัวอย่าง */}
-                            <Link href="/dashboard-message" className="dropdown-item" style={{
-                              height: "auto",
-                              padding: "15px 20px",
-                              display: "block",
-                              backgroundColor: "#fff",
-                              whiteSpace: "normal"
-                            }}>
-                              <div style={{ display: "flex" }}>
-                                <div style={{
-                                  width: "45px",
-                                  height: "45px",
-                                  backgroundColor: "#eef2ff",
-                                  borderRadius: "50%",
+                          <div
+                            style={{ maxHeight: "350px", overflowY: "auto" }}
+                          >
+                            <Link
+                              href="/dashboard-message"
+                              className="dropdown-item border-bottom"
+                              style={{
+                                height: "auto",
+                                width: "100%",
+                                lineHeight: "normal",
+                                whiteSpace: "normal",
+                                padding: "15px 20px",
+                                display: "block",
+                                backgroundColor: "#fff",
+                              }}
+                            >
+                              <div
+                                style={{
                                   display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  marginRight: "15px"
-                                }}>
-                                  <i className="flaticon-chat-1" />
+                                  alignItems: "flex-start",
+                                  width: "100%",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    flexShrink: 0,
+                                    width: "45px",
+                                    height: "45px",
+                                    backgroundColor: "#eef2ff",
+                                    color: "#4f46e5",
+                                    borderRadius: "50%",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    marginRight: "15px",
+                                  }}
+                                >
+                                  <i
+                                    className="flaticon-chat-1"
+                                    style={{ fontSize: "20px" }}
+                                  />
                                 </div>
 
-                                <div>
-                                  <div className="fw-bold">มีข้อความใหม่!</div>
-                                  <p className="mb-0 text-muted">ลูกค้าสนใจบ้านพระราม 9</p>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      justifyContent: "space-between",
+                                      alignItems: "baseline",
+                                      marginBottom: "4px",
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        fontSize: "15px",
+                                        fontWeight: "bold",
+                                        color: "#333",
+                                      }}
+                                    >
+                                      มีข้อความใหม่!
+                                    </span>
+                                    <span
+                                      style={{
+                                        fontSize: "11px",
+                                        color: "#999",
+                                        whiteSpace: "nowrap",
+                                      }}
+                                    >
+                                      2 นาที
+                                    </span>
+                                  </div>
+
+                                  <p
+                                    style={{
+                                      fontSize: "13px",
+                                      lineHeight: "1.6",
+                                      color: "#666",
+                                      margin: 0,
+                                      wordBreak: "break-word",
+                                    }}
+                                  >
+                                    ลูกค้าสนใจบ้านเดี่ยว พระราม 9 (ติดต่อด่วน)
+                                  </p>
+                                </div>
+                              </div>
+                            </Link>
+
+                            <Link
+                              href="/dashboard-my-properties"
+                              className="dropdown-item"
+                              style={{
+                                height: "auto",
+                                width: "100%",
+                                lineHeight: "normal",
+                                whiteSpace: "normal",
+                                padding: "15px 20px",
+                                display: "block",
+                                backgroundColor: "#fff",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "flex-start",
+                                  width: "100%",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    flexShrink: 0,
+                                    width: "45px",
+                                    height: "45px",
+                                    backgroundColor: "#ecfdf5",
+                                    color: "#10b981",
+                                    borderRadius: "50%",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    marginRight: "15px",
+                                  }}
+                                >
+                                  <i
+                                    className="flaticon-home"
+                                    style={{ fontSize: "20px" }}
+                                  />
+                                </div>
+
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      justifyContent: "space-between",
+                                      alignItems: "baseline",
+                                      marginBottom: "4px",
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        fontSize: "15px",
+                                        fontWeight: "bold",
+                                        color: "#333",
+                                      }}
+                                    >
+                                      อนุมัติประกาศแล้ว
+                                    </span>
+                                    <span
+                                      style={{
+                                        fontSize: "11px",
+                                        color: "#999",
+                                        whiteSpace: "nowrap",
+                                      }}
+                                    >
+                                      1 ชม.
+                                    </span>
+                                  </div>
+
+                                  <p
+                                    style={{
+                                      fontSize: "13px",
+                                      lineHeight: "1.6",
+                                      color: "#666",
+                                      margin: 0,
+                                      wordBreak: "break-word",
+                                    }}
+                                  >
+                                    คอนโด สุขุมวิท 24 ออนไลน์แล้ว
+                                  </p>
                                 </div>
                               </div>
                             </Link>
                           </div>
 
                           <div className="p-3 text-center border-top bg-white">
-                            <Link href="/dashboard-message" className="fw-bold text-primary">
-                              ดูทั้งหมด
+                            <Link
+                              href="/dashboard-message"
+                              className="text-decoration-none text-primary fw-bold"
+                              style={{
+                                fontSize: "14px",
+                                height: "auto",
+                                width: "auto",
+                                lineHeight: "normal",
+                              }}
+                            >
+                              ดูการแจ้งเตือนทั้งหมด
                             </Link>
                           </div>
                         </div>
                       </div>
                     </li>
+                    {/* End notification icon */}
 
-                    {/* เมนู User */}
+                    {/* เมนูโปรไฟล์ผู้ใช้ */}
                     <li className="user_setting">
                       <div className="dropdown">
                         <a className="btn" href="#" data-bs-toggle="dropdown">
@@ -206,22 +372,26 @@ const DashboardHeader = () => {
                             width={44}
                             height={44}
                             src="/images/resource/user.png"
-                            alt="user"
+                            alt="user.png"
                           />
                         </a>
-
                         <div className="dropdown-menu">
                           <div className="user_setting_content">
                             {menuItems.map((section, sectionIndex) => (
                               <div key={sectionIndex}>
-                                <p className={`fz15 fw400 ff-heading ${sectionIndex === 0 ? "mb20" : "mt30"}`}>
+                                <p
+                                  className={`fz15 fw400 ff-heading ${
+                                    sectionIndex === 0 ? "mb20" : "mt30"
+                                  }`}
+                                >
                                   {section.title}
                                 </p>
-
                                 {section.items.map((item, itemIndex) => (
                                   <Link
                                     key={itemIndex}
-                                    className={`dropdown-item ${pathname === item.href ? "-is-active" : ""}`}
+                                    className={`dropdown-item ${
+                                      pathname === item.href ? "-is-active" : ""
+                                    } `}
                                     href={item.href}
                                   >
                                     <i className={`${item.icon} mr10`} />
@@ -234,18 +404,24 @@ const DashboardHeader = () => {
                         </div>
                       </div>
                     </li>
-
+                    {/* End avatar dropdown */}
                   </ul>
                 </div>
               </div>
-
+              {/* End .col-6 */}
             </div>
+            {/* End .row */}
           </div>
         </nav>
       </header>
 
-      {/* Sidebar Panel สำหรับมือถือ */}
-      <div className="offcanvas offcanvas-end" id="SidebarPanel">
+      {/* Sidebar Panel (offcanvas) */}
+      <div
+        className="offcanvas offcanvas-end"
+        tabIndex="-1"
+        id="SidebarPanel"
+        aria-labelledby="SidebarPanelLabel"
+      >
         <SidebarPanel />
       </div>
     </>
