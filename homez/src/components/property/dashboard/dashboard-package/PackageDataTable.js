@@ -6,12 +6,12 @@ const PackageDataTable = () => {
     <table className="table-style3 table">
       <thead className="t-head">
         <tr>
-          <th scope="col">Current Package</th>
-          <th scope="col">Properties remaining</th>
-          <th scope="col">Featured remaining</th>
-          <th scope="col">Renewal remaining</th>
-          <th scope="col">Storage Space</th>
-          <th scope="col">Expiry Date</th>
+          <th scope="col">แพ็กเกจปัจจุบัน</th>
+          <th scope="col">ลงประกาศได้อีก</th>
+          <th scope="col">โควตาประกาศแนะนำ</th>
+          <th scope="col">สิทธิ์ต่ออายุ</th>
+          <th scope="col">พื้นที่จัดเก็บ</th>
+          <th scope="col">วันหมดอายุ</th>
         </tr>
       </thead>
       <tbody className="t-body">

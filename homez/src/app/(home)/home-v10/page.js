@@ -125,17 +125,25 @@ const Home_V10 = () => {
       {/* Explore Blog */}
       <section className="pt-0 pb90 pb20-md">
         <div className="container">
-          <div className="row">
+          <div className="row align-items-center">
             <div
-              className="col-lg-6 m-auto"
+              className="col-lg-9"
               data-aos="fade-up"
-              data-aos-delay="0"
+              data-aos-delay="100"
             >
-              <div className="main-title text-start text-md-center">
+              <div className="main-title text-start">
                 <h2 className="title">บทความ</h2>
                 <p className="paragraph">
                   Aliquam lacinia diam quis lacus euismod
                 </p>
+              </div>
+            </div>
+            <div className="col-lg-3">
+              <div className="text-start text-lg-end mb-3">
+                <Link className="ud-btn2" href="/blog-list-v1">
+                  ดูบทความทั้งหมด
+                  <i className="fal fa-arrow-right-long" />
+                </Link>
               </div>
             </div>
           </div>
