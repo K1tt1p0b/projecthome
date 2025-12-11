@@ -102,6 +102,7 @@ export const pageItems = [
   { href: "/register", label: "Register" },
   { href: "/not-found", label: "404" },
   { href: "/invoice", label: "Invoice" },
+  { href: "/download-documents", label: "ดาวน์โหลดเอกสาร" },
 ];
 
 export const faqItems = [
