@@ -9,67 +9,57 @@ const DboardMobileNavigation = () => {
 
   const sidebarItems = [
     {
-      title: "MAIN",
+      title: "เมนูหลัก",
       items: [
         {
           href: "/dashboard-home",
           icon: "flaticon-discovery",
-          text: "Dashboard",
+          text: "หน้าแดชบอร์ด",
         },
         {
           href: "/dashboard-message",
           icon: "flaticon-chat-1",
-          text: "Message",
+          text: "ข้อความ",
         },
       ],
     },
     {
-      title: "MANAGE LISTINGS",
+      title: "การจัดการทรัพย์สิน",
       items: [
         {
           href: "/dashboard-add-property",
           icon: "flaticon-new-tab",
-          text: "Add New Property",
+          text: "เพิ่มที่อยู่ทรัพย์",
         },
         {
           href: "/dashboard-my-properties",
           icon: "flaticon-home",
-          text: "My Properties",
-        },
-        {
-          href: "/dashboard-my-favourites",
-          icon: "flaticon-like",
-          text: "My Favorites",
-        },
-        {
-          href: "/dashboard-saved-search",
-          icon: "flaticon-search-2",
-          text: "Saved Search",
-        },
-        {
-          href: "/dashboard-reviews",
-          icon: "flaticon-review",
-          text: "Reviews",
+          text: "ทรัพย์สินของฉัน",
         },
       ],
     },
     {
-      title: "MANAGE ACCOUNT",
+      title: "การตั้งค่าบัญชี",
       items: [
         {
+          href: "/dashboard-points",
+          icon: "flaticon-like",
+          text: "เติมพอยต์",
+        },
+        {
           href: "/dashboard-my-package",
-          icon: "flaticon-protection",
-          text: "My Package",
+          icon: "flaticon-review",
+          text: "ประวัติพอยต์",
         },
         {
           href: "/dashboard-my-profile",
           icon: "flaticon-user",
-          text: "My Profile",
+          text: "โปรไฟล์ของฉัน",
         },
         {
           href: "/login",
           icon: "flaticon-logout",
-          text: "Logout",
+          text: "ออกจากระบบ",
         },
       ],
     },
@@ -82,8 +72,9 @@ const DboardMobileNavigation = () => {
           className="dropbtn"
           onClick={() => setIsDropdownOpen((prevOpen) => !prevOpen)}
         >
-          <i className="fa fa-bars pr10" /> Dashboard Navigation
+          <i className="fa fa-bars pr10" /> เมนูแดชบอร์ด
         </button>
+
         <ul className={`dropdown-content ${isDropdownOpen ? "show" : ""}`}>
           {sidebarItems.map((section, sectionIndex) => (
             <div key={sectionIndex}>
@@ -94,13 +85,14 @@ const DboardMobileNavigation = () => {
               >
                 {section.title}
               </p>
+
               {section.items.map((item, itemIndex) => (
                 <div key={itemIndex} className="sidebar_list_item">
                   <Link
                     href={item.href}
-                    className={`items-center   ${
-                      pathname == item.href ? "-is-active" : ""
-                    } `}
+                    className={`items-center ${
+                      pathname === item.href ? "-is-active" : ""
+                    }`}
                   >
                     <i className={`${item.icon} mr15`} />
                     {item.text}
