@@ -13,6 +13,7 @@
     "@popperjs/core": "^2.11.8",
     "@react-google-maps/api": "^2.20.7",
     "aos": "^2.3.4",
+    "axios": "^1.13.2",
     "bootstrap": "5.3.6",
     "eslint": "9.27.0",
     "next": "15.1.8",
