@@ -32,11 +32,21 @@ const PropertySummary = ({
   const safeLocation = location || {};
   const safeImages = images || [];
   const safeDetails = details || {};
-  const amenities = safeDetails.amenities || [];
 
   const isEmptyObject = (obj) => !obj || Object.keys(obj).length === 0;
 
+  // ---------- helpers ----------
+  const isBlank = (v) => v === undefined || v === null || String(v).trim() === "";
+
+  const formatPrice = (p) => {
+    if (p === undefined || p === null || p === "") return "-";
+    if (typeof p === "number") return p.toLocaleString() + " บาท";
+    const n = Number(String(p).replace(/,/g, ""));
+    return Number.isFinite(n) && n > 0 ? n.toLocaleString() + " บาท" : String(p);
+  };
+
   const handleSaveDraft = () => {
+    if (!onSaveDraft) return;
     const payload = {
       basicInfo: safeBasic,
       location: safeLocation,
@@ -47,6 +57,7 @@ const PropertySummary = ({
   };
 
   const handleSubmit = () => {
+    if (!onSubmit) return;
     const payload = {
       basicInfo: safeBasic,
       location: safeLocation,
@@ -56,37 +67,22 @@ const PropertySummary = ({
     onSubmit?.(payload);
   };
 
-  // ---------- helpers ----------
-  const isBlank = (v) => v === undefined || v === null || String(v).trim() === "";
-
-  const formatPrice = (p) => {
-    if (p === undefined || p === null || p === "") return "-";
-    if (typeof p === "number") return p.toLocaleString() + " บาท";
-    // เผื่อเป็น string
-    const n = Number(String(p).replace(/,/g, ""));
-    return Number.isFinite(n) && n > 0 ? n.toLocaleString() + " บาท" : String(p);
-  };
-
-  // ---------- map label ตาม field ใหม่จาก DetailsFiled ----------
-  // details ที่คุณส่งมาจาก AddPropertyTabContent จะเป็น summary object แล้ว
-  // แต่เผื่อกรณีที่ส่งเป็น raw detailsForm ก็รองรับด้วยการ map ต่อไปนี้
+  // ---------- map label (รองรับทั้ง summary ไทย และ raw detailsForm) ----------
   const detailsView = useMemo(() => {
-    // ถ้า details ถูก build มาเป็น key ภาษาไทยแล้ว (ตาม buildDetailsSummary ใหม่) ก็ใช้ได้เลย
-    // แต่ถ้าเป็น raw (landSqw, usableArea, projectName...) จะถูก map ให้เป็นไทย
     const d = safeDetails || {};
 
-    // ถ้าเจอ key ภาษาไทยแล้ว ให้ใช้แบบนั้นเลย
+    // ถ้าเป็น summary ไทยอยู่แล้ว ใช้เลย
     const hasThaiKeys = Object.keys(d).some((k) => /[ก-๙]/.test(k));
     if (hasThaiKeys) return d;
 
+    // ถ้าเป็น raw -> map เป็นไทย
     const out = {};
-
     const pick = (label, value) => {
       if (isBlank(value)) return;
       out[label] = value;
     };
 
-    // house-and-land
+    // บ้าน/บ้าน+ที่ดิน/ที่ดิน
     pick("ห้องนอน", d.bedrooms?.label ?? d.bedrooms);
     pick("ห้องน้ำ", d.bathrooms?.label ?? d.bathrooms);
     pick("จำนวนชั้น", d.floors);
@@ -98,7 +94,7 @@ const PropertySummary = ({
     pick("หน้ากว้างที่ดิน (ม.)", d.frontage);
     pick("ความลึกที่ดิน (ม.)", d.depth);
 
-    // condo
+    // คอนโด
     pick("ชื่อโครงการ", d.projectName);
     pick("อาคาร/ตึก", d.building);
     pick("ชั้น", d.unitFloor);
@@ -106,7 +102,7 @@ const PropertySummary = ({
     pick("ประเภทห้อง", d.roomType);
     pick("สิทธิ์ที่จอดรถ", d.condoParking);
 
-    // room-rent
+    // ห้องเช่า
     pick("ขนาดห้อง (ตร.ม.)", d.roomAreaRent);
     pick("ชั้นที่อยู่", d.rentFloor);
     if (d.bathroomPrivate !== undefined) pick("ห้องน้ำในตัว", d.bathroomPrivate ? "มี" : "ไม่มี");
@@ -125,11 +121,66 @@ const PropertySummary = ({
     return out;
   }, [safeDetails]);
 
-  // กรอง key ที่ไม่อยากโชว์
+  const amenities = Array.isArray(detailsView.amenities) ? detailsView.amenities : [];
+
+  // ---------- ✅ ORDER: เรียงตามฟอร์มที่กรอก ----------
+  const DETAILS_ORDER = [
+    // กลุ่มหลัก (เหมือนในฟอร์มบ้าน/ที่ดิน)
+    "ห้องนอน",
+    "ห้องน้ำ",
+    "พื้นที่ใช้สอย (ตร.ม.)",
+    "ขนาดที่ดิน (ตร.ว.)",
+
+    "เอกสารสิทธิ",
+    "ทิศหน้าทรัพย์",
+    "การตกแต่ง",
+    "ปีที่สร้าง",
+
+    // กลุ่ม “ข้อมูลเพิ่มเติม”
+    "จำนวนชั้น",
+    "ที่จอดรถ",
+    "ถนนหน้าบ้าน/ที่ดินกว้าง (ม.)",
+    "หน้ากว้างที่ดิน (ม.)",
+    "ความลึกที่ดิน (ม.)",
+
+    // คอนโด
+    "ชื่อโครงการ",
+    "อาคาร/ตึก",
+    "ชั้น",
+    "ขนาดห้อง (ตร.ม.)",
+    "ประเภทห้อง",
+    "สิทธิ์ที่จอดรถ",
+
+    // ห้องเช่า
+    "ชั้นที่อยู่",
+    "ห้องน้ำในตัว",
+    "รวมอินเทอร์เน็ต",
+    "ค่าไฟ (บาท/หน่วย)",
+    "ค่าน้ำ",
+
+    // ท้ายสุด
+    "หมายเหตุ(เจ้าของ/นายหน้า)",
+  ];
+
+  // ---------- ✅ detailsEntries แบบเรียง order ----------
   const detailsEntries = useMemo(() => {
-    return Object.entries(detailsView)
+    const d = detailsView || {};
+    const used = new Set();
+
+    const ordered = DETAILS_ORDER
+      .filter((k) => k in d)
+      .map((k) => [k, d[k]])
+      .filter(([, v]) => !isBlank(v))
+      .filter(([k]) => k !== "amenities");
+
+    ordered.forEach(([k]) => used.add(k));
+
+    const rest = Object.entries(d)
       .filter(([k]) => k !== "amenities")
+      .filter(([k]) => !used.has(k))
       .filter(([, v]) => !isBlank(v));
+
+    return [...ordered, ...rest];
   }, [detailsView]);
 
   return (
@@ -140,7 +191,6 @@ const PropertySummary = ({
       <div className="col-12 mb25">
         <div className="d-flex justify-content-between align-items-center mb10">
           <h4 className="ff-heading fw600 mb0">ข้อมูลทรัพย์สิน</h4>
-
           {onEditBasic && (
             <button type="button" style={editButtonStyle} onClick={onEditBasic}>
               {isEmptyObject(safeBasic) ? "เพิ่มข้อมูล" : "แก้ไข"}
@@ -184,7 +234,6 @@ const PropertySummary = ({
       <div className="col-12 mb25">
         <div className="d-flex justify-content-between align-items-center mb10">
           <h4 className="ff-heading fw600 mb0">ที่อยู่ทรัพย์สิน</h4>
-
           {onEditLocation && (
             <button type="button" style={editButtonStyle} onClick={onEditLocation}>
               {isEmptyObject(safeLocation) ? "เพิ่มข้อมูล" : "แก้ไข"}
@@ -202,9 +251,9 @@ const PropertySummary = ({
                   <strong>ที่อยู่:</strong> {safeLocation.address}
                 </p>
               )}
-              {!isBlank(safeLocation.province) && (
+              {!isBlank(safeLocation.subdistrict) && (
                 <p>
-                  <strong>จังหวัด:</strong> {safeLocation.province}
+                  <strong>ตำบล/แขวง:</strong> {safeLocation.subdistrict}
                 </p>
               )}
               {!isBlank(safeLocation.district) && (
@@ -212,9 +261,9 @@ const PropertySummary = ({
                   <strong>อำเภอ/เขต:</strong> {safeLocation.district}
                 </p>
               )}
-              {!isBlank(safeLocation.subdistrict) && (
+              {!isBlank(safeLocation.province) && (
                 <p>
-                  <strong>ตำบล/แขวง:</strong> {safeLocation.subdistrict}
+                  <strong>จังหวัด:</strong> {safeLocation.province}
                 </p>
               )}
               {!isBlank(safeLocation.zipCode) && (
@@ -222,71 +271,65 @@ const PropertySummary = ({
                   <strong>รหัสไปรษณีย์:</strong> {safeLocation.zipCode}
                 </p>
               )}
-              <p>
-                <strong>พิกัด:</strong>{" "}
-                {safeLocation.latitude && safeLocation.longitude
-                  ? `${safeLocation.latitude}, ${safeLocation.longitude}`
-                  : "-"}
-              </p>
+
+              {(!isBlank(safeLocation.latitude) || !isBlank(safeLocation.longitude)) && (
+                <div className="mt15">
+                  <Map
+                    lat={Number(safeLocation.latitude)}
+                    lng={Number(safeLocation.longitude)}
+                  />
+                  <div className="d-flex gap-3 mt10">
+                    {!isBlank(safeLocation.latitude) && (
+                      <small>
+                        <strong>Lat:</strong> {safeLocation.latitude}
+                      </small>
+                    )}
+                    {!isBlank(safeLocation.longitude) && (
+                      <small>
+                        <strong>Lng:</strong> {safeLocation.longitude}
+                      </small>
+                    )}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
       </div>
 
       {/* --------------------
-          ตำแหน่งบนแผนที่
-      -------------------- */}
-      <div className="col-12 mb25">
-        <div className="d-flex justify-content-between align-items-center mb10">
-          <h4 className="ff-heading fw600 mb0">ตำแหน่งบนแผนที่</h4>
-
-          {onEditLocation && (
-            <button type="button" style={editButtonStyle} onClick={onEditLocation}>
-              {safeLocation.latitude && safeLocation.longitude ? "แก้ไข" : "เพิ่มข้อมูล"}
-            </button>
-          )}
-        </div>
-
-        <div style={cardStyle}>
-          {safeLocation.latitude && safeLocation.longitude ? (
-            <Map lat={Number(safeLocation.latitude)} lng={Number(safeLocation.longitude)} zoom={16} />
-          ) : (
-            <p className="text-muted mb0">ยังไม่ได้ระบุพิกัดแผนที่</p>
-          )}
-        </div>
-      </div>
-
-      {/* --------------------
-          รูปภาพทรัพย์สิน
+          รูปภาพ
       -------------------- */}
       <div className="col-12 mb25">
         <div className="d-flex justify-content-between align-items-center mb10">
           <h4 className="ff-heading fw600 mb0">รูปภาพทรัพย์สิน</h4>
-
           {onEditImages && (
             <button type="button" style={editButtonStyle} onClick={onEditImages}>
-              {safeImages.length === 0 ? "เพิ่มข้อมูล" : "แก้ไข"}
+              {safeImages.length === 0 ? "เพิ่มรูป" : "แก้ไข"}
             </button>
           )}
         </div>
 
         <div style={cardStyle}>
           {safeImages.length === 0 ? (
-            <p className="text-muted mb0">ยังไม่ได้อัปโหลดรูปภาพ</p>
+            <p className="text-muted mb0">ยังไม่มีรูปภาพ</p>
           ) : (
-            <div className="row g-2">
-              {safeImages.map((img, idx) => (
+            <div className="row g-3">
+              {safeImages.map((src, idx) => (
                 <div className="col-6 col-md-3" key={idx}>
-                  <div
+                  {/* ใช้ img ตรง ๆ เพราะเราไม่รู้ว่าคุณเก็บเป็น url/preview object */}
+                  {/* ถ้าเป็น object ให้ปรับ src={src.url} ตามจริง */}
+                  <img
+                    src={typeof src === "string" ? src : src?.url}
+                    alt={`property-${idx}`}
                     style={{
-                      borderRadius: 6,
-                      overflow: "hidden",
-                      backgroundColor: "#eaeaea",
+                      width: "100%",
+                      height: 120,
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      background: "#fff",
                     }}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img} alt="" className="w-100" style={{ height: 130, objectFit: "cover" }} />
-                  </div>
+                  />
                 </div>
               ))}
             </div>
@@ -300,49 +343,52 @@ const PropertySummary = ({
       <div className="col-12 mb25">
         <div className="d-flex justify-content-between align-items-center mb10">
           <h4 className="ff-heading fw600 mb0">รายละเอียดทรัพย์เพิ่มเติม</h4>
-
           {onEditDetails && (
             <button type="button" style={editButtonStyle} onClick={onEditDetails}>
-              {detailsEntries.length === 0 && amenities.length === 0 ? "เพิ่มข้อมูล" : "แก้ไข"}
+              {isEmptyObject(detailsView) ? "เพิ่มข้อมูล" : "แก้ไข"}
             </button>
           )}
         </div>
 
         <div style={cardStyle}>
           {detailsEntries.length === 0 && amenities.length === 0 ? (
-            <p className="text-muted mb0">ยังไม่ได้กรอกรายละเอียดเพิ่มเติม</p>
+            <p className="text-muted mb0">ยังไม่มีรายละเอียดเพิ่มเติม</p>
           ) : (
             <>
-              {/* รายละเอียดอื่น ๆ */}
-              {detailsEntries.length > 0 && (
-                <div className="row">
-                  {detailsEntries.map(([key, value], idx) => (
-                    <div className="col-sm-6 col-md-3 mb10" key={idx}>
-                      <p className="mb0">
-                        <strong>{key}:</strong> {String(value)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {/* details list (เรียงตาม order แล้ว) */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                  gap: 10,
+                }}
+              >
+                {detailsEntries.map(([k, v]) => (
+                  <div key={k} style={{ fontSize: 14 }}>
+                    <strong>{k}:</strong> {String(v)}
+                  </div>
+                ))}
+              </div>
 
-              {/* สิ่งอำนวยความสะดวก */}
-              {Array.isArray(amenities) && amenities.length > 0 && (
-                <div className="mt10">
-                  <strong>สิ่งอำนวยความสะดวก:</strong>
-                  <div className="d-flex flex-wrap gap-2 mt5">
-                    {amenities.map((label, idx) => (
+              {/* amenities */}
+              {amenities.length > 0 && (
+                <div className="mt20">
+                  <div style={{ fontWeight: 700, marginBottom: 8 }}>
+                    สิ่งอำนวยความสะดวก:
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {amenities.map((a, idx) => (
                       <span
                         key={idx}
-                        className="badge bg-light text-dark"
                         style={{
-                          borderRadius: 999,
-                          border: "1px solid #ddd",
+                          background: "#fff",
+                          border: "1px solid #e5e5e5",
                           padding: "4px 10px",
+                          borderRadius: 999,
                           fontSize: 12,
                         }}
                       >
-                        {label}
+                        {a}
                       </span>
                     ))}
                   </div>
@@ -354,18 +400,28 @@ const PropertySummary = ({
       </div>
 
       {/* --------------------
-          ปุ่มล่าง
+          Actions
       -------------------- */}
-      <div className="col-12 mt10">
-        <div className="d-flex justify-content-between">
-          <button type="button" className="ud-btn btn-light" onClick={handleSaveDraft}>
-            บันทึกร่าง
-          </button>
-          <button type="button" className="ud-btn btn-thm" onClick={handleSubmit}>
-            ยืนยันลงประกาศ
-          </button>
+      
+        <div className="col-12">
+          <div className="d-flex justify-content-end gap-2">
+              <button 
+                type="button" 
+                className="ud-btn btn-light" 
+                onClick={handleSaveDraft}
+              >
+                บันทึกร่าง
+              </button>
+              <button 
+                type="button" 
+                className="ud-btn btn-thm" 
+                onClick={handleSubmit}
+              >
+                ยืนยันลงประกาศ
+              </button>
+          </div>
         </div>
-      </div>
+      
     </div>
   );
 };

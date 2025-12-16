@@ -385,11 +385,19 @@ const AddPropertyTabContent = () => {
                 basicInfo={basicInfoSummary}
                 location={locationSummary}
                 images={imagesSummary}
-                details={detailsSummary}   // ✅ ส่งเป็น summary ไทย
+                details={detailsSummary}
                 onEditBasic={goBasic}
                 onEditLocation={goLocation}
                 onEditImages={goMedia}
                 onEditDetails={goDetails}
+                onSaveDraft={(payload) => {
+                  console.log("draft confirm:", payload);
+                  // TODO: call API save draft
+                }}
+                onSubmit={(payload) => {
+                  console.log("submit final:", payload);
+                  // TODO: call API submit final
+                }}
               />
             </div>
           </div>
