@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import Select from "react-select";
+import Select from "@/components/common/ClientSelect";
 
 // ดึงข้อมูลจาก geography.json (วางไฟล์ไว้โฟลเดอร์เดียวกัน)
 import geography from "./geography.json";
