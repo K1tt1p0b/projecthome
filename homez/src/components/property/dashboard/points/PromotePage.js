@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link"; // ✅ เพิ่ม import นี้
+import Link from "next/link";
 
 const PROMOTE_PACKAGES = [
   { id: 1, days: 3, label: "โปรโมต 3 วัน", pointsCost: 150 },
@@ -62,21 +62,40 @@ const PromotePage = () => {
 
   return (
     <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30">
-      {/* Header + พอยต์คงเหลือ */}
-      <div className="mb20 d-flex justify-content-between align-items-center">
-        <div>
-          <h4 className="title mb5">โปรโมตประกาศ (ใช้พอยต์)</h4>
-          <p className="text mb-0">
-            เลือกแพ็กเกจโปรโมต และเลือกประกาศที่ต้องการโปรโมต
-          </p>
+      
+      {/* --- ส่วน Header Banner ยาว (ที่คุณต้องการ) --- */}
+      <div 
+        className="d-flex justify-content-between align-items-center p-4 mb30 bdrs12 position-relative overflow-hidden"
+        style={{ 
+            background: "linear-gradient(135deg, #eb6753 0%, #ff9f43 100%)",
+            color: "white"
+        }}
+      >
+        {/* ลายน้ำจางๆ พื้นหลัง */}
+        <i className="fas fa-coins position-absolute" style={{ right: '-10px', bottom: '-20px', fontSize: '100px', opacity: '0.15' }}></i>
+
+        {/* ฝั่งซ้าย: ชื่อหน้า */}
+        <div className="position-relative">
+          <h4 className="title mb-1 text-white">โปรโมตประกาศ</h4>
+          <p className="text-white-50 mb-0 fz14">เลือกแพ็กเกจที่คุณต้องการ</p>
         </div>
-        <div className="d-inline-block px-3 py-2 bgc-f7 bdrs12">
-          พอยต์คงเหลือ:{" "}
-          <strong>{currentPoints.toLocaleString()} พอยต์</strong>
+
+        {/* ฝั่งขวา: พอยต์ */}
+        <div className="text-end position-relative">
+           <div className="d-flex align-items-center justify-content-end">
+               <div className="me-3">
+                   <span className="d-block fz12 opacity-75">พอยต์คงเหลือ</span>
+                   <span className="d-block fz24 fw-bold">{currentPoints.toLocaleString()}</span>
+               </div>
+               <div className="bg-white rounded-circle d-flex align-items-center justify-content-center text-thm" style={{ width: '45px', height: '45px', color: '#eb6753' }}>
+                   <i className="fas fa-wallet fz20"></i>
+               </div>
+           </div>
         </div>
       </div>
+      {/* ------------------------------------------- */}
 
-      {/* STEP 1 */}
+      {/* STEP 1: เลือกแพ็กเกจ */}
       {step === 1 && (
         <div className="row">
           {PROMOTE_PACKAGES.map((pkg) => (
@@ -107,7 +126,7 @@ const PromotePage = () => {
         </div>
       )}
 
-      {/* STEP 2 */}
+      {/* STEP 2: เลือกประกาศและยืนยัน */}
       {step === 2 && (
         <>
           <div className="bgc-f7 bdrs12 p15 mb20">
@@ -171,7 +190,7 @@ const PromotePage = () => {
         </>
       )}
 
-      {/* ✅ ปุ่มย้อนกลับไปหน้า /dashboard-points */}
+      {/* ปุ่มย้อนกลับ */}
       <div className="mt20">
         <Link href="/dashboard-points" className="fz14 text-thm">
           ← กลับไปหน้าจัดการพอยต์

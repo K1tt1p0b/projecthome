@@ -16,6 +16,11 @@ const DashboardHeader = () => {
       title: "เมนูหลัก",
       items: [
         {
+          icon: "flaticon-user",
+          text: "โปรไฟล์ของฉัน",
+          href: "/dashboard-my-profile",
+        },
+        {
           icon: "flaticon-discovery",
           text: "หน้าแดชบอร์ด",
           href: "/dashboard-home",
@@ -54,11 +59,6 @@ const DashboardHeader = () => {
           icon: "flaticon-review",
           text: "ประวัติพอยต์",
           href: "/dashboard-my-package",
-        },
-        {
-          icon: "flaticon-user",
-          text: "โปรไฟล์ของฉัน",
-          href: "/dashboard-my-profile",
         },
         {
           icon: "flaticon-logout",
@@ -380,18 +380,16 @@ const DashboardHeader = () => {
                             {menuItems.map((section, sectionIndex) => (
                               <div key={sectionIndex}>
                                 <p
-                                  className={`fz15 fw400 ff-heading ${
-                                    sectionIndex === 0 ? "mb20" : "mt30"
-                                  }`}
+                                  className={`fz15 fw400 ff-heading ${sectionIndex === 0 ? "mb20" : "mt30"
+                                    }`}
                                 >
                                   {section.title}
                                 </p>
                                 {section.items.map((item, itemIndex) => (
                                   <Link
                                     key={itemIndex}
-                                    className={`dropdown-item ${
-                                      pathname === item.href ? "-is-active" : ""
-                                    } `}
+                                    className={`dropdown-item ${pathname === item.href ? "-is-active" : ""
+                                      } `}
                                     href={item.href}
                                   >
                                     <i className={`${item.icon} mr10`} />

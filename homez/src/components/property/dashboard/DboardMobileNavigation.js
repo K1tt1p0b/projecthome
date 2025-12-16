@@ -12,6 +12,11 @@ const DboardMobileNavigation = () => {
       title: "เมนูหลัก",
       items: [
         {
+          href: "/dashboard-my-profile",
+          icon: "flaticon-user",
+          text: "โปรไฟล์ของฉัน",
+        },
+        {
           href: "/dashboard-home",
           icon: "flaticon-discovery",
           text: "หน้าแดชบอร์ด",
@@ -51,11 +56,7 @@ const DboardMobileNavigation = () => {
           icon: "flaticon-review",
           text: "ประวัติพอยต์",
         },
-        {
-          href: "/dashboard-my-profile",
-          icon: "flaticon-user",
-          text: "โปรไฟล์ของฉัน",
-        },
+
         {
           href: "/login",
           icon: "flaticon-logout",
