@@ -385,7 +385,7 @@ const AddPropertyTabContent = () => {
                 basicInfo={basicInfoSummary}
                 location={locationSummary}
                 images={imagesSummary}
-                details={detailsSummary}   // ✅ ส่งเป็น summary ไทย
+                details={detailsSummary}
                 onEditBasic={goBasic}
                 onEditLocation={goLocation}
                 onEditImages={goMedia}
@@ -396,6 +396,7 @@ const AddPropertyTabContent = () => {
                 }}
                 onSubmit={(payload) => {
                   console.log("submit final:", payload);
+                  // TODO: call API submit final
                 }}
               />
             </div>
