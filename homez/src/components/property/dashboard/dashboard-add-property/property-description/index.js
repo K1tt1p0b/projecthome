@@ -1,41 +1,26 @@
 "use client";
-import { useEffect, useState } from "react";
-import Select from "react-select";
+import { useEffect, useMemo, useState } from "react";
+import Select from "@/components/common/ClientSelect";
 
-// ✅ import options จากไฟล์ JSON ในโฟลเดอร์เดียวกัน
 import announcerStatusOptions from "./announcerStatusOptions.json";
 import listingTypeOptions from "./listingTypeOptions.json";
 import propertyConditionOptions from "./propertyConditionOptions.json";
 import propertyTypeOptions from "./propertyTypeOptions.json";
 
 const PropertyDescription = ({ onNext, onSaveDraft }) => {
-  // ==========================
-  // Custom Styles
-  // ==========================
   const customStyles = {
-    option: (styles, { isFocused, isSelected, isHovered }) => ({
+    option: (styles, { isFocused, isSelected }) => ({
       ...styles,
-      backgroundColor: isSelected
-        ? "#eb6753"
-        : isHovered || isFocused
-        ? "#eb675312"
-        : undefined,
+      backgroundColor: isSelected ? "#eb6753" : isFocused ? "#eb675312" : undefined,
     }),
-    menuPortal: (base) => ({
-      ...base,
-      zIndex: 9999,
-    }),
-    menu: (base) => ({
-      ...base,
-      zIndex: 9999,
-    }),
+    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+    menu: (base) => ({ ...base, zIndex: 9999 }),
   };
 
-  // ==========================
-  // State ฟอร์ม
-  // ==========================
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+
+  // ราคา: เก็บเป็น string แต่บังคับให้พิมพ์ได้แค่เลข+comma
   const [price, setPrice] = useState("");
 
   const [announcerStatus, setAnnouncerStatus] = useState(null);
@@ -44,29 +29,37 @@ const PropertyDescription = ({ onNext, onSaveDraft }) => {
   const [condition, setCondition] = useState(null);
 
   const [error, setError] = useState("");
-
-  // handle react-select render delay
   const [showSelect, setShowSelect] = useState(false);
-  useEffect(() => {
-    setShowSelect(true);
-  }, []);
 
-  // สร้าง object ข้อมูลฟอร์ม เผื่อส่งไป onNext / onSaveDraft
+  useEffect(() => setShowSelect(true), []);
+
+  const priceNumber = useMemo(() => {
+    const n = Number(String(price).replace(/,/g, ""));
+    return Number.isFinite(n) ? n : 0;
+  }, [price]);
+
   const buildFormData = () => ({
-    title,
-    description,
-    price,
-    announcerStatus,
-    listingTypes,
-    propertyType,
-    condition,
+    title: title.trim(),
+    description: description.trim(),
+
+    // เก็บทั้ง string และ number (เลือกใช้ได้)
+    price_text: price,
+    price: priceNumber,
+
+    announcerStatus: announcerStatus?.value ?? null,
+    announcerStatus_label: announcerStatus?.label ?? null,
+
+    listingTypes: listingTypes.map((x) => x.value), // ✅ array ของ value
+    listingTypes_label: listingTypes.map((x) => x.label),
+
+    propertyType: propertyType?.value ?? null,
+    propertyType_label: propertyType?.label ?? null,
+
+    condition: condition?.value ?? null,
+    condition_label: condition?.label ?? null,
   });
 
-  // ==========================
-  // Handlers
-  // ==========================
   const handleNext = () => {
-    // เช็กฟิลด์ที่บังคับ (เครื่องหมาย *)
     if (
       !title.trim() ||
       !description.trim() ||
@@ -74,35 +67,22 @@ const PropertyDescription = ({ onNext, onSaveDraft }) => {
       listingTypes.length === 0 ||
       !propertyType ||
       !condition ||
-      !price.trim()
+      !price.trim() ||
+      priceNumber <= 0
     ) {
       setError("กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบถ้วน");
       return;
     }
 
     setError("");
-
-    const data = buildFormData();
-    if (onNext) {
-      onNext(data);
-    } else {
-      console.log("Next with data:", data);
-    }
+    onNext?.(buildFormData());
   };
 
   const handleSaveDraft = () => {
-    const data = buildFormData();
-    if (onSaveDraft) {
-      onSaveDraft(data);
-    } else {
-      console.log("Save draft with data:", data);
-    }
+    onSaveDraft?.(buildFormData());
     alert("บันทึกร่างประกาศเรียบร้อย (mock)");
   };
 
-  // ==========================
-  // Render
-  // ==========================
   return (
     <form
       className="form-style1"
@@ -112,12 +92,9 @@ const PropertyDescription = ({ onNext, onSaveDraft }) => {
       }}
     >
       <div className="row">
-        {/* Title */}
         <div className="col-sm-12">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              หัวข้อประกาศ *
-            </label>
+            <label className="heading-color ff-heading fw600 mb10">หัวข้อประกาศ *</label>
             <input
               type="text"
               className="form-control"
@@ -128,12 +105,9 @@ const PropertyDescription = ({ onNext, onSaveDraft }) => {
           </div>
         </div>
 
-        {/* Description */}
         <div className="col-sm-12">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              รายละเอียดประกาศ *
-            </label>
+            <label className="heading-color ff-heading fw600 mb10">รายละเอียดประกาศ *</label>
             <textarea
               cols={30}
               rows={5}
@@ -145,12 +119,9 @@ const PropertyDescription = ({ onNext, onSaveDraft }) => {
           </div>
         </div>
 
-        {/* สถานะผู้ประกาศ */}
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              สถานะผู้ประกาศ *
-            </label>
+            <label className="heading-color ff-heading fw600 mb10">สถานะผู้ประกาศ *</label>
             <div className="location-area">
               {showSelect && (
                 <Select
@@ -168,12 +139,9 @@ const PropertyDescription = ({ onNext, onSaveDraft }) => {
           </div>
         </div>
 
-        {/* ประเภทการขาย */}
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              ประเภทการขาย *
-            </label>
+            <label className="heading-color ff-heading fw600 mb10">ประเภทการขาย *</label>
             <div className="location-area">
               {showSelect && (
                 <Select
@@ -192,12 +160,9 @@ const PropertyDescription = ({ onNext, onSaveDraft }) => {
           </div>
         </div>
 
-        {/* ประเภททรัพย์ */}
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              ประเภททรัพย์ *
-            </label>
+            <label className="heading-color ff-heading fw600 mb10">ประเภททรัพย์ *</label>
             <div className="location-area">
               {showSelect && (
                 <Select
@@ -215,12 +180,9 @@ const PropertyDescription = ({ onNext, onSaveDraft }) => {
           </div>
         </div>
 
-        {/* สภาพทรัพย์ */}
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              สภาพทรัพย์ *
-            </label>
+            <label className="heading-color ff-heading fw600 mb10">สภาพทรัพย์ *</label>
             <div className="location-area">
               {showSelect && (
                 <Select
@@ -238,37 +200,33 @@ const PropertyDescription = ({ onNext, onSaveDraft }) => {
           </div>
         </div>
 
-        {/* Price */}
         <div className="col-sm-6 col-xl-4">
           <div className="mb30">
-            <label className="heading-color ff-heading fw600 mb10">
-              ราคา *
-            </label>
+            <label className="heading-color ff-heading fw600 mb10">ราคา *</label>
             <input
               type="text"
+              inputMode="numeric"
               className="form-control"
               placeholder="กรอกราคาทรัพย์"
               value={price}
-              onChange={(e) => setPrice(e.target.value)}
+              onChange={(e) => {
+                // ให้พิมพ์ได้เฉพาะตัวเลขและ comma
+                const v = e.target.value.replace(/[^\d,]/g, "");
+                setPrice(v);
+              }}
             />
           </div>
         </div>
 
-        {/* error message */}
         {error && (
           <div className="col-12">
             <p className="text-danger mb10">{error}</p>
           </div>
         )}
 
-        {/* ปุ่มด้านล่าง */}
         <div className="col-12">
           <div className="d-flex justify-content-between mt10">
-            <button
-              type="button"
-              className="ud-btn btn-light"
-              onClick={handleSaveDraft}
-            >
+            <button type="button" className="ud-btn btn-light" onClick={handleSaveDraft}>
               บันทึกร่าง
             </button>
             <button type="submit" className="ud-btn btn-thm">
