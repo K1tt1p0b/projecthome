@@ -36,26 +36,30 @@ const DashboardMyPackage = () => {
               </div>
               {/* End .row */}
 
+              {/* 🟢 ส่วนที่ 1: Header Title (เก็บไว้ได้ครับ) */}
               <div className="row align-items-center pb40">
                 <div className="col-lg-12">
                   <div className="dashboard_title_area">
-                    <h2>My Package</h2>
-                    <p className="text">We are glad to see you again!</p>
+                    <h2>Points & Credits</h2>
+                    <p className="text">ดูพอยต์คงเหลือ และประวัติการใช้งานของคุณ</p>
                   </div>
                 </div>
               </div>
               {/* End .row */}
 
+              {/* 🔴 ส่วนที่ 2: Component ตาราง (ต้องแก้ตรงนี้) */}
               <div className="row">
                 <div className="col-xl-12">
-                  <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                    <div className="packages_table table-responsive">
-                      <PackageDataTable />
-                    </div>
-                  </div>
+                  
+                  {/* ❌ ลบ div ที่ชื่อ ps-widget bgc-white... ทิ้งไปครับ */}
+                  {/* เพราะตัว Component ข้างในมันมีกล่องขาวของมันเองอยู่แล้ว */}
+                  
+                  <PackageDataTable /> 
+
                 </div>
               </div>
               {/* End .row */}
+
             </div>
             {/* End .dashboard__content */}
 

@@ -1,72 +1,146 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import Link from "next/link";
 import pointHistoryData from "./pointHistory.json";
 
 const PointHistoryTable = () => {
   const history = pointHistoryData.history || pointHistoryData;
-
-  // ถ้า JSON มี pointsBalance ให้ใช้, ถ้าไม่ให้ใช้ balanceAfter ของรายการแรก
+  // ประกาศตัวแปรชื่อ pointsBalance
   const pointsBalance =
     pointHistoryData.pointsBalance ??
     (history.length > 0 ? history[0].balanceAfter : 0);
 
-  return (
-    <div>
-      {/* ปุ่มไปหน้าเติมพอยต์ */}
-      <div className="d-flex justify-content-end mb-3">
-        <Link href="/dashboard-points" className="ud-btn btn-thm">
-          เติม/จัดการพอยต์
-          <i className="fal fa-arrow-right-long" />
-        </Link>
-      </div>
+  const [isHover, setIsHover] = useState(false);
 
-      {/* การ์ดแสดงพอยต์คงเหลือ */}
-      <div className="ps-widget bgc-white bdrs12 p20 mb20 default-box-shadow2">
-        <h4 className="fw600 mb5">พอยต์คงเหลือปัจจุบัน</h4>
-        <div className="d-inline-block px-3 py-2 bgc-f7 bdrs12 fw600 text-thm">
-          ⭐ {pointsBalance.toLocaleString()} พอยต์
+  return (
+    <>
+      {/* --- ส่วนการ์ดลอย --- */}
+      <div
+        className="row justify-content-center position-relative"
+        style={{ zIndex: 2, marginBottom: '-100px', marginTop: '20px' }}
+      >
+        <div className="col-lg-7">
+          <div
+            className="p-4 text-white position-relative overflow-hidden default-box-shadow2"
+            style={{
+              background: "linear-gradient(135deg, #eb6753 0%, #ff9f43 100%)",
+              boxShadow: "0 20px 40px -10px rgba(235, 103, 83, 0.4)",
+              minHeight: "240px",
+              borderRadius: "20px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center" // เพิ่ม align-items center เพื่อให้ปุ่มกับตัวหนังสืออยู่กลางเป๊ะๆ
+            }}
+          >
+            {/* ลายน้ำพื้นหลัง */}
+            <div style={{ position: 'absolute', right: '30px', top: '140px', opacity: '0.15', transform: 'rotate(25deg)' }}>
+              <i className="fas fa-coins" style={{ fontSize: '180px' }}></i>
+            </div>
+
+            {/* ส่วนบนของบัตร */}
+            <div style={{ position: 'absolute', top: '20px', left: '20px', right: '20px' }}>
+              <div className="d-flex justify-content-between align-items-start">
+                <div className="d-flex align-items-center">
+                  <div className="bg-white rounded-circle d-flex align-items-center justify-content-center me-2" style={{ width: '40px', height: '40px' }}>
+                    <i className="fas fa-crown text-warning fz20"></i>
+                  </div>
+                  <div>
+                    <span className="d-block fz14 opacity-75 lh-1">My Balance</span>
+                    <span className="fw600 fz16">พอยต์คงเหลือ</span>
+                  </div>
+                </div>
+                <i className="fas fa-wifi opacity-50 fz20"></i>
+              </div>
+            </div>
+
+            {/* ตัวเลขตรงกลาง */}
+            {/* ผมรวมปุ่มไว้ใน div นี้ด้วยเลย เพื่อให้จัด layout ง่ายขึ้น */}
+            <div className="text-center position-relative z-1 mt-4">
+              <h1 className="fw-bold m-0 text-white" style={{ fontSize: "70px", textShadow: "0 4px 10px rgba(0,0,0,0.1)" }}>
+                {/* ✅ แก้ไขจุดที่ 1: เปลี่ยน balance เป็น pointsBalance ให้ถูกต้อง */}
+                {pointsBalance.toLocaleString()}
+              </h1>
+
+              {/* ปุ่มกด */}
+              <div className="mt-3">
+                <Link
+                  href="/dashboard-points"
+                  onMouseEnter={() => setIsHover(true)}
+                  onMouseLeave={() => setIsHover(false)}
+                  className="fw600 px-5 py-3 d-inline-flex align-items-center justify-content-center"
+                  style={{
+                    backgroundColor: isHover ? '#c0392b' : '#e74c3c',
+                    color: 'white',
+                    transition: 'all 0.3s ease',
+                    fontSize: '18px',
+                    boxShadow: '0 10px 20px rgba(0,0,0,0.15)',
+                    borderRadius: '15px',
+                    minWidth: '280px'
+                  }}
+                >
+                  <i className="fas fa-plus-circle me-3 fz20"></i> เติมพอยต์ทันที
+                </Link>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
+      {/* ✅ แก้ไขจุดที่ 2: ลบ </div> ที่เกินมาตรงนี้ออกแล้ว */}
 
-      {/* ตารางประวัติพอยต์ */}
-      <table className="table-style3 table">
-        <thead className="t-head">
-          <tr>
-            <th scope="col">วันที่</th>
-            <th scope="col">รายการ</th>
-            <th scope="col">รายละเอียด</th>
-            <th scope="col">พอยต์ที่เปลี่ยนแปลง</th>
-            <th scope="col">พอยต์คงเหลือหลังรายการ</th>
-            <th scope="col">หมายเหตุ</th>
-          </tr>
-        </thead>
 
-        <tbody className="t-body">
-          {history.map((item, index) => (
-            <tr key={index}>
-              <td>{item.date}</td>
-              <td>{item.type}</td>
-              <td>{item.detail}</td>
+      {/* --- ส่วนที่ 2: กล่องขาว (Table Box) --- */}
+      <div
+        className="ps-widget bgc-white bdrs12 default-box-shadow2 mb30 overflow-hidden position-relative"
+        style={{
+          paddingTop: '160px',
+          paddingLeft: '30px',
+          paddingRight: '30px',
+          paddingBottom: '30px',
+          zIndex: 1
+        }}
+      >
+        <h4 className="fw600 mb20">ประวัติธุรกรรม</h4>
 
-              {/* สีเขียว = เพิ่มพอยต์ / สีแดง = ลดพอยต์ */}
-              <td
-                style={{
-                  color: item.pointsChange > 0 ? "green" : "red",
-                  fontWeight: 600,
-                }}
-              >
-                {item.pointsChange > 0
-                  ? `+${item.pointsChange}`
-                  : item.pointsChange}
-              </td>
-
-              <td>{item.balanceAfter}</td>
-              <td>{item.note || "-"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        <div className="table-responsive">
+          <table className="table-style3 table">
+            <thead className="t-head">
+              <tr>
+                <th scope="col">วันที่</th>
+                <th scope="col">รายการ</th>
+                <th scope="col">รายละเอียด</th>
+                <th scope="col">เปลี่ยนแปลง</th>
+                <th scope="col">คงเหลือ</th>
+                <th scope="col">หมายเหตุ</th>
+              </tr>
+            </thead>
+            <tbody className="t-body">
+              {history.map((item, index) => (
+                <tr key={index}>
+                  <td className="vam">{item.date}</td>
+                  <td className="vam fw500">{item.type}</td>
+                  <td className="vam text-muted">{item.detail}</td>
+                  <td
+                    className="vam"
+                    style={{
+                      color: item.pointsChange > 0 ? "#16a34a" : "#dc2626",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {item.pointsChange > 0 ? "+" : ""}
+                    {item.pointsChange.toLocaleString()}
+                  </td>
+                  <td className="vam fw600">{item.balanceAfter.toLocaleString()}</td>
+                  <td className="vam fz14 text-muted">{item.note || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
   );
 };
 

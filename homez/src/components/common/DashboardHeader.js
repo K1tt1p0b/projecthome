@@ -56,6 +56,11 @@ const DashboardHeader = () => {
           href: "/dashboard-points",
         },
         {
+          href: "/dashboard-points/promote",
+          icon: "far fa-bullhorn",
+          text: "โปรโมทประกาศ",
+        },
+        {
           icon: "flaticon-review",
           text: "ประวัติพอยต์",
           href: "/dashboard-my-package",

@@ -39,7 +39,7 @@ const PointsPage = () => {
             }}
           >
             {/* ลายน้ำพื้นหลัง */}
-            <div style={{ position: 'absolute', right: '-20px', top: '-20px', opacity: '0.15', transform: 'rotate(25deg)' }}>
+            <div style={{ position: 'absolute', right: '30px', top: '140px', opacity: '0.15', transform: 'rotate(25deg)' }}>
               <i className="fas fa-coins" style={{ fontSize: '180px' }}></i>
             </div>
 
