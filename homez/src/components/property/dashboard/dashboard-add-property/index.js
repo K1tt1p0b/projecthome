@@ -390,6 +390,13 @@ const AddPropertyTabContent = () => {
                 onEditLocation={goLocation}
                 onEditImages={goMedia}
                 onEditDetails={goDetails}
+                onSaveDraft={(payload) => {
+                  console.log("draft confirm:", payload);
+                  // TODO: call API save draft
+                }}
+                onSubmit={(payload) => {
+                  console.log("submit final:", payload);
+                }}
               />
             </div>
           </div>
