@@ -8,11 +8,11 @@ const Footer = () => {
   const footerMenuItems = [
     {
       label: "Privacy",
-      link: "#",
+      link: "/privacy",
     },
     {
       label: "Terms",
-      link: "#",
+      link: "/Terms-of-use",
     },
     {
       label: "Sitemap",

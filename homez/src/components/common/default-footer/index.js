@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import ContactMeta from "./ContactMeta";
-import AppWidget from "./AppWidget";
 import Social from "./Social";
 import MenuWidget from "./MenuWidget";
 import Copyright from "./Copyright";
