@@ -16,14 +16,14 @@ const DashboardHeader = () => {
       title: "เมนูหลัก",
       items: [
         {
-          icon: "flaticon-user",
-          text: "โปรไฟล์ของฉัน",
-          href: "/dashboard-my-profile",
-        },
-        {
           icon: "flaticon-discovery",
           text: "หน้าแดชบอร์ด",
           href: "/dashboard-home",
+        },
+        {
+          icon: "flaticon-user",
+          text: "โปรไฟล์ของฉัน",
+          href: "/dashboard-my-profile",
         },
         {
           icon: "flaticon-chat-1",

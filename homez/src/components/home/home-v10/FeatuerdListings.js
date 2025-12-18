@@ -226,7 +226,7 @@ const FeaturedListings = ({ data, colstyle }) => {
 
               <div className="list-content">
                 <h6 className="list-title">
-                  <Link href={`/single-v1/${listing.id}`}>
+                  <Link href={`/single-v5/${listing.id}`}>
                     {listing.title}
                   </Link>
                 </h6>
