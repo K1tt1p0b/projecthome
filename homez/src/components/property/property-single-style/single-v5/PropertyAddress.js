@@ -2,50 +2,55 @@ import ListingMap1 from "@/components/listing/map-style/ListingMap1";
 import React from "react";
 
 const PropertyAddress = () => {
-  const addresses = [
-    {
-      address: "10425 Tabor St",
-      city: "Los Angeles",
-      state: "California",
-      zipCode: "90034",
-      area: "Brookside",
-      country: "United States",
-    },
-    {
-      address: "10 Downing Street",
-      city: "London",
-      state: "Greater London",
-      zipCode: "SW1A 2AA",
-      area: "Westminster",
-      country: "United Kingdom",
-    },
-  ];
+  const addressData = {
+    address: "10425 ถนนสุขุมวิท",
+    city: "เขตวัฒนา",
+    state: "กรุงเทพมหานคร",
+    zipCode: "10110",
+    country: "ไทย",
+  };
 
   return (
     <>
-      {addresses.map((address, index) => (
-        <div key={index} className="col-md-6 col-xl-6">
-          <div className="d-flex justify-content-between">
-            <div className="pd-list">
-              <p className="fw600 mb10 ff-heading dark-color">Address</p>
-              <p className="fw600 mb10 ff-heading dark-color">City</p>
-              <p className="fw600 mb-0 ff-heading dark-color">State/county</p>
+      {/* ใช้ row เพื่อห่อหุ้มคอลัมน์ */}
+      <div className="col-lg-12">
+        <div className="row">
+          
+          {/* 🟢 คอลัมน์ซ้าย: แสดง ที่อยู่, อำเภอ, จังหวัด */}
+          <div className="col-md-6">
+            <div className="d-flex justify-content-between border-bottom pb-2 mb-2">
+              <span className="fw600 dark-color">ที่อยู่</span>
+              <span className="text-black">{addressData.address}</span>
             </div>
-            <div className="pd-list">
-              <p className="text mb10">{address.address}</p>
-              <p className="text mb10">{address.city}</p>
-              <p className="text mb-0">{address.state}</p>
+            <div className="d-flex justify-content-between border-bottom pb-2 mb-2">
+              <span className="fw600 dark-color">อำเภอ/เขต</span>
+              <span className="text-black">{addressData.city}</span>
+            </div>
+            <div className="d-flex justify-content-between border-bottom pb-2 mb-2">
+              <span className="fw600 dark-color">จังหวัด</span>
+              <span className="text-black">{addressData.state}</span>
             </div>
           </div>
+
+          {/* 🟢 คอลัมน์ขวา: แสดง รหัสไปรษณีย์, ประเทศ */}
+          <div className="col-md-6">
+            <div className="d-flex justify-content-between border-bottom pb-2 mb-2">
+              <span className="fw600 dark-color">รหัสไปรษณีย์</span>
+              <span className="text-black">{addressData.zipCode}</span>
+            </div>
+            <div className="d-flex justify-content-between border-bottom pb-2 mb-2">
+              <span className="fw600 dark-color">ประเทศ</span>
+              <span className="text-black">{addressData.country}</span>
+            </div>
+          </div>
+
         </div>
-      ))}
-      {/* End col */}
-
-      <div className="col-md-12 h-500" style={{height:'400px'}}>
-
-   <ListingMap1/>
       </div>
-      {/* End col */}
+
+      {/* แผนที่ */}
+      <div className="col-md-12 h-500 mt30" style={{ height: '400px' }}>
+        <ListingMap1 />
+      </div>
     </>
   );
 };

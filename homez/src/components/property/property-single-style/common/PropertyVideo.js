@@ -15,7 +15,7 @@ const PropertyVideo = () => {
             onClick={() => setOpen(true)}
             style={{ border: "none", background: "transparent" }}
           >
-            <span className="flaticon-play" />
+            <span className="flaticon-play" style={{ color: 'white', fontSize: '50px', display: 'block' }} />
           </button>
         </div>
       </div>

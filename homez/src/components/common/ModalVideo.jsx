@@ -13,10 +13,12 @@ const ModalVideo = ({ videoId, isOpen, setIsOpen, src }) => {
         }}
         onClick={closeModal}
       >
+        {/* ✅ 1. ย้ายปุ่มมาไว้ตรงนี้ (นอกกล่องวิดีโอ) เพื่อให้ลอยมุมขวาบนจอ */}
+        <button onClick={closeModal} style={closeButtonStyle}>
+           &times; {/* ใช้สัญลักษณ์ทางคณิตศาสตร์ให้ X สวยๆ */}
+        </button>
+
         <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
-          <button onClick={closeModal} style={closeButtonStyle}>
-            ×
-          </button>
           <div style={responsiveIframeContainerStyle}>
             {isOpen && (
               <iframe
@@ -46,11 +48,11 @@ const overlayStyle = {
   left: 0,
   right: 0,
   bottom: 0,
-  backgroundColor: "rgba(0, 0, 0, 0.8)",
+  backgroundColor: "rgba(0, 0, 0, 0.9)", // ดำเข้ม 90%
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
-  zIndex: 1008,
+  zIndex: 99999, // อยู่บนสุด
   transition: "0.4s",
 };
 
@@ -58,22 +60,28 @@ const modalStyle = {
   position: "relative",
   width: "90%",
   maxWidth: "1100px",
-  backgroundColor: "#fff",
-  borderRadius: "4px",
+  backgroundColor: "#000",
+  borderRadius: "8px",
   overflow: "hidden",
-  boxShadow: "0px 0px 15px rgba(0, 0, 0, 0.2)",
+  boxShadow: "0px 20px 50px rgba(0, 0, 0, 0.5)",
+  // ❌ ลบ padding/relative ออก เพื่อให้วิดีโอเต็มกรอบ
 };
 
 const closeButtonStyle = {
+  // ✅ 2. ปรับสไตล์ปุ่มให้เป็นแบบลอยมุมขวาบน
   position: "absolute",
-  top: "5px",
-  right: "5px",
-  fontSize: "30px",
-  background: "transparent",
-  border: "none",
-  color: "#fff",
+  top: "30px",    // ห่างจากขอบบนจอ
+  right: "30px",  // ห่างจากขอบขวาจอ
+  background: "transparent", // พื้นหลังใส
+  border: "none",            // ไม่มีขอบ
+  color: "#fff",             // สีขาว
+  fontSize: "50px",          // ตัวใหญ่สะใจ
+  fontWeight: "300",         // ตัวบางๆ ดูแพง
   cursor: "pointer",
-  zIndex: 1001,
+  zIndex: 100001,            // สูงกว่าทุกอย่าง
+  lineHeight: "1",
+  padding: "0",
+  transition: "transform 0.2s ease", // เพิ่มลูกเล่นตอนชี้เม้าส์นิดนึง
 };
 
 const responsiveIframeContainerStyle = {
@@ -89,6 +97,7 @@ const iframeStyle = {
   left: 0,
   width: "100%",
   height: "100%",
+  border: "none",
 };
 
 export default ModalVideo;

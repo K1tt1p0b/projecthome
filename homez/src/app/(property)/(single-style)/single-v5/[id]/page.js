@@ -45,17 +45,16 @@ const SingleV5 = async props => {
             <PropertyHeader id={params.id} />
           </div>
 
-          {/* ✅ เอา gx-5 ออก เพื่อคืนพื้นที่ให้คอลัมน์ */}
           <div className="row mt50 mt30-lg">
 
             {/* ================================================= */}
-            {/* 🟢 ฝั่งซ้าย: ปรับลดเหลือ col-lg-7 (เพื่อให้ฝั่งขวาขยายได้) */}
+            {/* 🟢 ฝั่งซ้าย */}
             {/* ================================================= */}
             <div className="col-lg-6"> 
 
               {/* Overview */}
               <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                <h4 className="title fz17 mb30">Overview</h4>
+                <h4 className="title fz17 mb30">ภาพรวม</h4>
                 <div className="row">
                   <OverView id={params.id} />
                 </div>
@@ -63,10 +62,10 @@ const SingleV5 = async props => {
 
               {/* Description & Details */}
               <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                <h4 className="title fz17 mb30">Property Description</h4>
+                <h4 className="title fz17 mb30">รายละเอียด</h4>
                 <ProperytyDescriptions />
 
-                <h4 className="title fz17 mb30 mt50">Property Details</h4>
+                <h4 className="title fz17 mb30 mt50">ข้อมูลเพิ่มเติม</h4>
                 <div className="row">
                   <PropertyDetails id={params.id} />
                 </div>
@@ -74,7 +73,7 @@ const SingleV5 = async props => {
 
               {/* Features */}
               <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                <h4 className="title fz17 mb30">Features &amp; Amenities</h4>
+                <h4 className="title fz17 mb30">สิ่งอำนวยความสะดวก</h4>
                 <div className="row">
                   <PropertyFeaturesAminites />
                 </div>
@@ -82,39 +81,39 @@ const SingleV5 = async props => {
 
               {/* Video Only */}
               <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                <h4 className="title fz17 mb30">Property Video</h4>
+                <h4 className="title fz17 mb30">วิดีโอแนะนำ</h4>
                 <div className="row">
                   <PropertyVideo />
                 </div>
               </div>
 
             </div>
-            {/* ปิด col-lg-7 */}
+            {/* ปิด col-lg-6 */}
 
 
             {/* ================================================= */}
-            {/* 🟢 ฝั่งขวา: ขยายเป็น col-lg-5 (กว้างขึ้น ใส่รูป Agent ได้สบาย) */}
+            {/* 🟢 ฝั่งขวา */}
             {/* ================================================= */}
             <div className="col-lg-6"> 
               <div className="column">
 
                 {/* Address (Map) */}
                 <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                  <h4 className="title fz17 mb30">Address</h4>
+                  <h4 className="title fz17 mb30">ที่ตั้ง</h4>
                   <div className="row">
                     <PropertyAddress />
                   </div>
                 </div>
 
-                {/* Agent Profile (ตัวปัญหาที่กินที่เยอะ) */}
+                {/* Agent Profile */}
                 <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                  <h4 className="title fz17 mb30">Get More Information</h4>
+                  <h4 className="title fz17 mb30">ติดต่อสอบถาม</h4>
                   <InfoWithForm />
                 </div>
 
                 {/* Nearby */}
                 <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                  <h4 className="title fz17 mb30">What&apos;s Nearby?</h4>
+                  <h4 className="title fz17 mb30">สถานที่ใกล้เคียง</h4>
                   <div className="row">
                     <PropertyNearby />
                   </div>

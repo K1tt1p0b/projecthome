@@ -1,55 +1,56 @@
 import React from "react";
 
 const PropertyNearby = () => {
+  // ✅ แปลข้อมูลใน tabsData เป็นภาษาไทย
   const tabsData = [
     {
-      title: "Education",
+      title: "การศึกษา", // Education
       details: [
         {
           rating: "4",
-          schoolName: "South Londonderry Elementary School",
-          grades: "PK-6",
-          distance: "3.7 mi",
+          schoolName: "โรงเรียนประถมเซาท์ลอนดอนเดอร์รี่",
+          grades: "อนุบาล-ป.6",
+          distance: "3.7 กม.",
         },
         {
           rating: "5",
-          schoolName: "Londonderry Senior High School",
-          grades: "PK-6",
-          distance: "3.7 mi",
+          schoolName: "โรงเรียนมัธยมปลายลอนดอนเดอร์รี่",
+          grades: "ม.4-ม.6",
+          distance: "3.7 กม.",
         },
         {
           rating: "5",
-          schoolName: "Londonderry Middle School",
-          grades: "PK-6",
-          distance: "3.7 mi",
+          schoolName: "โรงเรียนมัธยมต้นลอนดอนเดอร์รี่",
+          grades: "ม.1-ม.3",
+          distance: "3.7 กม.",
         },
       ],
     },
     {
-      title: "Health & Medical",
+      title: "สุขภาพและการแพทย์", // Health & Medical
       details: [
-        { rating: "4", facilityName: "Health Facility 1", distance: "3.7 mi" },
-        { rating: "5", facilityName: "Health Facility 2", distance: "3.7 mi" },
-        { rating: "5", facilityName: "Health Facility 3", distance: "3.7 mi" },
+        { rating: "4", facilityName: "ศูนย์สุขภาพชุมชน 1", distance: "3.7 กม." },
+        { rating: "5", facilityName: "โรงพยาบาลทั่วไป 2", distance: "3.7 กม." },
+        { rating: "5", facilityName: "คลินิกทันตกรรม 3", distance: "3.7 กม." },
       ],
     },
     {
-      title: "Transportation",
+      title: "การเดินทาง", // Transportation
       details: [
         {
           rating: "4",
-          transportationName: "Transportation 1",
-          distance: "3.7 mi",
+          transportationName: "สถานีรถไฟฟ้า 1",
+          distance: "3.7 กม.",
         },
         {
           rating: "5",
-          transportationName: "Transportation 2",
-          distance: "3.7 mi",
+          transportationName: "ป้ายรถประจำทาง 2",
+          distance: "3.7 กม.",
         },
         {
           rating: "5",
-          transportationName: "Transportation 3",
-          distance: "3.7 mi",
+          transportationName: "จุดจอดแท็กซี่ 3",
+          distance: "3.7 กม.",
         },
       ],
     },
@@ -101,14 +102,16 @@ const PropertyNearby = () => {
                   </div>
                   <div className="details">
                     <p className="dark-color fw600 mb-0">
-                      {tab.title === "Education"
+                      {/* ✅ แก้เงื่อนไขเช็คชื่อ Tab เป็นภาษาไทย */}
+                      {tab.title === "การศึกษา"
                         ? detail.schoolName
                         : detail.facilityName || detail.transportationName}
                     </p>
                     <p className="text mb-0">
-                      {tab.title === "Education"
-                        ? `Grades: ${detail.grades} Distance: ${detail.distance}`
-                        : `Distance: ${detail.distance}`}
+                      {/* ✅ แปล Label เป็นภาษาไทย */}
+                      {tab.title === "การศึกษา"
+                        ? `ระดับชั้น: ${detail.grades} ระยะทาง: ${detail.distance}`
+                        : `ระยะทาง: ${detail.distance}`}
                     </p>
                     <div className="blog-single-review">
                       <ul className="mb0 ps-0">

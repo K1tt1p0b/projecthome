@@ -4,13 +4,12 @@ const ProperytyDescriptions = () => {
   return (
     <>
       <p className="text mb10">
-        This 3-bed with a loft, 2-bath home in the gated community of The
-        Hideout has it all. From the open floor plan to the abundance of light
-        from the windows, this home is perfect for entertaining. The living room
-        and dining room have vaulted ceilings and a beautiful fireplace. You
-        will love spending time on the deck taking in the beautiful views. In
-        the kitchen, you&apos;ll find stainless steel appliances and a tile
-        backsplash, as well as a breakfast bar.
+        บ้านเดี่ยว 3 ห้องนอน พร้อมชั้นลอยและ 2 ห้องน้ำ ในโครงการหมู่บ้าน The Hideout 
+        ที่ตอบโจทย์ทุกความต้องการ ด้วยผังบ้านแบบเปิดโล่ง (Open plan) 
+        และช่องแสงขนาดใหญ่ที่เปิดรับแสงธรรมชาติ ทำให้บ้านหลังนี้เหมาะอย่างยิ่งสำหรับการสังสรรค์ 
+        ห้องนั่งเล่นและห้องรับประทานอาหารโดดเด่นด้วยเพดานสูงโปร่ง (Vaulted ceilings) 
+        และเตาผิงที่สวยงาม คุณจะหลงรักช่วงเวลาพักผ่อนบนระเบียงเพื่อชมวิวทิวทัศน์ 
+        ส่วนห้องครัวมาพร้อมเครื่องใช้ไฟฟ้าสแตนเลส ผนังกันเปื้อนปูกระเบื้อง และบาร์สำหรับรับประทานอาหารเช้า
       </p>
       <div className="agent-single-accordion">
         <div className="accordion accordion-flush" id="accordionFlushExample">
@@ -24,12 +23,12 @@ const ProperytyDescriptions = () => {
             >
               <div className="accordion-body p-0">
                 <p className="text">
-                  Placeholder content for this accordion, which is intended to
-                  demonstrate the class. This is the first item&apos;s accordion
-                  body you get groundbreaking performance and amazing battery
-                  life. Add to that a stunning Liquid Retina XDR display, the
-                  best camera and audio ever in a Mac notebook, and all the
-                  ports you need.
+                  {/* ผมเปลี่ยนข้อความ Placeholder เดิมที่เป็นเรื่อง Mac ให้เป็นเรื่องบ้านแทนครับ */}
+                  เนื้อหาเพิ่มเติมสำหรับส่วนขยายนี้ เพื่อแสดงรายละเอียดทรัพย์สินที่ครบถ้วน 
+                  นอกจากนี้บ้านยังมาพร้อมกับระบบระบายอากาศที่ดีเยี่ยม 
+                  พื้นที่สวนรอบบ้านที่ได้รับการดูแลอย่างดี และสิ่งอำนวยความสะดวกครบครันในโครงการ 
+                  ไม่ว่าจะเป็นคลับเฮาส์ สระว่ายน้ำ และระบบรักษาความปลอดภัยตลอด 24 ชั่วโมง 
+                  เพื่อให้คุณและครอบครัวได้ใช้ชีวิตอย่างสมบูรณ์แบบ
                 </p>
               </div>
             </div>
@@ -42,7 +41,7 @@ const ProperytyDescriptions = () => {
                 aria-expanded="false"
                 aria-controls="flush-collapseOne"
               >
-                Show more
+                แสดงเพิ่มเติม
               </button>
             </h2>
           </div>

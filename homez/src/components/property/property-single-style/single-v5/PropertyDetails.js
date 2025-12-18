@@ -4,48 +4,48 @@ import React from "react";
 const PropertyDetails = ({id}) => {
   const data = listings.filter((elm) => elm.id == id)[0] || listings[0];
   const columns = [
-    [
+ [
       {
-        label: "Property ID",
+        label: "รหัสทรัพย์สิน",
         value: "RT48",
       },
       {
-        label: "Price",
-        value:data.price,
+        label: "ราคา",
+        value: data.price,
       },
       {
-        label: "Property Size",
-        value: `${data.sqft} Sq Ft`,
+        label: "ขนาดพื้นที่",
+        value: `${data.sqft} ตร.ฟุต`,
       },
       {
-        label: "Bathrooms",
+        label: "ห้องน้ำ",
         value: data.bath,
       },
       {
-        label: "Bedrooms",
+        label: "ห้องนอน",
         value: data.bed,
       },
     ],
     [
       {
-        label: "Garage",
+        label: "โรงจอดรถ",
         value: "2",
       },
       {
-        label: "Garage Size",
-        value: "200 SqFt",
+        label: "ขนาดโรงจอดรถ",
+        value: "200 ตร.ฟุต",
       },
       {
-        label: "Year Built",
+        label: "ปีที่สร้าง",
         value: data.yearBuilding,
       },
       {
-        label: "Property Type",
+        label: "ประเภททรัพย์สิน",
         value: data.propertyType,
       },
       {
-        label: "Property Status",
-        value: `For ${data.forRent ? 'rent':'sale'}`,
+        label: "สถานะ",
+        value: `สำหรับ${data.forRent ? 'เช่า' : 'ขาย'}`,
       },
     ],
   ];
