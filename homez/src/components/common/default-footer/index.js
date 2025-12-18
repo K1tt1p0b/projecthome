@@ -3,7 +3,6 @@ import Link from "next/link";
 import ContactMeta from "./ContactMeta";
 import AppWidget from "./AppWidget";
 import Social from "./Social";
-import Subscribe from "./Subscribe";
 import MenuWidget from "./MenuWidget";
 import Copyright from "./Copyright";
 
@@ -24,7 +23,6 @@ const Footer = () => {
                 />
               </Link>
               <ContactMeta />
-              <AppWidget />
               <div className="social-widget">
                 <h6 className="text-white mb20">Follow us on social media</h6>
                 <Social />
@@ -35,7 +33,6 @@ const Footer = () => {
 
           <div className="col-lg-7">
             <div className="footer-widget mb-4 mb-lg-5">
-              <Subscribe />
               <div className="row justify-content-between">
                 <MenuWidget />
               </div>
