@@ -140,7 +140,7 @@ const Home_V10 = () => {
             </div>
             <div className="col-lg-3" data-aos="fade-up" data-aos-delay="100">
               <div className="text-start text-lg-end mb-3">
-                <Link className="ud-btn2" href="/blog-list-v1">
+                <Link className="ud-btn2" href="/blog-list-v3">
                   ดูบทความทั้งหมด
                   <i className="fal fa-arrow-right-long" />
                 </Link>
