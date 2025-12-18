@@ -59,7 +59,6 @@ const Agents = () => {
       {/* แถบค้นหา + sort */}
       <div className="row align-items-center mb20">
         <div className="col-md-6">
-          <h4 className="mb-0">ตัวแทน / นายหน้า</h4>
           <p className="text-muted mb-0 fz14">
             พบ {filteredAgents.length} คน • หน้า {currentPageSafe} /{" "}
             {totalPages}
@@ -116,7 +115,7 @@ const Agents = () => {
                 </div>
                 <div className="team-content pt15 text-center">
                   <h6 className="name mb-1 text-truncate">{agent.name}</h6>
-                  <p className="text fz13 mb-0">Broker</p>
+                  <p className="text fz13 mb-0">{agent.city}</p>
                 </div>
               </div>
             </Link>

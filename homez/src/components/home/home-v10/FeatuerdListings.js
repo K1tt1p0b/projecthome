@@ -234,13 +234,13 @@ const FeaturedListings = ({ data, colstyle }) => {
 
                 <div className="list-meta d-flex align-items-center">
                   <a href="#">
-                    <span className="flaticon-bed" /> {listing.bed} bed
+                    <span className="flaticon-bed" /> {listing.bed} เตียง
                   </a>
                   <a href="#">
-                    <span className="flaticon-shower" /> {listing.bath} bath
+                    <span className="flaticon-shower" /> {listing.bath} ห้องน้ำ
                   </a>
                   <a href="#">
-                    <span className="flaticon-expand" /> {listing.sqft} sqft
+                    <span className="flaticon-expand" /> {listing.sqft} ตร.ฟุต
                   </a>
                 </div>
 
@@ -248,7 +248,7 @@ const FeaturedListings = ({ data, colstyle }) => {
 
                 <div className="list-meta2 d-flex justify-content-between align-items-center">
                   <span className="for-what">
-                    {listing.forRent ? "For Rent" : "For Sale"}
+                    {listing.forRent ? "เช่า" : "ขาย"}
                   </span>
                   <div className="icons d-flex align-items-center">
                     <a href="#">
