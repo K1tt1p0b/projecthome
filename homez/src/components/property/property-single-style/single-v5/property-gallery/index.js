@@ -43,20 +43,6 @@ const PropertyGallery = () => {
                     <span className="flaticon-map text-white fz20" />
                   </button>
                 </li>
-                <li className="nav-item" role="presentation">
-                  <button
-                    className="nav-link"
-                    id="pills-contact-tab"
-                    data-bs-toggle="pill"
-                    data-bs-target="#pills-contact"
-                    type="button"
-                    role="tab"
-                    aria-controls="pills-contact"
-                    aria-selected="false"
-                  >
-                    <span className="flaticon-maps-1 text-white fz20" />
-                  </button>
-                </li>
               </ul>
             </div>
           </div>
