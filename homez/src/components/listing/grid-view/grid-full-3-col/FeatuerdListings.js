@@ -39,28 +39,28 @@ const FeaturedListings = ({ data, colstyle }) => {
               </div>
 
               <div className="list-price">
-                {listing.price} / <span>mo</span>
+                {listing.price} / <span>เดือน</span>
               </div>
             </div>
             <div className="list-content">
               <h6 className="list-title">
-                <Link href={`/single-v6/${listing.id}`}>{listing.title}</Link>
+                <Link href={`/single-v5/${listing.id}`}>{listing.title}</Link>
               </h6>
               <p className="list-text">{listing.location}</p>
               <div className="list-meta d-flex align-items-center">
                 <a href="#">
-                  <span className="flaticon-bed" /> {listing.bed} bed
+                  <span className="flaticon-bed" /> {listing.bed} เตียง
                 </a>
                 <a href="#">
-                  <span className="flaticon-shower" /> {listing.bath} bath
+                  <span className="flaticon-shower" /> {listing.bath} ห้องน้ำ
                 </a>
                 <a href="#">
-                  <span className="flaticon-expand" /> {listing.sqft} sqft
+                  <span className="flaticon-expand" /> {listing.sqft} ตร.ฟุต
                 </a>
               </div>
               <hr className="mt-2 mb-2" />
               <div className="list-meta2 d-flex justify-content-between align-items-center">
-                <span className="for-what">For Rent</span>
+                <span className="for-what">เช่า</span>
                 <div className="icons d-flex align-items-center">
                   <a href="#">
                     <span className="flaticon-fullscreen" />

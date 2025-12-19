@@ -62,6 +62,27 @@ const FeaturedListings = ({ data, colstyle }) => {
       return (b.id ?? 0) - (a.id ?? 0);
     });
 
+    // ✅ แก้ไขตรงส่วน Sort นี้ครับ
+    list.sort((a, b) => {
+      // 1. ดัน Featured (!forRent) ขึ้นก่อนเสมอ
+      const isFeaturedA = !a.forRent; // ใน JSX คุณเช็คว่าถ้าไม่เช่า คือ Featured
+      const isFeaturedB = !b.forRent;
+
+      if (isFeaturedA && !isFeaturedB) return -1; // A เป็น Featured ให้ขึ้นก่อน
+      if (!isFeaturedA && isFeaturedB) return 1;  // B เป็น Featured ให้ขึ้นก่อน
+
+      // 2. ถ้าสถานะเหมือนกัน (เป็น Featured ทั้งคู่ หรือ ธรรมดาทั้งคู่) ให้เรียงตาม SortBy ที่เลือก
+      if (sortBy === "price-low") {
+        return parsePrice(a.price) - parsePrice(b.price);
+      }
+      if (sortBy === "price-high") {
+        return parsePrice(b.price) - parsePrice(a.price);
+      }
+
+      // newest: ค่า Default
+      return (b.id ?? 0) - (a.id ?? 0);
+    });
+
     return list;
   }, [source, statusFilter, sortBy, search]);
 
@@ -123,7 +144,7 @@ const FeaturedListings = ({ data, colstyle }) => {
               active={statusFilter === "rent"}
               onClick={() => setStatusFilter("rent")}
             >
-             เช่า
+              เช่า
             </StatusPill>
 
             {/* Search */}
@@ -189,9 +210,8 @@ const FeaturedListings = ({ data, colstyle }) => {
       <div className="row g-4">
         {paginatedListings.map((listing) => (
           <div
-            className={`${
-              colstyle ? "col-sm-12 col-lg-6" : "col-sm-6 col-lg-4"
-            }`}
+            className={`${colstyle ? "col-sm-12 col-lg-6" : "col-sm-6 col-lg-4"
+              }`}
             key={listing.id}
           >
             <div
@@ -298,9 +318,8 @@ const FeaturedListings = ({ data, colstyle }) => {
               return (
                 <button
                   key={page}
-                  className={`btn rounded-circle me-2 ${
-                    isActive ? "text-white" : "btn-light"
-                  }`}
+                  className={`btn rounded-circle me-2 ${isActive ? "text-white" : "btn-light"
+                    }`}
                   style={{
                     width: 38,
                     height: 38,
