@@ -6,6 +6,7 @@ import announcerStatusOptions from "./announcerStatusOptions.json";
 import listingTypeOptions from "./listingTypeOptions.json";
 import propertyConditionOptions from "./propertyConditionOptions.json";
 import propertyTypeOptions from "./propertyTypeOptions.json";
+import { toast } from "react-toastify";
 
 const PropertyDescription = ({ onNext, onSaveDraft }) => {
   const customStyles = {
@@ -70,11 +71,10 @@ const PropertyDescription = ({ onNext, onSaveDraft }) => {
       !price.trim() ||
       priceNumber <= 0
     ) {
-      setError("กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบถ้วน");
+      toast.warn("กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบถ้วน");
       return;
     }
 
-    setError("");
     onNext?.(buildFormData());
   };
 

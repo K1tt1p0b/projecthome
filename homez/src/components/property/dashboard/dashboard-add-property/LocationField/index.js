@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import SelectMulitField from "./SelectMulitField";
 import Map from "./Map";
+import { toast } from "react-toastify";
 
 const LocationField = ({ onBack, onNext, onSaveDraft }) => {
   // ที่อยู่ข้อความ
@@ -21,7 +22,6 @@ const LocationField = ({ onBack, onNext, onSaveDraft }) => {
   const [latitude, setLatitude] = useState(13.9869); // ค่าเริ่มต้น
   const [longitude, setLongitude] = useState(100.6184);
 
-  const [error, setError] = useState("");
 
   const handleLatChange = (e) => {
     const value = e.target.value;
@@ -49,10 +49,9 @@ const LocationField = ({ onBack, onNext, onSaveDraft }) => {
   const handleNext = () => {
     // validate ขั้นต่ำก่อน
     if (!address.trim() || latitude === "" || longitude === "") {
-      setError("กรุณากรอกที่อยู่ และละติจูด/ลองจิจูดให้ครบถ้วน");
+      toast.warn("กรุณากรอกที่อยู่ และละติจูด/ลองจิจูดให้ครบถ้วน");
       return;
     }
-    setError("");
 
     const data = buildFormData();
     if (onNext) {
@@ -145,13 +144,6 @@ const LocationField = ({ onBack, onNext, onSaveDraft }) => {
             />
           </div>
         </div>
-
-        {/* แสดง error */}
-        {error && (
-          <div className="col-12">
-            <p className="text-danger mb10">{error}</p>
-          </div>
-        )}
 
         {/* ปุ่มล่าง */}
         <div className="col-12">

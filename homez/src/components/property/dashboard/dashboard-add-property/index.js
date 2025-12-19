@@ -194,8 +194,9 @@ const AddPropertyTabContent = () => {
 
   return (
     <>
-      <nav>
+<nav>
         <div className="nav nav-tabs" id="nav-tab2" role="tablist">
+          {/* 1. หัวข้อทรัพย์ (เปิดตลอด) */}
           <button
             ref={tabBasicRef}
             className="nav-link active fw600 ms-3"
@@ -210,6 +211,7 @@ const AddPropertyTabContent = () => {
             1. หัวข้อทรัพย์
           </button>
 
+          {/* 2. ที่อยู่ทรัพย์ (กดได้เมื่อมี basicInfoForm) */}
           <button
             ref={tabLocationRef}
             className="nav-link fw600"
@@ -220,10 +222,13 @@ const AddPropertyTabContent = () => {
             role="tab"
             aria-controls="nav-item3"
             aria-selected="false"
+            // ✅ เพิ่มเงื่อนไข disabled
+            disabled={!basicInfoForm}
           >
             2. ที่อยู่ทรัพย์
           </button>
 
+          {/* 3. เพิ่มรูปทรัพย์ (กดได้เมื่อมี locationForm) */}
           <button
             ref={tabMediaRef}
             className="nav-link fw600"
@@ -234,10 +239,13 @@ const AddPropertyTabContent = () => {
             role="tab"
             aria-controls="nav-item2"
             aria-selected="false"
+            // ✅ เพิ่มเงื่อนไข disabled
+            disabled={!locationForm}
           >
             3. เพิ่มรูปทรัพย์
           </button>
 
+          {/* 4. รายละเอียด (กดได้เมื่อมี mediaForm) */}
           <button
             ref={tabDetailsRef}
             className="nav-link fw600"
@@ -248,10 +256,13 @@ const AddPropertyTabContent = () => {
             role="tab"
             aria-controls="nav-item4"
             aria-selected="false"
+            // ✅ เพิ่มเงื่อนไข disabled
+            disabled={!mediaForm} 
           >
             4. รายละเอียด
           </button>
 
+          {/* 5. ยืนยัน (กดได้เมื่อมี detailsForm) */}
           <button
             className="nav-link fw600"
             id="nav-item5-tab"
@@ -261,6 +272,8 @@ const AddPropertyTabContent = () => {
             role="tab"
             aria-controls="nav-item5"
             aria-selected="false"
+            // ✅ เพิ่มเงื่อนไข disabled
+            disabled={!detailsForm}
           >
             5. ยืนยัน
           </button>
