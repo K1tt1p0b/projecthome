@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import UploadPhotoGallery from "./UploadPhotoGallery";
+import { toast } from "react-toastify";
 
 const UploadMedia = ({ onBack, onNext, onSaveDraft }) => {
   const [images, setImages] = useState([]);
@@ -17,7 +18,7 @@ const UploadMedia = ({ onBack, onNext, onSaveDraft }) => {
 
   const handleNext = () => {
     if (!images || images.length < MIN_IMAGES) {
-      alert(`กรุณาอัปโหลดรูปภาพอย่างน้อย ${MIN_IMAGES} รูป`);
+      toast.warn(`กรุณาอัปโหลดรูปภาพอย่างน้อย ${MIN_IMAGES} รูป`);
       return;
     }
     onNext?.(buildPayload());
@@ -73,7 +74,11 @@ const UploadMedia = ({ onBack, onNext, onSaveDraft }) => {
               >
                 บันทึกร่าง
               </button>
-              <button type="submit" className="ud-btn btn-thm">
+              <button
+                type="button"
+                className="ud-btn btn-thm"
+                onClick={handleNext}
+              >
                 ถัดไป
               </button>
             </div>

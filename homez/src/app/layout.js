@@ -9,6 +9,8 @@ import "../../public/scss/main.scss";
 import "rc-slider/assets/index.css";
 import { DM_Sans, Poppins } from "next/font/google";
 import { useEffect } from "react";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // DM_Sans font
 const dmSans = DM_Sans({
@@ -46,6 +48,20 @@ export default function RootLayout({ children }) {
         <div className="wrapper ovh">{children}</div>
 
         <ScrollToTop />
+
+        {/* ✅ ใส่ตรงนี้ และตั้งค่า theme="dark" เพื่อให้เหมือนในรูป */}
+        <ToastContainer 
+          position="top-center" // ตำแหน่ง (บนกลาง)
+          autoClose={3000}      // เวลาปิดอัตโนมัติ (3 วิ)
+          hideProgressBar={false} 
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="colored"          // 🌑 โหมดมืด (ตามรูปเป๊ะ)
+        />
       </body>
     </html>
   );
