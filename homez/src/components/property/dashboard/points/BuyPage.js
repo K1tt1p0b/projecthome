@@ -210,7 +210,7 @@ const BuyPointsPage = () => {
                 <div className="qr-container mx-auto mb15" style={{ width: 200, height: 200, position: 'relative' }}>
                   {/* รูป QR จริง หรือ Demo */}
                   <Image
-                    src="/images/payment/promptpay-qr-demo.png"
+                    src=""
                     alt="PromptPay QR"
                     fill
                     style={{ objectFit: 'contain' }}
