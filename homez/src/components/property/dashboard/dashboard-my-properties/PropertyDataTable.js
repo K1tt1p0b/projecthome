@@ -3,54 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 import { Tooltip as ReactTooltip } from "react-tooltip";
-
-const propertyData = [
-  {
-    id: 1,
-    title: "บ้านเดี่ยวสไตล์คันทรี",
-    imageSrc: "/images/listings/list-1.jpg",
-    location: "แคลิฟอร์เนีย, สหรัฐอเมริกา",
-    price: "$14,000/เดือน",
-    datePublished: "31 ธันวาคม 2022",
-    status: "รอตรวจสอบ",
-  },
-  {
-    id: 2,
-    title: "วิลล่าหรู ย่านรีโกพาร์ค",
-    imageSrc: "/images/listings/list-2.jpg",
-    location: "แคลิฟอร์เนีย, สหรัฐอเมริกา",
-    price: "$14,000/เดือน",
-    datePublished: "31 ธันวาคม 2022",
-    status: "เผยแพร่แล้ว",
-  },
-  {
-    id: 3,
-    title: "วิลล่า บนถนนฮอลลีวูด",
-    imageSrc: "/images/listings/list-3.jpg",
-    location: "แคลิฟอร์เนีย, สหรัฐอเมริกา",
-    price: "$14,000/เดือน",
-    datePublished: "31 ธันวาคม 2022",
-    status: "กำลังดำเนินการ",
-  },
-  {
-    id: 4,
-    title: "บ้านเดี่ยวสไตล์คันทรี",
-    imageSrc: "/images/listings/list-4.jpg",
-    location: "แคลิฟอร์เนีย, สหรัฐอเมริกา",
-    price: "$14,000/เดือน",
-    datePublished: "31 ธันวาคม 2022",
-    status: "รอตรวจสอบ",
-  },
-  {
-    id: 5,
-    title: "วิลล่าหรู ย่านรีโกพาร์ค",
-    imageSrc: "/images/listings/list-5.jpg",
-    location: "แคลิฟอร์เนีย, สหรัฐอเมริกา",
-    price: "$14,000/เดือน",
-    datePublished: "31 ธันวาคม 2022",
-    status: "เผยแพร่แล้ว",
-  },
-];
+import { useRouter } from "next/navigation";
+import { propertyData } from "@/data/propertyData";
 
 const getStatusStyle = (status) => {
   switch (status) {
@@ -66,6 +20,12 @@ const getStatusStyle = (status) => {
 };
 
 const PropertyDataTable = () => {
+  const router = useRouter();
+
+  const handleEdit = (id) => {
+    router.push(`/dashboard-edit-property/${id}`);
+  };
+
   return (
     <table className="table-style3 table at-savesearch">
       <thead className="t-head">
@@ -77,6 +37,7 @@ const PropertyDataTable = () => {
           <th scope="col">จัดการ</th>
         </tr>
       </thead>
+
       <tbody className="t-body">
         {propertyData.map((property) => (
           <tr key={property.id}>
@@ -91,62 +52,74 @@ const PropertyDataTable = () => {
                     alt="property"
                   />
                 </div>
+
                 <div className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4">
                   <div className="h6 list-title">
-                    <Link href={`/single-v1/${property.id}`}>{property.title}</Link>
+                    <Link href={`/single-v1/${property.id}`}>
+                      {property.title}
+                    </Link>
                   </div>
-                  <p className="list-text mb-0">{property.location}</p>
+                  <p className="list-text mb-0">
+                    {typeof property.location === "string"
+                      ? property.location
+                      : property.location.fullText || ""}
+                  </p>
                   <div className="list-price">
                     <a href="#">{property.price}</a>
                   </div>
                 </div>
               </div>
             </th>
-            <td className="vam"style={{ whiteSpace: "nowrap" }} >{property.datePublished}</td>
+
+            <td className="vam" style={{ whiteSpace: "nowrap" }}>
+              {property.datePublished}
+            </td>
+
             <td className="vam">
-              <span className={getStatusStyle(property.status)}
-              style={{
-                    padding: "8px 16px",        // ระยะห่างในปุ่ม
-                    borderRadius: "20px",       // ความมน
-                    fontSize: "13px",
-                    fontWeight: "600",
-                    display: "inline-block",    // ให้เป็นก้อน
-                    whiteSpace: "nowrap",       // ห้ามตัดคำ!
-                    minWidth: "110px",          // ความกว้างขั้นต่ำ
-                    textAlign: "center"
-                  }}
+              <span
+                className={getStatusStyle(property.status)}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "20px",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  display: "inline-block",
+                  whiteSpace: "nowrap",
+                  minWidth: "110px",
+                  textAlign: "center",
+                }}
               >
                 {property.status}
               </span>
             </td>
-            <td className="vam" style={{ whiteSpace: "nowrap" }} >{property.datePublished}</td>
+
+            <td className="vam" style={{ whiteSpace: "nowrap" }}>
+              {property.datePublished}
+            </td>
+
             <td className="vam">
               <div className="d-flex">
                 <button
+                  type="button"
                   className="icon"
-                  style={{ border: "none" }}
+                  style={{ border: "none", background: "transparent" }}
                   data-tooltip-id={`edit-${property.id}`}
+                  onClick={() => handleEdit(property.id)}
                 >
                   <span className="fas fa-pen fa" />
                 </button>
+
                 <button
+                  type="button"
                   className="icon"
-                  style={{ border: "none" }}
+                  style={{ border: "none", background: "transparent" }}
                   data-tooltip-id={`delete-${property.id}`}
                 >
                   <span className="flaticon-bin" />
                 </button>
 
-                <ReactTooltip
-                  id={`edit-${property.id}`}
-                  place="top"
-                  content="แก้ไข"
-                />
-                <ReactTooltip
-                  id={`delete-${property.id}`}
-                  place="top"
-                  content="ลบ"
-                />
+                <ReactTooltip id={`edit-${property.id}`} place="top" content="แก้ไข" />
+                <ReactTooltip id={`delete-${property.id}`} place="top" content="ลบ" />
               </div>
             </td>
           </tr>
