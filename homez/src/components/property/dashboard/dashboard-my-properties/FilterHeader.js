@@ -1,40 +1,69 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const FilterHeader = () => {
+  const router = useRouter();
+  const [isAdding, setIsAdding] = useState(false);
+
+  const handleAdd = () => {
+    if (isAdding) return; // กันกดซ้ำ
+    setIsAdding(true);
+    router.push("/dashboard-add-property");
+  };
+
   return (
-    <div className="dashboard_search_meta d-md-flex align-items-center justify-content-xxl-end">
-      <div className="item1 mb15-sm">
+    <div className="dashboard_search_meta d-md-flex align-items-center justify-content-between gap-2">
+      {/* Search */}
+      <div className="item1 flex-grow-1 mb15-sm">
         <div className="search_area">
           <input
             type="text"
             className="form-control bdrs12"
-            placeholder="ค้นหาทรัพย์สินของคุณ..."
-            required
+            placeholder="ค้นหาชื่อประกาศ / จังหวัด / อำเภอ"
           />
           <label>
             <span className="flaticon-search" />
           </label>
         </div>
       </div>
-      {/* End item1 */}
 
-      <div className="page_control_shorting bdr1 bdrs12 py-2 ps-3 pe-2 mx-1 mx-xxl-3 bgc-white mb15-sm maxw160">
+      {/* Sort */}
+      <div className="page_control_shorting bdr1 bdrs12 py-2 ps-3 pe-2 bgc-white mb15-sm maxw200">
         <div className="pcs_dropdown d-flex align-items-center">
-          <span style={{ minWidth: "50px" }} className="title-color">
-            Sort by:
+          <span className="title-color me-2" style={{ whiteSpace: "nowrap" }}>
+            เรียงตาม:
           </span>
           <select className="form-select show-tick">
-            <option>ขายดีที่สุด</option>
-            <option>ตรงใจที่สุด</option>
-            <option>ราคาต่ำสุดก่อน</option>
-            <option>ราคาสูงสุดก่อน</option>
+            <option value="latest">ล่าสุด</option>
+            <option value="price_asc">ราคาต่ำ → สูง</option>
+            <option value="price_desc">ราคาสูง → ต่ำ</option>
+            <option value="views_desc">ยอดเข้าชมสูงสุด</option>
+            <option value="status">สถานะประกาศ</option>
           </select>
         </div>
       </div>
-      <a href="./dashboard-add-property" className="ud-btn btn-thm">
-        เพิ่มที่อยู่ทรัพย์
-        <i className="fal fa-arrow-right-long" />
-      </a>
+
+      {/* Add Property (with loading) */}
+      <button
+        type="button"
+        className="ud-btn btn-thm"
+        onClick={handleAdd}
+        disabled={isAdding}
+        aria-busy={isAdding}
+      >
+        {isAdding ? (
+          <>
+            กำลังไปหน้าเพิ่มประกาศ...
+            <i className="fal fa-spinner fa-spin ms-2" />
+          </>
+        ) : (
+          <>
+            เพิ่มประกาศใหม่
+          </>
+        )}
+      </button>
     </div>
   );
 };
