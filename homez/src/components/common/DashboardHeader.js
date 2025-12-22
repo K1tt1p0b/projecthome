@@ -166,16 +166,18 @@ const DashboardHeader = () => {
                             >
                               การแจ้งเตือน
                             </h6>
-                            <span
-                              className="text-primary"
+                            <Link
+                              href="/dashboard-message"
+                              className="text-primary text-decoration-none me-3" // เพิ่ม text-decoration-none ไม่ให้มีขีดเส้นใต้
                               style={{
                                 cursor: "pointer",
                                 fontSize: "13px",
                                 fontWeight: "500",
+                                whiteSpace: "nowrap",
                               }}
                             >
                               อ่านทั้งหมด
-                            </span>
+                            </Link>
                           </div>
 
                           <div
