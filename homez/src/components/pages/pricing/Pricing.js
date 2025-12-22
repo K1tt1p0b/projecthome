@@ -1,50 +1,55 @@
 "use client";
 import Image from "next/image";
 import React, { useState } from "react";
+import Link from "next/link"; // แนะนำให้ใช้ Link แทน a href
 
 const Pricing = () => {
+  // 1. ข้อมูลแพ็กเกจของเรา
   const pricingPackages = [
     {
-      packageTitle: "Basic",
-      price: "Free",
-      pricePerMonth: "per month",
-      priceIcon: "images/icon/pricing-icon-2.svg",
+      packageTitle: "Starter",
+      price: "ฟรี",
+      priceYearly: "ฟรี", // ราคารายปี
+      pricePerMonth: "ตลอดชีพ",
+      priceIcon: "/images/icon/pricing-icon-2.svg", // ใส่ / นำหน้าเผื่อไว้
       features: [
-        "Standard listing submission, active for 30 days",
-        "All Operating Supported",
-        "Great Interface",
-        "Allows encryption",
-        "Face recognized system",
-        "24/7 Full support",
+        "ลงประกาศฟรี 1 รายการ", // ฟีเจอร์แรกจะไปโชว์แยกด้านบน
+        "อัปโหลดรูปได้ 5 รูป/ประกาศ",
+        "ระบบจัดการประกาศพื้นฐาน",
+        "ไม่มีป้าย Verified",
+        "ไม่มีเครดิตพอยต์รายเดือน",
+        "การสนับสนุนทางอีเมล",
       ],
     },
     {
-      packageTitle: "Professional",
-      price: "$199.95",
-      pricePerMonth: "per month",
-      priceIcon: "images/icon/pricing-icon-1.svg",
-      uniqueClass: "unique-class", // Add a unique class for Professional package
+      packageTitle: "Pro Agent",
+      price: "฿590",
+      priceYearly: "฿5,660", // คำนวณลด 20% (590x12x0.8)
+      pricePerMonth: "/ เดือน",
+      priceIcon: "/images/icon/pricing-icon-1.svg",
+      uniqueClass: "unique-class", // ✅ Class นี้จะทำให้กล่องนี้เด่นกว่าเพื่อน
       features: [
-        "Standard listing submission, active for 30 days",
-        "All Operating Supported",
-        "Great Interface",
-        "Allows encryption",
-        "Face recognized system",
-        "24/7 Full support",
+        "รับทันที 800 พอยต์/เดือน",
+        "✅ ได้รับป้าย Verified Agent",
+        "อัปโหลดรูปได้ 15 รูป/ประกาศ",
+        "ดันประกาศฟรี 1 ครั้ง/วัน",
+        "ส่วนลดซื้อพอยต์เพิ่ม 10%",
+        "การสนับสนุนแบบ Priority (ตอบไว)",
       ],
     },
     {
       packageTitle: "Business",
-      price: "$399.95",
-      pricePerMonth: "per month",
-      priceIcon: "images/icon/pricing-icon-3.svg",
+      price: "฿1,590",
+      priceYearly: "฿15,260", // คำนวณลด 20% (1590x12x0.8)
+      pricePerMonth: "/ เดือน",
+      priceIcon: "/images/icon/pricing-icon-3.svg",
       features: [
-        "Standard listing submission, active for 30 days",
-        "All Operating Supported",
-        "Great Interface",
-        "Allows encryption",
-        "Face recognized system",
-        "24/7 Full support",
+        "รับทันที 2,500 พอยต์/เดือน",
+        "🏆 ได้รับป้าย Premium Agency",
+        "อัปโหลดรูปไม่จำกัด",
+        "ดันประกาศฟรี 3 ครั้ง/วัน",
+        "ดูเบอร์โทรลูกค้าที่กดสนใจได้",
+        "ผู้ดูแลบัญชีส่วนตัว (Account Manager)",
       ],
     },
   ];
@@ -61,7 +66,7 @@ const Pricing = () => {
         <div className="col-lg-12">
           <div className="pricing_packages_top d-flex align-items-center justify-content-center mb60">
             <div className="toggle-btn">
-              <span className="pricing_save1 ff-heading">Billed Monthly</span>
+              <span className="pricing_save1 ff-heading">จ่ายรายเดือน</span>
               <label className="switch">
                 <input
                   type="checkbox"
@@ -71,8 +76,8 @@ const Pricing = () => {
                 />
                 <span className="pricing_table_switch_slide round" />
               </label>
-              <span className="pricing_save2 ff-heading">Billed Yearly</span>
-              <span className="pricing_save3">Save 20%</span>
+              <span className="pricing_save2 ff-heading">จ่ายรายปี</span>
+              <span className="pricing_save3">ลด 20%</span>
             </div>
           </div>
         </div>
@@ -82,21 +87,21 @@ const Pricing = () => {
       <div className="row" data-aos="fade-up" data-aos-delay="300">
         {pricingPackages.map((item, index) => (
           <div className="col-md-6 col-xl-4" key={index}>
-            <div className={`pricing_packages ${index === 1 ? "active" : ""}`}>
+            <div className={`pricing_packages ${index === 1 ? "active" : ""} ${item.uniqueClass || ""}`}>
               <div className="heading mb60">
-                <h4 className={`package_title ${item.uniqueClass || ""}`}>
+                <h4 className="package_title">
                   {item.packageTitle}
                 </h4>
+                
+                {/* 2. Logic การแสดงราคา (ตาม Toggle) */}
                 <h1 className="text2">
-                  {isYearlyBilling
-                    ? index === 0
-                      ? "Free" // First object shows "Free"
-                      : index === 1
-                      ? "$599.99" // Second object shows "$599.95"
-                      : "$999.99" // Third object shows "$999.95"
-                    : item.price}
+                  {isYearlyBilling ? item.priceYearly : item.price}
                 </h1>
-                <p className="text">{item.pricePerMonth}</p>
+                
+                <p className="text">
+                    {isYearlyBilling && index !== 0 ? "/ ปี" : item.pricePerMonth}
+                </p>
+                
                 <Image
                   width={70}
                   height={70}
@@ -106,9 +111,12 @@ const Pricing = () => {
                 />
               </div>
               <div className="details">
+                {/* ฟีเจอร์แรก (แยกออกมาโชว์เด่นๆ) */}
                 <p className="text mb35">
-                  {item.features[0]} {/* Display the first feature */}
+                  {item.features[0]} 
                 </p>
+                
+                {/* ฟีเจอร์ที่เหลือ */}
                 <div className="list-style1 mb40">
                   <ul>
                     {item.features.slice(1).map((feature, featureIndex) => (
@@ -119,11 +127,12 @@ const Pricing = () => {
                     ))}
                   </ul>
                 </div>
+                
                 <div className="d-grid">
-                  <a href="#" className="ud-btn btn-thm-border text-thm">
-                    Join
+                  <Link href="/register" className="ud-btn btn-thm-border text-thm">
+                    สมัครสมาชิก
                     <i className="fal fa-arrow-right-long" />
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
