@@ -1,19 +1,17 @@
 "use client";
 import Image from "next/image";
 import React, { useState } from "react";
-import Link from "next/link"; // แนะนำให้ใช้ Link แทน a href
+import Link from "next/link"; // เปลี่ยนจาก a เป็น Link เพื่อประสิทธิภาพที่ดีกว่า
 
 const Pricing = () => {
-  // 1. ข้อมูลแพ็กเกจของเรา
   const pricingPackages = [
     {
       packageTitle: "Starter",
       price: "ฟรี",
-      priceYearly: "ฟรี", // ราคารายปี
       pricePerMonth: "ตลอดชีพ",
-      priceIcon: "/images/icon/pricing-icon-2.svg", // ใส่ / นำหน้าเผื่อไว้
+      priceIcon: "/images/icon/pricing-icon-2.svg",
       features: [
-        "ลงประกาศฟรี 1 รายการ", // ฟีเจอร์แรกจะไปโชว์แยกด้านบน
+        "ลงประกาศฟรี 1 รายการ",
         "อัปโหลดรูปได้ 5 รูป/ประกาศ",
         "ระบบจัดการประกาศพื้นฐาน",
         "ไม่มีป้าย Verified",
@@ -24,10 +22,9 @@ const Pricing = () => {
     {
       packageTitle: "Pro Agent",
       price: "฿590",
-      priceYearly: "฿5,660", // คำนวณลด 20% (590x12x0.8)
       pricePerMonth: "/ เดือน",
       priceIcon: "/images/icon/pricing-icon-1.svg",
-      uniqueClass: "unique-class", // ✅ Class นี้จะทำให้กล่องนี้เด่นกว่าเพื่อน
+      uniqueClass: "unique-class", // คง class เดิมไว้ตามเทมเพลต
       features: [
         "รับทันที 800 พอยต์/เดือน",
         "✅ ได้รับป้าย Verified Agent",
@@ -40,7 +37,6 @@ const Pricing = () => {
     {
       packageTitle: "Business",
       price: "฿1,590",
-      priceYearly: "฿15,260", // คำนวณลด 20% (1590x12x0.8)
       pricePerMonth: "/ เดือน",
       priceIcon: "/images/icon/pricing-icon-3.svg",
       features: [
@@ -87,21 +83,23 @@ const Pricing = () => {
       <div className="row" data-aos="fade-up" data-aos-delay="300">
         {pricingPackages.map((item, index) => (
           <div className="col-md-6 col-xl-4" key={index}>
-            <div className={`pricing_packages ${index === 1 ? "active" : ""} ${item.uniqueClass || ""}`}>
+            <div className={`pricing_packages ${index === 1 ? "active" : ""}`}>
               <div className="heading mb60">
-                <h4 className="package_title">
+                <h4 className={`package_title ${item.uniqueClass || ""}`}>
                   {item.packageTitle}
                 </h4>
-                
-                {/* 2. Logic การแสดงราคา (ตาม Toggle) */}
                 <h1 className="text2">
-                  {isYearlyBilling ? item.priceYearly : item.price}
+                  {isYearlyBilling
+                    ? index === 0
+                      ? "ฟรี" // ตัวแรก (Starter)
+                      : index === 1
+                      ? "฿5,660" // ตัวที่สอง (Pro Agent รายปี)
+                      : "฿15,260" // ตัวที่สาม (Business รายปี)
+                    : item.price}
                 </h1>
-                
                 <p className="text">
                     {isYearlyBilling && index !== 0 ? "/ ปี" : item.pricePerMonth}
                 </p>
-                
                 <Image
                   width={70}
                   height={70}
@@ -111,12 +109,9 @@ const Pricing = () => {
                 />
               </div>
               <div className="details">
-                {/* ฟีเจอร์แรก (แยกออกมาโชว์เด่นๆ) */}
                 <p className="text mb35">
-                  {item.features[0]} 
+                  {item.features[0]} {/* Display the first feature */}
                 </p>
-                
-                {/* ฟีเจอร์ที่เหลือ */}
                 <div className="list-style1 mb40">
                   <ul>
                     {item.features.slice(1).map((feature, featureIndex) => (
@@ -127,7 +122,6 @@ const Pricing = () => {
                     ))}
                   </ul>
                 </div>
-                
                 <div className="d-grid">
                   <Link href="/register" className="ud-btn btn-thm-border text-thm">
                     สมัครสมาชิก

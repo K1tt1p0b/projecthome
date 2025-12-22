@@ -51,6 +51,11 @@ const SidebarDashboard = () => {
           text: "เติมพอยต์",
         },
         {
+          href: "/pricing",
+          icon: "flaticon-protection",
+          text: "แพ็กเกจสมาชิก",
+        },
+        {
           href: "/dashboard-points/promote",
           icon: "far fa-bullhorn",
           text: "โปรโมทประกาศ",
