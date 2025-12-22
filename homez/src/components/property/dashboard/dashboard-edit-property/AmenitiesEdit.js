@@ -29,7 +29,7 @@ const amenitiesData = {
     { label: "ห้องซักรีด", defaultChecked: false },
     { label: "ซาวน่า", defaultChecked: false },
   ],
-    colum4: [
+  colum4: [
     { label: "เตาอบ", defaultChecked: true },
     { label: "ที่จอดรถ", defaultChecked: true },
     { label: "แอร์", defaultChecked: true },
