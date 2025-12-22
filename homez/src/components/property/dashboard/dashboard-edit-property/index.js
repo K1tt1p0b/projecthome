@@ -367,7 +367,7 @@ const DashboardEditProperty = () => {
 
       console.log("UPDATED DATA:", form);
 
-      toast.success("บันทึกการแก้ไขเรียบร้อย 🎉");
+      toast.success("บันทึกการแก้ไขเรียบร้อย");
       router.back();
     } catch (e) {
       console.error(e);
