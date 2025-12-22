@@ -71,6 +71,10 @@ const DashboardEditProperty = () => {
   const [coverPreview, setCoverPreview] = useState("");
   const [galleryPreview, setGalleryPreview] = useState([]);
 
+  // loading ปุ่มล่าง (บันทึก/ยกเลิก)
+  const [saving, setSaving] = useState(false);
+  const [canceling, setCanceling] = useState(false);
+
   useEffect(() => {
     if (!found) return;
 
@@ -340,9 +344,10 @@ const DashboardEditProperty = () => {
     if (selectedConfig?.fields?.length) {
       for (const f of selectedConfig.fields) {
         if (!String(form?.details?.[f] || "").trim()) {
-          return toast.warn(
-            "กรุณากรอกรายละเอียดทรัพย์ให้ครบตามประเภททรัพย์ *"
-          ), false;
+          return (
+            toast.warn("กรุณากรอกรายละเอียดทรัพย์ให้ครบตามประเภททรัพย์ *"),
+            false
+          );
         }
       }
     }
@@ -350,33 +355,51 @@ const DashboardEditProperty = () => {
     return true;
   };
 
-  // ✅ handle เหมือน PropertyDescription
-  const handleSubmit = () => {
+  //  handle submit + loading
+  const handleSubmit = async () => {
     if (!validateWithToast()) return;
 
-    console.log("UPDATED DATA:", form);
+    try {
+      setSaving(true);
 
-    toast.success("บันทึกการแก้ไขเรียบร้อย 🎉");
-    router.back();
+      // mock save (ถ้ามี API จริง เปลี่ยนตรงนี้เป็น fetch/axios ได้เลย)
+      await new Promise((r) => setTimeout(r, 700));
+
+      console.log("UPDATED DATA:", form);
+
+      toast.success("บันทึกการแก้ไขเรียบร้อย 🎉");
+      router.back();
+    } catch (e) {
+      console.error(e);
+      toast.error("บันทึกไม่สำเร็จ");
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!form) {
     return (
       <div className="p-4">
         <h5>ไม่พบข้อมูลประกาศ</h5>
-        <button className="btn btn-outline-secondary" onClick={() => router.back()}>
+        <button
+          className="btn btn-outline-secondary"
+          onClick={() => router.back()}
+        >
           ย้อนกลับ
         </button>
       </div>
     );
   }
 
+  const busy = saving || canceling;
+
   return (
     <form
       className="p-3 p-md-4"
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
-        handleSubmit();
+        if (busy) return;
+        await handleSubmit();
       }}
     >
       {/* ===== ข้อมูลพื้นฐาน ===== */}
@@ -388,6 +411,7 @@ const DashboardEditProperty = () => {
             className="form-select"
             value={form.propertyType || ""}
             onChange={(e) => update(["propertyType"], e.target.value)}
+            disabled={busy}
           >
             <option value="">-- เลือก --</option>
             {PROPERTY_TYPE_OPTIONS.map((type) => (
@@ -404,6 +428,7 @@ const DashboardEditProperty = () => {
             className="form-select"
             value={form.listingType || ""}
             onChange={(e) => update(["listingType"], e.target.value)}
+            disabled={busy}
           >
             <option value="">-- เลือก --</option>
             <option value="ขาย">ขาย</option>
@@ -417,6 +442,7 @@ const DashboardEditProperty = () => {
             className="form-select"
             value={form.details.condition || ""}
             onChange={(e) => update(["details", "condition"], e.target.value)}
+            disabled={busy}
           >
             <option value="">-- เลือก --</option>
             {CONDITION_OPTIONS.map((opt) => (
@@ -429,7 +455,12 @@ const DashboardEditProperty = () => {
 
         <div className="col-md-4">
           <label className="form-label">สถานะ (แอดมินเป็นผู้อนุมัติ)</label>
-          <input className="form-control" value={form.status || ""} disabled readOnly />
+          <input
+            className="form-control"
+            value={form.status || ""}
+            disabled
+            readOnly
+          />
           <div className="text-muted small mt-1" style={{ fontSize: 13 }}>
             สถานะประกาศจะถูกกำหนดโดยแอดมินหลังจากตรวจสอบข้อมูล
           </div>
@@ -441,6 +472,7 @@ const DashboardEditProperty = () => {
             className="form-control"
             value={form.title || ""}
             onChange={(e) => update(["title"], e.target.value)}
+            disabled={busy}
           />
         </div>
 
@@ -450,6 +482,7 @@ const DashboardEditProperty = () => {
             className="form-control"
             value={form.price || ""}
             onChange={(e) => update(["price"], e.target.value)}
+            disabled={busy}
           />
         </div>
 
@@ -460,6 +493,7 @@ const DashboardEditProperty = () => {
             rows={4}
             value={form.description || ""}
             onChange={(e) => update(["description"], e.target.value)}
+            disabled={busy}
           />
         </div>
       </div>
@@ -473,6 +507,7 @@ const DashboardEditProperty = () => {
             className="form-select"
             value={form.location.province || ""}
             onChange={(e) => onProvinceChange(e.target.value)}
+            disabled={busy}
           >
             <option value="">-- เลือกจังหวัด --</option>
             {provinces.map((p) => (
@@ -489,7 +524,7 @@ const DashboardEditProperty = () => {
             className="form-select"
             value={form.location.district || ""}
             onChange={(e) => onDistrictChange(e.target.value)}
-            disabled={!form.location.province}
+            disabled={busy || !form.location.province}
           >
             <option value="">-- เลือกอำเภอ/เขต --</option>
             {districts.map((d) => (
@@ -506,7 +541,7 @@ const DashboardEditProperty = () => {
             className="form-select"
             value={form.location.subdistrict || ""}
             onChange={(e) => onSubdistrictChange(e.target.value)}
-            disabled={!form.location.district}
+            disabled={busy || !form.location.district}
           >
             <option value="">-- เลือกตำบล/แขวง --</option>
             {subdistricts.map((s) => (
@@ -523,6 +558,7 @@ const DashboardEditProperty = () => {
             className="form-control"
             value={form.location.zipcode || ""}
             onChange={(e) => update(["location", "zipcode"], e.target.value)}
+            disabled={busy}
           />
         </div>
 
@@ -532,6 +568,7 @@ const DashboardEditProperty = () => {
             className="form-control"
             value={form.location.address || ""}
             onChange={(e) => update(["location", "address"], e.target.value)}
+            disabled={busy}
           />
         </div>
 
@@ -541,6 +578,7 @@ const DashboardEditProperty = () => {
             className="form-control"
             value={form.location.latitude || ""}
             onChange={(e) => update(["location", "latitude"], e.target.value)}
+            disabled={busy}
           />
         </div>
 
@@ -550,12 +588,17 @@ const DashboardEditProperty = () => {
             className="form-control"
             value={form.location.longitude || ""}
             onChange={(e) => update(["location", "longitude"], e.target.value)}
+            disabled={busy}
           />
         </div>
       </div>
 
       <div className="mb-4" style={{ borderRadius: 12, overflow: "hidden" }}>
-        <Map lat={hasLatLng ? latNum : 13.9869} lng={hasLatLng ? lngNum : 100.6184} zoom={14} />
+        <Map
+          lat={hasLatLng ? latNum : 13.9869}
+          lng={hasLatLng ? lngNum : 100.6184}
+          zoom={14}
+        />
       </div>
 
       {/* ===== รูปภาพ ===== */}
@@ -563,13 +606,24 @@ const DashboardEditProperty = () => {
       <div className="row g-3 mb-4">
         <div className="col-md-6">
           <label className="form-label">รูปหน้าปก *</label>
-          <input className="form-control" type="file" accept="image/*" onChange={onCoverFile} />
+          <input
+            className="form-control"
+            type="file"
+            accept="image/*"
+            onChange={onCoverFile}
+            disabled={busy}
+          />
           {(coverPreview || form.imageSrc) && (
             <div className="mt-2">
               <img
                 src={coverPreview || form.imageSrc}
                 alt="cover"
-                style={{ width: "100%", maxHeight: 260, objectFit: "cover", borderRadius: 12 }}
+                style={{
+                  width: "100%",
+                  maxHeight: 260,
+                  objectFit: "cover",
+                  borderRadius: 12,
+                }}
               />
             </div>
           )}
@@ -577,7 +631,14 @@ const DashboardEditProperty = () => {
 
         <div className="col-md-6">
           <label className="form-label">แกลเลอรี่รูป</label>
-          <input className="form-control" type="file" accept="image/*" multiple onChange={onGalleryFiles} />
+          <input
+            className="form-control"
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={onGalleryFiles}
+            disabled={busy}
+          />
 
           {galleryPreview?.length > 0 && (
             <div className="mt-2 d-flex flex-wrap gap-2">
@@ -586,13 +647,25 @@ const DashboardEditProperty = () => {
                   <img
                     src={src}
                     alt={`gallery-${idx}`}
-                    style={{ width: 120, height: 90, objectFit: "cover", borderRadius: 10 }}
+                    style={{
+                      width: 120,
+                      height: 90,
+                      objectFit: "cover",
+                      borderRadius: 10,
+                    }}
                   />
                   <button
                     type="button"
                     className="btn btn-sm btn-danger"
-                    style={{ position: "absolute", top: 6, right: 6, padding: "2px 6px", lineHeight: 1 }}
+                    style={{
+                      position: "absolute",
+                      top: 6,
+                      right: 6,
+                      padding: "2px 6px",
+                      lineHeight: 1,
+                    }}
                     onClick={() => removeGalleryAt(idx)}
+                    disabled={busy}
                   >
                     ×
                   </button>
@@ -616,7 +689,8 @@ const DashboardEditProperty = () => {
         <div className="alert alert-danger">
           ประเภททรัพย์นี้ไม่มีการตั้งค่าฟิลด์: <b>{form.propertyType}</b>
           <br />
-          กรุณาตรวจสอบ <code>PROPERTY_TYPE_CONFIG</code> ให้ตรงกับข้อมูลใน <code>propertyData</code>
+          กรุณาตรวจสอบ <code>PROPERTY_TYPE_CONFIG</code> ให้ตรงกับข้อมูลใน{" "}
+          <code>propertyData</code>
         </div>
       )}
 
@@ -625,42 +699,82 @@ const DashboardEditProperty = () => {
           {selectedConfig.fields.includes("landSize") && (
             <div className="col-md-3">
               <label className="form-label">ขนาดที่ดิน (ตร.ว.) *</label>
-              <input className="form-control" value={form.details.landSize || ""} onChange={(e) => update(["details", "landSize"], e.target.value)} />
+              <input
+                className="form-control"
+                value={form.details.landSize || ""}
+                onChange={(e) =>
+                  update(["details", "landSize"], e.target.value)
+                }
+                disabled={busy}
+              />
             </div>
           )}
 
           {selectedConfig.fields.includes("usableArea") && (
             <div className="col-md-3">
               <label className="form-label">พื้นที่ใช้สอย (ตร.ม.) *</label>
-              <input className="form-control" value={form.details.usableArea || ""} onChange={(e) => update(["details", "usableArea"], e.target.value)} />
+              <input
+                className="form-control"
+                value={form.details.usableArea || ""}
+                onChange={(e) =>
+                  update(["details", "usableArea"], e.target.value)
+                }
+                disabled={busy}
+              />
             </div>
           )}
 
           {selectedConfig.fields.includes("bedrooms") && (
             <div className="col-md-2">
               <label className="form-label">ห้องนอน *</label>
-              <input className="form-control" value={form.details.bedrooms || ""} onChange={(e) => update(["details", "bedrooms"], e.target.value)} />
+              <input
+                className="form-control"
+                value={form.details.bedrooms || ""}
+                onChange={(e) =>
+                  update(["details", "bedrooms"], e.target.value)
+                }
+                disabled={busy}
+              />
             </div>
           )}
 
           {selectedConfig.fields.includes("bathrooms") && (
             <div className="col-md-2">
               <label className="form-label">ห้องน้ำ *</label>
-              <input className="form-control" value={form.details.bathrooms || ""} onChange={(e) => update(["details", "bathrooms"], e.target.value)} />
+              <input
+                className="form-control"
+                value={form.details.bathrooms || ""}
+                onChange={(e) =>
+                  update(["details", "bathrooms"], e.target.value)
+                }
+                disabled={busy}
+              />
             </div>
           )}
 
           {selectedConfig.fields.includes("parking") && (
             <div className="col-md-2">
               <label className="form-label">ที่จอดรถ *</label>
-              <input className="form-control" value={form.details.parking || ""} onChange={(e) => update(["details", "parking"], e.target.value)} />
+              <input
+                className="form-control"
+                value={form.details.parking || ""}
+                onChange={(e) =>
+                  update(["details", "parking"], e.target.value)
+                }
+                disabled={busy}
+              />
             </div>
           )}
 
           {selectedConfig.fields.includes("floor") && (
             <div className="col-md-2">
               <label className="form-label">ชั้น *</label>
-              <input className="form-control" value={form.details.floor || ""} onChange={(e) => update(["details", "floor"], e.target.value)} />
+              <input
+                className="form-control"
+                value={form.details.floor || ""}
+                onChange={(e) => update(["details", "floor"], e.target.value)}
+                disabled={busy}
+              />
             </div>
           )}
         </div>
@@ -668,14 +782,27 @@ const DashboardEditProperty = () => {
 
       {/* ===== Amenities ===== */}
       <h5 className="mb-3">สิ่งอำนวยความสะดวก</h5>
-      <AmenitiesEdit value={form.amenities || []} onChange={(newValue) => update(["amenities"], newValue)} />
+      <AmenitiesEdit
+        value={form.amenities || []}
+        onChange={(newValue) => update(["amenities"], newValue)}
+      />
 
       {/* ===== Buttons ===== */}
       <div className="d-flex justify-content-end gap-3 mt-5">
         <button
           type="button"
           className="btn btn-outline-secondary"
-          onClick={() => router.back()}
+          disabled={busy}
+          onClick={async () => {
+            try {
+              setCanceling(true);
+              // mock เล็กน้อยให้เห็น spinner (optional)
+              await new Promise((r) => setTimeout(r, 300));
+              router.back();
+            } finally {
+              setCanceling(false);
+            }
+          }}
           style={{
             border: "1px solid #EB6753",
             color: "#EB6753",
@@ -684,30 +811,37 @@ const DashboardEditProperty = () => {
             borderRadius: 12,
             fontWeight: 500,
             transition: "all .2s ease",
+            opacity: busy ? 0.6 : 1,
+            cursor: busy ? "not-allowed" : "pointer",
           }}
           onMouseEnter={(e) => {
+            if (busy) return;
             e.currentTarget.style.backgroundColor = "#EB6753";
             e.currentTarget.style.color = "#fff";
           }}
           onMouseLeave={(e) => {
+            if (busy) return;
             e.currentTarget.style.backgroundColor = "#fff";
             e.currentTarget.style.color = "#EB6753";
           }}
         >
+          {canceling ? <span className="fas fa-spinner fa-spin me-2" /> : null}
           ยกเลิก
         </button>
 
-        {/* ✅ wrapper เพื่อให้คลิกแล้วเตือนได้ “แน่นอน” แม้ปุ่ม disabled */}
+        {/* wrapper เพื่อให้คลิกแล้วเตือนได้ “แน่นอน” แม้ปุ่ม disabled */}
         <div
           onClick={() => {
-            if (!isFormComplete) toast.warn("กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบถ้วน");
+            if (busy) return;
+            if (!isFormComplete)
+              toast.warn("กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบถ้วน");
           }}
           style={{ display: "inline-block" }}
         >
           <button
             className="btn btn-primary"
             type="submit"
-            disabled={!isFormComplete}
+            disabled={!isFormComplete || busy}
             style={{
               backgroundColor: "#EB6753",
               color: "#fff",
@@ -715,22 +849,28 @@ const DashboardEditProperty = () => {
               borderRadius: 12,
               fontWeight: 600,
               border: "none",
-              boxShadow: !isFormComplete ? "none" : "0 6px 16px rgba(235,103,83,.35)",
+              boxShadow:
+                !isFormComplete || busy
+                  ? "none"
+                  : "0 6px 16px rgba(235,103,83,.35)",
               transition: "all .2s ease",
-              opacity: !isFormComplete ? 0.6 : 1,
-              cursor: !isFormComplete ? "not-allowed" : "pointer",
+              opacity: !isFormComplete || busy ? 0.6 : 1,
+              cursor: !isFormComplete || busy ? "not-allowed" : "pointer",
             }}
             onMouseEnter={(e) => {
-              if (!isFormComplete) return;
+              if (!isFormComplete || busy) return;
               e.currentTarget.style.transform = "translateY(-1px)";
-              e.currentTarget.style.boxShadow = "0 10px 24px rgba(235,103,83,.45)";
+              e.currentTarget.style.boxShadow =
+                "0 10px 24px rgba(235,103,83,.45)";
             }}
             onMouseLeave={(e) => {
-              if (!isFormComplete) return;
+              if (!isFormComplete || busy) return;
               e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "0 6px 16px rgba(235,103,83,.35)";
+              e.currentTarget.style.boxShadow =
+                "0 6px 16px rgba(235,103,83,.35)";
             }}
           >
+            {saving ? <span className="fas fa-spinner fa-spin me-2" /> : null}
             บันทึกการแก้ไข
           </button>
         </div>
