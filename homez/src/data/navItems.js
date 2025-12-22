@@ -3,20 +3,14 @@ export const homeItems = [
 
 export const listingItems = [
   {
-    title: "Grid View",
+    title: "สินทรัพย์",
     submenu: [
-      { label: "Grid Default", href: "/grid-default" },
-      { label: "Grid Full Width 3 Cols", href: "/grid-full-3-col" },
-      { label: "Grid Full Width 4 Cols", href: "/grid-full-4-col" },
-      { label: "Grid Full Width 2 Cols", href: "/grid-full-2-col" },
-      {
-        label: "Grid Full Width 1 Cols v1",
-        href: "/grid-full-1-col-v1",
-      },
-      {
-        label: "Grid Full Width 1 Cols v2",
-        href: "/grid-full-1-col-v2",
-      },
+      { label: "ทั้งหมด", href: "",},
+      { label: "บ้าน", href: "/grid-default" },
+      { label: "บ้านพร้อมที่ดิน", href: "/grid-full-3-col" },
+      { label: "ที่ดินเปล่า", href: "/grid-full-4-col" },
+      { label: "คอนโด", href: "/grid-full-2-col" },
+      { label: "ห้องเช่า", href: "/grid-full-1-col-v1",},
       { label: "Banner Search v1", href: "/banner-search-v1" },
       { label: "Banner Search v2", href: "/banner-search-v2" },
     ],
