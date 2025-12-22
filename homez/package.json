@@ -16,7 +16,7 @@
     "axios": "^1.13.2",
     "bootstrap": "5.3.6",
     "eslint": "9.27.0",
-    "next": "15.1.8",
+    "next": "15.1.11",
     "photoswipe": "^5.4.4",
     "prop-types": "15.8.1",
     "rc-slider": "^11.1.8",

@@ -10,7 +10,9 @@ import "rc-slider/assets/index.css";
 import { DM_Sans, Poppins } from "next/font/google";
 import { useEffect } from "react";
 import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import "react-toastify/ReactToastify.css";
+
+
 
 // DM_Sans font
 const dmSans = DM_Sans({
