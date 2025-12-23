@@ -145,7 +145,7 @@ const DashboardHeader = () => {
                             className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                             style={{ fontSize: "10px", marginTop: "5px" }}
                           >
-                            2
+                            3
                           </span>
                         </a>
 
@@ -184,7 +184,7 @@ const DashboardHeader = () => {
                             style={{ maxHeight: "350px", overflowY: "auto" }}
                           >
                             <Link
-                              href="/dashboard-message"
+                              href="/dashboard-agent-contacts"
                               className="dropdown-item border-bottom"
                               style={{
                                 height: "auto",
@@ -218,7 +218,7 @@ const DashboardHeader = () => {
                                   }}
                                 >
                                   <i
-                                    className="flaticon-chat-1"
+                                    className="flaticon-chat"
                                     style={{ fontSize: "20px" }}
                                   />
                                 </div>
@@ -261,7 +261,7 @@ const DashboardHeader = () => {
                                       wordBreak: "break-word",
                                     }}
                                   >
-                                    ลูกค้าสนใจบ้านเดี่ยว พระราม 9 (ติดต่อด่วน)
+                                    คุณมีข้อความใหม่จากผู้สนใจทรัพย์สิน
                                   </p>
                                 </div>
                               </div>
@@ -350,11 +350,95 @@ const DashboardHeader = () => {
                                 </div>
                               </div>
                             </Link>
+
+                            <Link
+                              href="/dashboard-message"
+                              className="dropdown-item border-bottom-0"
+                              style={{
+                                height: "auto",
+                                width: "100%",
+                                lineHeight: "normal",
+                                whiteSpace: "normal",
+                                padding: "15px 20px",
+                                display: "block",
+                                backgroundColor: "#fff",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "flex-start",
+                                  width: "100%",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    flexShrink: 0,
+                                    width: "45px",
+                                    height: "45px",
+                                    backgroundColor: "#fff7ed",
+                                    color: "#f97316",
+                                    borderRadius: "50%",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    marginRight: "15px",
+                                  }}
+                                >
+                                  <i
+                                    className="flaticon-chat-1"
+                                    style={{ fontSize: "20px" }}
+                                  />
+                                </div>
+
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      justifyContent: "space-between",
+                                      alignItems: "baseline",
+                                      marginBottom: "4px",
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        fontSize: "15px",
+                                        fontWeight: "bold",
+                                        color: "#333",
+                                      }}
+                                    >
+                                      ข้อความใหม่จากเอเจนท์
+                                    </span>
+                                    <span
+                                      style={{
+                                        fontSize: "11px",
+                                        color: "#999",
+                                        whiteSpace: "nowrap",
+                                      }}
+                                    >
+                                      3 ชม.
+                                    </span>
+                                  </div>
+                                  <p
+                                    style={{
+                                      fontSize: "13px",
+                                      lineHeight: "1.6",
+                                      color: "#666",
+                                      margin: 0,
+                                      wordBreak: "break-word",
+                                    }}
+                                  >
+                                    เอเจนท์ A ได้ส่งข้อความถึงคุณ
+                                  </p>
+                                </div>
+                              </div>
+                            </Link>
+
                           </div>
 
                           <div className="p-3 text-center border-top bg-white">
                             <Link
-                              href="/dashboard-message"
+                              href="#"
                               className="text-decoration-none text-primary fw-bold"
                               style={{
                                 fontSize: "14px",

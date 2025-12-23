@@ -25,6 +25,11 @@ const SidebarDashboard = () => {
           icon: "flaticon-chat-1",
           text: "ข้อความ",
         },
+        {
+          href: "/dashboard-agent-contacts",
+          icon: "flaticon-chat",
+          text: "ข้อความจากผู้สนใจ",
+        },
       ],
     },
     {
