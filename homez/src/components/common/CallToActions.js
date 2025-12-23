@@ -29,9 +29,9 @@ const CallToActions = () => {
           <div className="row align-items-center">
             <div className="col-lg-7 col-xl-6 " data-aos="fade-right">
               <div className="cta-style1">
-                <h2 className="cta-title">Need help? Talk to our expert.</h2>
+                <h2 className="cta-title">ต้องการความช่วยเหลือ? ปรึกษาผู้เชี่ยวชาญของเรา</h2>
                 <p className="cta-text mb-0">
-                  Talk to our experts or Browse through more properties.
+                  พูดคุยกับทีมงานมืออาชีพ หรือเลือกชมอสังหาริมทรัพย์รายการอื่นๆ เพิ่มเติม
                 </p>
               </div>
             </div>
@@ -43,12 +43,12 @@ const CallToActions = () => {
                   href="/contact"
                   className="ud-btn btn-transparent mr30 mr0-xs"
                 >
-                  Contact Us
+                  ติดต่อเรา
                   <i className="fal fa-arrow-right-long" />
                 </Link>
                 <Link href="/contact" className="ud-btn btn-dark">
                   <span className="flaticon-call vam pe-2" />
-                  920 851 9087
+                  02-XXX-XXXX
                 </Link>
               </div>
             </div>
