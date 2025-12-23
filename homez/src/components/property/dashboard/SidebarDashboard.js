@@ -26,6 +26,11 @@ const SidebarDashboard = () => {
           unreadCount: 5,
           text: "ข้อความ",
         },
+        {
+          href: "/dashboard-agent-contacts",
+          icon: "flaticon-chat",
+          text: "ข้อความจากผู้สนใจ",
+        },
       ],
     },
     {
