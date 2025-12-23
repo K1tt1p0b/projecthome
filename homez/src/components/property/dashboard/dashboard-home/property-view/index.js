@@ -8,14 +8,20 @@ const PropertyViews = () => {
     <div className="col-md-12">
       <div className="navtab-style1">
         <div className="d-sm-flex align-items-center justify-content-between">
-          <h4 className="title fz17 mb20">Property Views</h4>
+          
+          {/* ✅ 1. ใช้ div แทน h4 เหมือนเดิม (ถูกต้องแล้ว) */}
+          <div className="title fz17 mb20 fw600">Property Views</div>
+          
           <ul
             className="nav nav-tabs border-bottom-0 mb30"
             id="myTab"
             role="tablist"
           >
-            <li className="nav-item">
+            {/* ✅ 2. เพิ่ม role="presentation" ให้ li ทุกตัว (ตามมาตรฐาน Bootstrap) */}
+            <li className="nav-item" role="presentation">
               <a
+                // ✅ 3. ใส่ suppressHydrationWarning={true} เพื่อปิด Error เรื่อง attribute ไม่ตรง
+                suppressHydrationWarning={true} 
                 className="nav-link active"
                 id="hourly-tab"
                 data-bs-toggle="tab"
@@ -27,8 +33,10 @@ const PropertyViews = () => {
                 Hours
               </a>
             </li>
-            <li className="nav-item">
+            
+            <li className="nav-item" role="presentation">
               <a
+                suppressHydrationWarning={true} // ✅ ใส่ตรงนี้
                 className="nav-link"
                 id="weekly-tab"
                 data-bs-toggle="tab"
@@ -40,8 +48,10 @@ const PropertyViews = () => {
                 Weekly
               </a>
             </li>
-            <li className="nav-item">
+            
+            <li className="nav-item" role="presentation">
               <a
+                suppressHydrationWarning={true} // ✅ ใส่ตรงนี้
                 className="nav-link"
                 id="monthly-tab"
                 data-bs-toggle="tab"
@@ -58,6 +68,7 @@ const PropertyViews = () => {
         {/* End nav-tabs */}
 
         <div className="tab-content" id="myTabContent2">
+          {/* ... ส่วนเนื้อหาข้างล่างคงเดิม ... */}
           <div
             className="tab-pane fade show active"
             id="hourly"
@@ -67,7 +78,6 @@ const PropertyViews = () => {
           >
             <HoursBarChart />
           </div>
-          {/* End tab-pane */}
 
           <div
             className="tab-pane fade w-100"
@@ -80,7 +90,6 @@ const PropertyViews = () => {
               <WeeklyLineChart />
             </div>
           </div>
-          {/* End tab-pane */}
 
           <div
             className="tab-pane fade"
@@ -91,7 +100,6 @@ const PropertyViews = () => {
           >
             <MonthlyPieChart />
           </div>
-          {/* End tab-pane */}
         </div>
       </div>
     </div>

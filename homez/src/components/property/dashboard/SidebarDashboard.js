@@ -23,6 +23,7 @@ const SidebarDashboard = () => {
         {
           href: "/dashboard-message",
           icon: "flaticon-chat-1",
+          unreadCount: 5,
           text: "ข้อความ",
         },
       ],
@@ -92,17 +93,38 @@ const SidebarDashboard = () => {
                   href={item.href}
                   className={`items-center ${pathname === item.href ? "-is-active" : ""
                     }`}
+                  // ✅ เพิ่ม justify-content-between เพื่อให้ไอคอน+ชื่อ อยู่ซ้าย และเลขแจ้งเตือน อยู่ขวา
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
-                  <i
-                    className={`${item.icon} mr15`}
-                    style={{
-                      // ถ้าเป็นโทรโข่ง ให้ปรับจางลงเหลือ 70%
-                      opacity: item.icon.includes('bullhorn') ? 0.9 : 1,
-                      // หรือปรับขนาดลงนิดนึงให้ดูไม่แน่น
-                      fontSize: item.icon.includes('bullhorn') ? '14px' : ''
-                    }}
-                  />
-                  {item.text}
+                  {/* กลุ่มก้อน ไอคอน + ชื่อเมนู */}
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <i
+                      className={`${item.icon} mr15`}
+                      style={{
+                        opacity: item.icon.includes("bullhorn") ? 0.9 : 1,
+                        fontSize: item.icon.includes("bullhorn") ? "14px" : "",
+                      }}
+                    />
+                    {item.text}
+                  </div>
+
+                  {/* ✅ ส่วนที่เพิ่ม: แสดงเลขแจ้งเตือน (ถ้ามีข้อมูล unreadCount) */}
+                  {item.unreadCount > 0 && (
+                    <span
+                      className="badge rounded-pill"
+                      style={{
+                        backgroundColor: '#ff5a5f', // สีแดงธีม
+                        color: 'white',
+                        fontSize: '12px',
+                        padding: '4px 10px',
+                        fontWeight: '500',
+                        // ถ้าต้องการให้วงกลมเป๊ะๆ อาจกำหนด minWidth เพิ่ม
+                      }}
+                    >
+                      {item.unreadCount}
+                    </span>
+                  )}
+
                 </Link>
               </div>
             ))}
