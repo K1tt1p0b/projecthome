@@ -11,7 +11,7 @@ export const listingItems = [
       { label: "ที่ดินเปล่า", href: "/grid-full-4-col" },
       { label: "คอนโด", href: "/grid-full-2-col" },
       { label: "ห้องเช่า", href: "/grid-full-1-col-v1",},
-      { label: "Banner Search v1", href: "/banner-search-v1" },
+      { label: "บริการเพิ่มเติม", href: "/services" },
       { label: "Banner Search v2", href: "/banner-search-v2" },
     ],
   },
