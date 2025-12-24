@@ -1,0 +1,33 @@
+/* ล็อก scrollbar กัน layout ขยับ */
+html {
+  overflow-y: scroll;
+}
+
+/* พื้นหลังเต็ม แต่ content ไม่ชิด */
+.dashboard-bg-fix {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* gutter ด้านใน */
+.dashboard-inner {
+  padding: 0 clamp(14px, 2.8vw, 32px) 40px;
+}
+
+/* ✅ กรอบกลาง = เท่ากับหน้าเพิ่ม */
+.dashboard-content-max {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+/* ❌ ไม่แตะ ps-widget อีก */
+@media (max-width: 991px) {
+  .dashboard-inner { 
+    padding: 0 12px 30px;
+  }
+
+  .dashboard-content-max {
+    max-width: 100%;
+  }
+}
