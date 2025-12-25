@@ -6,6 +6,12 @@ import { usePathname } from "next/navigation";
 const SidebarDashboard = () => {
   const pathname = usePathname();
 
+  // เพิ่ม: active แบบรองรับ /dashboard-banners/new ด้วย
+  const isActive = (href) => {
+    if (!href) return false;
+    return pathname === href || pathname.startsWith(href + "/");
+  };
+
   const sidebarItems = [
     {
       title: "เมนูหลัก",
@@ -29,6 +35,7 @@ const SidebarDashboard = () => {
         {
           href: "/dashboard-agent-contacts",
           icon: "flaticon-chat",
+          unreadCount: 2,
           text: "ข้อความจากผู้สนใจ",
         },
       ],
@@ -39,13 +46,18 @@ const SidebarDashboard = () => {
         {
           href: "/dashboard-add-property",
           icon: "flaticon-new-tab",
-          text: "เพิ่มที่อยู่ทรัพย์",
+          text: "เพิ่มทรัพย์ใหม่",
         },
         {
           href: "/dashboard-my-properties",
           icon: "flaticon-home",
           text: "ทรัพย์สินของฉัน",
-        }
+        },
+        {
+          href: "/dashboard-banners",
+          icon: "flaticon-images",
+          text: "โฆษณาทรัพย์สิน",
+        },
       ],
     },
     {
@@ -66,7 +78,6 @@ const SidebarDashboard = () => {
           icon: "flaticon-review",
           text: "ประวัติพอยต์",
         },
-
         {
           href: "/login",
           icon: "flaticon-logout",
@@ -82,52 +93,69 @@ const SidebarDashboard = () => {
         {sidebarItems.map((section, sectionIndex) => (
           <div key={sectionIndex}>
             <p
-              className={`fz15 fw400 ff-heading ${sectionIndex === 0 ? "mt-0" : "mt30"
-                }`}
+              className={`fz15 fw400 ff-heading ${
+                sectionIndex === 0 ? "mt-0" : "mt30"
+              }`}
             >
               {section.title}
             </p>
-            {section.items.map((item, itemIndex) => (
-              <div key={itemIndex} className="sidebar_list_item">
-                <Link
-                  href={item.href}
-                  className={`items-center ${pathname === item.href ? "-is-active" : ""
-                    }`}
-                  // ✅ เพิ่ม justify-content-between เพื่อให้ไอคอน+ชื่อ อยู่ซ้าย และเลขแจ้งเตือน อยู่ขวา
-                  style={{ display: 'flex', justifyContent: 'space-between' }}
-                >
-                  {/* กลุ่มก้อน ไอคอน + ชื่อเมนู */}
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <i
-                      className={`${item.icon} mr15`}
-                      style={{
-                        opacity: item.icon.includes("bullhorn") ? 0.9 : 1,
-                        fontSize: item.icon.includes("bullhorn") ? "14px" : "",
-                      }}
-                    />
-                    {item.text}
-                  </div>
 
-                  {/* ✅ ส่วนที่เพิ่ม: แสดงเลขแจ้งเตือน (ถ้ามีข้อมูล unreadCount) */}
-                  {item.unreadCount > 0 && (
-                    <span
-                      className="badge rounded-pill"
-                      style={{
-                        backgroundColor: '#ff5a5f', // สีแดงธีม
-                        color: 'white',
-                        fontSize: '12px',
-                        padding: '4px 10px',
-                        fontWeight: '500',
-                        // ถ้าต้องการให้วงกลมเป๊ะๆ อาจกำหนด minWidth เพิ่ม
-                      }}
-                    >
-                      {item.unreadCount}
-                    </span>
-                  )}
+            {section.items.map((item, itemIndex) => {
+              const active = isActive(item.href);
 
-                </Link>
-              </div>
-            ))}
+              return (
+                <div key={itemIndex} className="sidebar_list_item">
+                  <Link
+                    href={item.href}
+                    className={`items-center ${active ? "-is-active" : ""}`}
+                    // ปรับ: ถ้า active ให้พื้นหลังดำแบบรูป
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "12px 14px",
+                      borderRadius: "14px",
+                      backgroundColor: active ? "#0f1115" : "transparent",
+                      color: active ? "#fff" : "inherit",
+                      transition: "all .15s ease",
+                    }}
+                  >
+                    {/* กลุ่มก้อน ไอคอน + ชื่อเมนู */}
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                      <i
+                        className={`${item.icon} mr15`}
+                        style={{
+                          opacity: item.icon.includes("bullhorn") ? 0.9 : 1,
+                          fontSize: item.icon.includes("bullhorn")
+                            ? "14px"
+                            : "",
+                          color: active ? "#fff" : "", // เพิ่ม: icon ขาวเมื่อ active
+                        }}
+                      />
+                      <span style={{ color: active ? "#fff" : "" }}>
+                        {item.text}
+                      </span>
+                    </div>
+
+                    {/* เลขแจ้งเตือน */}
+                    {item.unreadCount > 0 && (
+                      <span
+                        className="badge rounded-pill"
+                        style={{
+                          backgroundColor: "#ff5a5f",
+                          color: "white",
+                          fontSize: "12px",
+                          padding: "4px 10px",
+                          fontWeight: "500",
+                        }}
+                      >
+                        {item.unreadCount}
+                      </span>
+                    )}
+                  </Link>
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>
