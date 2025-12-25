@@ -140,16 +140,6 @@ const ConstructionRequest = ({ initialCategory }) => {
                                             <Link href={`/agent-single/${agent.id}`} className="btn btn-light rounded-pill fw600 text-thm border-0 bg-opacity-10" style={{backgroundColor: '#eb675320'}}>
                                                 ดูรายละเอียด
                                             </Link>
-                                            <div className="d-flex gap-2">
-                                                <a href={`tel:${agent.tel}`} className="btn btn-outline-dark rounded-pill fw600 flex-fill">
-                                                    <i className="fas fa-phone-alt me-1"></i> โทร
-                                                </a>
-                                                {agent.line && (
-                                                    <a href={`https://line.me/ti/p/~${agent.line}`} target="_blank" className="btn btn-success text-white rounded-pill fw600 flex-fill border-0" style={{backgroundColor: '#00B900'}}>
-                                                        <i className="fab fa-line me-1"></i> ไลน์
-                                                    </a>
-                                                )}
-                                            </div>
                                         </div>
                                     </div>
                                 </div>

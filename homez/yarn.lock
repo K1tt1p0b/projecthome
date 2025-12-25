@@ -1738,7 +1738,7 @@ react-pro-sidebar@^1.1.0:
     "@popperjs/core" "^2.11.6"
     classnames "^2.3.2"
 
-react-select@^5.10.1:
+react-select@^5.10.2:
   version "5.10.2"
   resolved "https://registry.npmjs.org/react-select/-/react-select-5.10.2.tgz"
   integrity sha512-Z33nHdEFWq9tfnfVXaiM12rbJmk+QjFEztWLtmXqQhz6Al4UZZ9xc0wiatmGtUOCCnHN0WizL3tCMYRENX4rVQ==

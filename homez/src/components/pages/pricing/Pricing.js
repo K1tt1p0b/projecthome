@@ -11,12 +11,18 @@ const Pricing = () => {
       pricePerMonth: "ตลอดชีพ",
       priceIcon: "/images/icon/pricing-icon-2.svg",
       features: [
-        "ลงประกาศฟรี 1 รายการ",
-        "อัปโหลดรูปได้ 5 รูป/ประกาศ",
-        "ระบบจัดการประกาศพื้นฐาน",
-        "ไม่มีป้าย Verified",
-        "ไม่มีเครดิตพอยต์รายเดือน",
-        "การสนับสนุนทางอีเมล",
+        "-",
+        "-",
+        "ดันประกาศฟรี 1 ครั้ง/วัน",
+        "-",
+        "ลงประกาศฟรี 5 รายการ",
+        "-",
+        "ได้ map page",
+        "-",
+        "-",
+        "-",
+        "-",
+        "-",
       ],
     },
     {
@@ -93,12 +99,12 @@ const Pricing = () => {
                     ? index === 0
                       ? "ฟรี" // ตัวแรก (Starter)
                       : index === 1
-                      ? "฿5,660" // ตัวที่สอง (Pro Agent รายปี)
-                      : "฿15,260" // ตัวที่สาม (Business รายปี)
+                        ? "฿5,660" // ตัวที่สอง (Pro Agent รายปี)
+                        : "฿15,260" // ตัวที่สาม (Business รายปี)
                     : item.price}
                 </h1>
                 <p className="text">
-                    {isYearlyBilling && index !== 0 ? "/ ปี" : item.pricePerMonth}
+                  {isYearlyBilling && index !== 0 ? "/ ปี" : item.pricePerMonth}
                 </p>
                 <Image
                   width={70}
