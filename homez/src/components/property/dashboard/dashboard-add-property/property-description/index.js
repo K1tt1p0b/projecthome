@@ -156,18 +156,50 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     condition_label: condition?.label ?? null,
   });
 
+  // ✅ เพิ่ม: เช็คลำดับ “ทีละ step” (ตัวแรกที่ยังขาดจะถูกแจ้ง)
+  const getFirstMissingField = () => {
+    if (!title.trim()) return "หัวข้อประกาศ";
+    if (!description.trim()) return "รายละเอียดประกาศ";
+    if (!announcerStatus) return "สถานะผู้ประกาศ";
+    if (!listingTypes || listingTypes.length === 0) return "ประเภทการขาย";
+    if (!propertyType) return "ประเภททรัพย์";
+    if (!condition) return "สภาพทรัพย์";
+    if (!price.trim() || priceNumber <= 0) return "ราคา";
+    return null;
+  };
+
+  // ✅ เพิ่ม: เช็คว่า “ยังไม่กรอกเลย” ไหม
+  const isAllEmpty = () => {
+    const noTitle = !title.trim();
+    const noDesc = !description.trim();
+    const noAnnouncer = !announcerStatus;
+    const noListing = !listingTypes || listingTypes.length === 0;
+    const noPropertyType = !propertyType;
+    const noCondition = !condition;
+    const noPrice = !price.trim() || priceNumber <= 0;
+
+    return (
+      noTitle &&
+      noDesc &&
+      noAnnouncer &&
+      noListing &&
+      noPropertyType &&
+      noCondition &&
+      noPrice
+    );
+  };
+
   const handleNext = () => {
-    if (
-      !title.trim() ||
-      !description.trim() ||
-      !announcerStatus ||
-      listingTypes.length === 0 ||
-      !propertyType ||
-      !condition ||
-      !price.trim() ||
-      priceNumber <= 0
-    ) {
-      toast.warn("กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบถ้วน");
+    // ✅ เคส 1: ไม่กรอกเลยสักช่อง
+    if (isAllEmpty()) {
+      toast.warn("กรุณากรอกข้อมูลให้ครบถ้วน");
+      return;
+    }
+
+    // ✅ เคส 2: กรอกไปบางส่วน → แจ้ง “ทีละช่อง” ตามลำดับที่ควรกรอก
+    const firstMissing = getFirstMissingField();
+    if (firstMissing) {
+      toast.warn(`กรุณากรอก${firstMissing}`);
       return;
     }
 
@@ -190,7 +222,9 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
       <div className="row">
         <div className="col-sm-12">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">หัวข้อประกาศ *</label>
+            <label className="heading-color ff-heading fw600 mb10">
+              หัวข้อประกาศ <span className="text-danger">*</span>
+            </label>
             <input
               type="text"
               className="form-control"
@@ -203,7 +237,9 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
 
         <div className="col-sm-12">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">รายละเอียดประกาศ *</label>
+            <label className="heading-color ff-heading fw600 mb10">
+              รายละเอียดประกาศ <span className="text-danger">*</span>
+            </label>
             <textarea
               cols={30}
               rows={5}
@@ -217,7 +253,9 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
 
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">สถานะผู้ประกาศ *</label>
+            <label className="heading-color ff-heading fw600 mb10">
+              สถานะผู้ประกาศ <span className="text-danger">*</span>
+            </label>
             <div className="location-area">
               {showSelect && (
                 <Select
@@ -237,7 +275,9 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
 
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">ประเภทการขาย *</label>
+            <label className="heading-color ff-heading fw600 mb10">
+              ประเภทการขาย <span className="text-danger">*</span>
+            </label>
             <div className="location-area">
               {showSelect && (
                 <Select
@@ -258,7 +298,9 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
 
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">ประเภททรัพย์ *</label>
+            <label className="heading-color ff-heading fw600 mb10">
+              ประเภททรัพย์ <span className="text-danger">*</span>
+            </label>
             <div className="location-area">
               {showSelect && (
                 <Select
@@ -278,7 +320,9 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
 
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">สภาพทรัพย์ *</label>
+            <label className="heading-color ff-heading fw600 mb10">
+              สภาพทรัพย์ <span className="text-danger">*</span>
+            </label>
             <div className="location-area">
               {showSelect && (
                 <Select
@@ -298,7 +342,9 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
 
         <div className="col-sm-6 col-xl-4">
           <div className="mb30">
-            <label className="heading-color ff-heading fw600 mb10">ราคา *</label>
+            <label className="heading-color ff-heading fw600 mb10">
+              ราคา <span className="text-danger">*</span>
+            </label>
             <input
               type="text"
               inputMode="numeric"

@@ -40,10 +40,21 @@ const SelectMulitField = ({ value = {}, onChange }) => {
   const [district, setDistrict] = useState(toOption(value.district));
   const [subdistrict, setSubdistrict] = useState(toOption(value.subdistrict));
   const [zipCode, setZipCode] = useState(value.zipCode ?? value.zipcode ?? "");
-  const [neighborhood, setNeighborhood] = useState(value.neighborhood ?? "");
+
+  // ✅ ช่องเดียว: หมู่บ้าน / โครงการ (ถ้ามี)
+  const [neighborhood, setNeighborhood] = useState(
+    value.neighborhood ?? value.village ?? value.projectName ?? ""
+  );
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // ✅ error สำหรับ required
+  const [errors, setErrors] = useState({
+    province: "",
+    district: "",
+    subdistrict: "",
+  });
 
   // กัน loop ตอน sync props
   const syncingRef = useRef(false);
@@ -56,7 +67,9 @@ const SelectMulitField = ({ value = {}, onChange }) => {
     const nextDistrict = toOption(value.district);
     const nextSubdistrict = toOption(value.subdistrict);
     const nextZip = value.zipCode ?? value.zipcode ?? "";
-    const nextNeighborhood = value.neighborhood ?? "";
+
+    const nextNeighborhood =
+      value.neighborhood ?? value.village ?? value.projectName ?? "";
 
     setProvince((prev) => (sameOpt(prev, nextProvince) ? prev : nextProvince));
     setDistrict((prev) => (sameOpt(prev, nextDistrict) ? prev : nextDistrict));
@@ -64,11 +77,20 @@ const SelectMulitField = ({ value = {}, onChange }) => {
       sameOpt(prev, nextSubdistrict) ? prev : nextSubdistrict
     );
 
-    // อย่าทับ zip ถ้า parent ไม่ส่งมา (กัน blank)
-    setZipCode((prev) => (nextZip === "" ? prev : String(prev) === String(nextZip) ? prev : nextZip));
+    setZipCode((prev) =>
+      nextZip === "" ? prev : String(prev) === String(nextZip) ? prev : nextZip
+    );
+
     setNeighborhood((prev) =>
       String(prev) === String(nextNeighborhood) ? prev : nextNeighborhood
     );
+
+    // เคลียร์ error เมื่อมีค่าแล้ว
+    setErrors((prev) => ({
+      province: nextProvince?.value ? "" : prev.province,
+      district: nextDistrict?.value ? "" : prev.district,
+      subdistrict: nextSubdistrict?.value ? "" : prev.subdistrict,
+    }));
 
     const t = setTimeout(() => {
       syncingRef.current = false;
@@ -116,11 +138,10 @@ const SelectMulitField = ({ value = {}, onChange }) => {
     return Array.from(map.values());
   }, [province, district]);
 
-  // FIX: auto fill ZIP ทันทีเมื่อเลือกตำบล
+  // auto fill ZIP ทันทีเมื่อเลือกตำบล
   useEffect(() => {
     if (!subdistrict?.value) return;
 
-    // match แบบละเอียดก่อน
     let row =
       geography.find(
         (r) =>
@@ -129,7 +150,6 @@ const SelectMulitField = ({ value = {}, onChange }) => {
           r.subdistrictNameTh === subdistrict.value
       ) || null;
 
-    // fallback: ถ้า district/province ยังไม่ครบหรือชื่อซ้ำ ให้หา subdistrict อย่างเดียว
     if (!row) {
       row = geography.find((r) => r.subdistrictNameTh === subdistrict.value) || null;
     }
@@ -150,6 +170,8 @@ const SelectMulitField = ({ value = {}, onChange }) => {
       subdistrict,
       zipCode,
       neighborhood,
+      // ✅ ส่งสถานะความถูกต้องให้ parent เผื่ออยาก block ปุ่ม Next
+      __valid: Boolean(province?.value && district?.value && subdistrict?.value),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [province, district, subdistrict, zipCode, neighborhood, mounted]);
@@ -161,14 +183,27 @@ const SelectMulitField = ({ value = {}, onChange }) => {
       {/* จังหวัด */}
       <div className="col-sm-6 col-xl-4">
         <div className="mb20">
-          <label className="heading-color ff-heading fw600 mb10">จังหวัด</label>
+          <label className="heading-color ff-heading fw600 mb10">
+            จังหวัด <span className="text-danger">*</span>
+          </label>
           <Select
             value={province}
             onChange={(val) => {
               setProvince(val);
               setDistrict(null);
               setSubdistrict(null);
-              setZipCode(""); // reset ได้ตอนเปลี่ยนจังหวัด
+              setZipCode("");
+              setErrors((prev) => ({
+                ...prev,
+                province: val?.value ? "" : "กรุณาเลือกจังหวัด",
+                district: "",
+                subdistrict: "",
+              }));
+            }}
+            onBlur={() => {
+              if (!province?.value) {
+                setErrors((prev) => ({ ...prev, province: "กรุณาเลือกจังหวัด" }));
+              }
             }}
             options={provinceOptions}
             styles={customStyles}
@@ -178,19 +213,41 @@ const SelectMulitField = ({ value = {}, onChange }) => {
             menuPortalTarget={mounted ? document.body : null}
             menuPosition="fixed"
           />
+          {errors.province && (
+            <div className="text-danger mt5" style={{ fontSize: 13 }}>
+              {errors.province}
+            </div>
+          )}
         </div>
       </div>
 
       {/* อำเภอ / เขต */}
       <div className="col-sm-6 col-xl-4">
         <div className="mb20">
-          <label className="heading-color ff-heading fw600 mb10">อำเภอ / เขต</label>
+          <label className="heading-color ff-heading fw600 mb10">
+            อำเภอ / เขต <span className="text-danger">*</span>
+          </label>
           <Select
             value={district}
             onChange={(val) => {
               setDistrict(val);
               setSubdistrict(null);
-              setZipCode(""); // reset ได้ตอนเปลี่ยนอำเภอ
+              setZipCode("");
+              setErrors((prev) => ({
+                ...prev,
+                district: val?.value ? "" : "กรุณาเลือกอำเภอ / เขต",
+                subdistrict: "",
+              }));
+            }}
+            onFocus={() => {
+              if (!province?.value) {
+                setErrors((prev) => ({ ...prev, province: "กรุณาเลือกจังหวัดก่อน" }));
+              }
+            }}
+            onBlur={() => {
+              if (!district?.value) {
+                setErrors((prev) => ({ ...prev, district: "กรุณาเลือกอำเภอ / เขต" }));
+              }
             }}
             options={districtOptions}
             styles={customStyles}
@@ -201,16 +258,43 @@ const SelectMulitField = ({ value = {}, onChange }) => {
             menuPortalTarget={mounted ? document.body : null}
             menuPosition="fixed"
           />
+          {errors.district && (
+            <div className="text-danger mt5" style={{ fontSize: 13 }}>
+              {errors.district}
+            </div>
+          )}
         </div>
       </div>
 
       {/* ตำบล / แขวง */}
       <div className="col-sm-6 col-xl-4">
         <div className="mb20">
-          <label className="heading-color ff-heading fw600 mb10">ตำบล / แขวง</label>
+          <label className="heading-color ff-heading fw600 mb10">
+            ตำบล / แขวง <span className="text-danger">*</span>
+          </label>
           <Select
             value={subdistrict}
-            onChange={(val) => setSubdistrict(val)}
+            onChange={(val) => {
+              setSubdistrict(val);
+              setErrors((prev) => ({
+                ...prev,
+                subdistrict: val?.value ? "" : "กรุณาเลือกตำบล / แขวง",
+              }));
+            }}
+            onFocus={() => {
+              if (!province?.value) {
+                setErrors((prev) => ({ ...prev, province: "กรุณาเลือกจังหวัดก่อน" }));
+                return;
+              }
+              if (!district?.value) {
+                setErrors((prev) => ({ ...prev, district: "กรุณาเลือกอำเภอ / เขตก่อน" }));
+              }
+            }}
+            onBlur={() => {
+              if (!subdistrict?.value) {
+                setErrors((prev) => ({ ...prev, subdistrict: "กรุณาเลือกตำบล / แขวง" }));
+              }
+            }}
             options={subdistrictOptions}
             styles={customStyles}
             classNamePrefix="select"
@@ -220,19 +304,24 @@ const SelectMulitField = ({ value = {}, onChange }) => {
             menuPortalTarget={mounted ? document.body : null}
             menuPosition="fixed"
           />
+          {errors.subdistrict && (
+            <div className="text-danger mt5" style={{ fontSize: 13 }}>
+              {errors.subdistrict}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* หมู่บ้าน / โครงการ */}
+      {/* ✅ หมู่บ้าน / โครงการ (ช่องเดียว) */}
       <div className="col-sm-6 col-xl-4">
         <div className="mb20">
           <label className="heading-color ff-heading fw600 mb10">
-            หมู่บ้าน / โครงการ (Neighborhood)
+            หมู่บ้าน / โครงการ (ถ้ามี)
           </label>
           <input
             type="text"
             className="form-control"
-            placeholder="เช่น หมู่บ้านฟิวเจอร์วิลล์"
+            placeholder="เช่น หมู่บ้านฟิวเจอร์วิลล์ / Life Asoke"
             value={neighborhood}
             onChange={(e) => setNeighborhood(e.target.value)}
           />
@@ -242,7 +331,9 @@ const SelectMulitField = ({ value = {}, onChange }) => {
       {/* รหัสไปรษณีย์ */}
       <div className="col-sm-6 col-xl-4">
         <div className="mb20">
-          <label className="heading-color ff-heading fw600 mb10">รหัสไปรษณีย์</label>
+          <label className="heading-color ff-heading fw600 mb10">
+            รหัสไปรษณีย์
+          </label>
           <input
             type="text"
             className="form-control"

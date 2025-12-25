@@ -216,7 +216,7 @@ const buildDetailsSummary = (detailsForm, propertyTypeValue) => {
   };
 
   const summary = {};
-  add(summary, "หมายเหตุ(เจ้าของ/นายหน้า)", detailsForm.note || "");
+  add(summary, "รายละเอียดเพิ่มเติม", detailsForm.note || "");
   add(summary, "amenities", detailsForm.amenities || []);
 
   const t = propertyTypeValue;

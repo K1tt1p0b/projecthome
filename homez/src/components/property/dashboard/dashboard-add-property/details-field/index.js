@@ -51,6 +51,12 @@ const toOption = (raw, options) => {
   return found || null;
 };
 
+const isImageFile = (file) => {
+  if (!file) return false;
+  if (file.type?.startsWith("image/")) return true;
+  return /\.(jpg|jpeg|png|webp)$/i.test(file.name || "");
+};
+
 const DetailsFiled = ({
   propertyType, // string จาก Step1 (value)
   listingTypes, // เผื่อใช้ต่อ
@@ -91,25 +97,31 @@ const DetailsFiled = ({
   const [roadWidth, setRoadWidth] = useState(initialValue?.roadWidth || ""); // ถนนกว้าง (ม.)
   const [titleDeed, setTitleDeed] = useState(initialValue?.titleDeed || ""); // เอกสารสิทธิ
 
-  // รูปโฉนด (ไม่บังคับ) รองรับได้ทั้ง File หรือ URL/string
+  // ✅ รูปโฉนด (บังคับเฉพาะ house-and-land / land)
+  // รองรับได้ทั้ง File หรือ URL/string
   const [titleDeedImage, setTitleDeedImage] = useState(
     initialValue?.titleDeedImage ?? null
   );
 
   /* =========================
      คอนโด (condo)
+     ✅ เอา "ชื่อโครงการ" ออกตาม requirement
+     (ให้ไปกรอกที่หน้า Location: neighborhood อย่างเดียว)
   ========================= */
-  const [projectName, setProjectName] = useState(initialValue?.projectName || "");
   const [building, setBuilding] = useState(initialValue?.building || "");
   const [unitFloor, setUnitFloor] = useState(initialValue?.unitFloor || "");
   const [roomArea, setRoomArea] = useState(initialValue?.roomArea || ""); // ตร.ม.
   const [roomType, setRoomType] = useState(initialValue?.roomType || "");
-  const [condoParking, setCondoParking] = useState(initialValue?.condoParking || "");
+  const [condoParking, setCondoParking] = useState(
+    initialValue?.condoParking || ""
+  );
 
   /* =========================
      ห้องเช่า (room-rent)
   ========================= */
-  const [roomAreaRent, setRoomAreaRent] = useState(initialValue?.roomAreaRent || "");
+  const [roomAreaRent, setRoomAreaRent] = useState(
+    initialValue?.roomAreaRent || ""
+  );
   const [rentFloor, setRentFloor] = useState(initialValue?.rentFloor || "");
   const [bathroomPrivate, setBathroomPrivate] = useState(
     initialValue?.bathroomPrivate ?? true
@@ -117,14 +129,20 @@ const DetailsFiled = ({
   const [internetIncluded, setInternetIncluded] = useState(
     initialValue?.internetIncluded ?? false
   );
-  const [electricRate, setElectricRate] = useState(initialValue?.electricRate || "");
+  const [electricRate, setElectricRate] = useState(
+    initialValue?.electricRate || ""
+  );
   const [waterRate, setWaterRate] = useState(initialValue?.waterRate || "");
 
   /* =========================
      เชิงกิจการ (เผื่ออนาคต)
   ========================= */
-  const [businessType, setBusinessType] = useState(initialValue?.businessType || "");
-  const [businessArea, setBusinessArea] = useState(initialValue?.businessArea || "");
+  const [businessType, setBusinessType] = useState(
+    initialValue?.businessType || ""
+  );
+  const [businessArea, setBusinessArea] = useState(
+    initialValue?.businessArea || ""
+  );
   const [restrooms, setRestrooms] = useState(initialValue?.restrooms || "");
   const [powerPhase, setPowerPhase] = useState(initialValue?.powerPhase || "");
 
@@ -154,11 +172,14 @@ const DetailsFiled = ({
     // รูปโฉนด: ถ้าเป็น list ก็หยิบตัวแรกมาโชว์
     if (initialValue.titleDeedImage !== undefined) {
       setTitleDeedImage(initialValue.titleDeedImage ?? null);
-    } else if (Array.isArray(initialValue.titleDeedImages) && initialValue.titleDeedImages[0]) {
+    } else if (
+      Array.isArray(initialValue.titleDeedImages) &&
+      initialValue.titleDeedImages[0]
+    ) {
       setTitleDeedImage(initialValue.titleDeedImages[0]);
     }
 
-    setProjectName(initialValue.projectName ?? "");
+    // condo (ไม่มี projectName แล้ว)
     setBuilding(initialValue.building ?? "");
     setUnitFloor(initialValue.unitFloor ?? "");
     setRoomArea(initialValue.roomArea ?? "");
@@ -203,9 +224,8 @@ const DetailsFiled = ({
       setTitleDeedImage(null);
     }
 
-    // reset condo
+    // reset condo (ไม่มี projectName แล้ว)
     if (!isCondo(propertyType)) {
-      setProjectName("");
       setBuilding("");
       setUnitFloor("");
       setRoomArea("");
@@ -257,11 +277,10 @@ const DetailsFiled = ({
     roadWidth,
     titleDeed,
 
-    // รูปโฉนด
+    // deed image
     titleDeedImage,
 
     // condo
-    projectName,
     building,
     unitFloor,
     roomArea,
@@ -282,6 +301,50 @@ const DetailsFiled = ({
     restrooms,
     powerPhase,
   });
+
+  /* =========================
+     ต้องบังคับแนบรูปโฉนดไหม?
+     - บังคับเฉพาะ house-and-land + land
+     - ถ้ามีรูปเดิมเป็น string(url) หรือเป็น File แล้ว => ผ่าน
+========================= */
+  const mustHaveDeedImage = useMemo(() => {
+    if (!isHouseLand(propertyType) && !isLandOnly(propertyType)) return false;
+    if (typeof titleDeedImage === "string" && titleDeedImage.trim()) return false;
+    if (titleDeedImage instanceof File) return false;
+    return true;
+  }, [propertyType, titleDeedImage]);
+
+  const deedPreviewText = useMemo(() => {
+    if (!titleDeedImage) return "";
+    if (typeof titleDeedImage === "string") return titleDeedImage;
+    if (titleDeedImage?.name) return titleDeedImage.name;
+    return "แนบไฟล์แล้ว";
+  }, [titleDeedImage]);
+
+  const handleDeedFileChange = (e) => {
+    const file = e.target.files?.[0];
+
+    if (!file) {
+      setTitleDeedImage(null);
+      return;
+    }
+
+    if (!isImageFile(file)) {
+      setError("กรุณาอัปโหลดไฟล์รูปเท่านั้น (jpg, png, webp)");
+      e.target.value = "";
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      setError("ไฟล์รูปต้องไม่เกิน 5MB");
+      e.target.value = "";
+      return;
+    }
+
+    setError("");
+    setTitleDeedImage(file);
+  };
 
   /* =========================
      validation (required)
@@ -305,6 +368,10 @@ const DetailsFiled = ({
         setError("กรุณาระบุ เอกสารสิทธิ (เช่น โฉนด/นส.3ก)");
         return;
       }
+      if (mustHaveDeedImage) {
+        setError("กรุณาอัปโหลดรูปเอกสารโฉนด");
+        return;
+      }
     }
 
     // ที่ดินเปล่า
@@ -321,14 +388,14 @@ const DetailsFiled = ({
         setError("กรุณาระบุ ถนนหน้าที่ดินกว้าง (เมตร)");
         return;
       }
+      if (mustHaveDeedImage) {
+        setError("กรุณาอัปโหลดรูปเอกสารโฉนด");
+        return;
+      }
     }
 
     // คอนโด
     if (isCondo(propertyType)) {
-      if (!String(projectName || "").trim()) {
-        setError("กรุณาระบุ ชื่อโครงการ");
-        return;
-      }
       if (!roomArea) {
         setError("กรุณาระบุ ขนาดห้อง (ตร.ม.)");
         return;
@@ -385,13 +452,6 @@ const DetailsFiled = ({
     return "รายละเอียด";
   }, [propertyType]);
 
-  const deedPreviewText = useMemo(() => {
-    if (!titleDeedImage) return "";
-    if (typeof titleDeedImage === "string") return titleDeedImage;
-    if (titleDeedImage?.name) return titleDeedImage.name;
-    return "แนบไฟล์แล้ว";
-  }, [titleDeedImage]);
-
   return (
     <form
       className="form-style1"
@@ -400,20 +460,27 @@ const DetailsFiled = ({
         handleNext();
       }}
     >
+      {/* note: required hint */}
+      <div className="row">
+        <div className="col-12 mb10">
+          <p className="text-muted mb10" style={{ fontSize: 13 }}>
+            ช่องที่มี <span className="text-danger">*</span> จำเป็นต้องกรอก
+          </p>
+        </div>
+      </div>
+
       <div className="row">
         <div className="col-12 mb10">
           <h4 className="title fz17 mb10">{typeTitle}</h4>
         </div>
 
-        {/* =========================
-            REQUIRED (ตามประเภท)
-        ========================= */}
-
         {/* บ้านและที่ดิน */}
         {isHouseLand(propertyType) && (
           <>
             <div className="col-sm-6 col-md-3 mb20">
-              <label className="fw600 mb10">ห้องนอน *</label>
+              <label className="fw600 mb10">
+                ห้องนอน <span className="text-danger">*</span>
+              </label>
               <Select
                 value={bedrooms}
                 onChange={setBedrooms}
@@ -425,7 +492,9 @@ const DetailsFiled = ({
             </div>
 
             <div className="col-sm-6 col-md-3 mb20">
-              <label className="fw600 mb10">ห้องน้ำ *</label>
+              <label className="fw600 mb10">
+                ห้องน้ำ <span className="text-danger">*</span>
+              </label>
               <Select
                 value={bathrooms}
                 onChange={setBathrooms}
@@ -437,7 +506,9 @@ const DetailsFiled = ({
             </div>
 
             <div className="col-sm-6 col-md-3 mb20">
-              <label className="fw600 mb10">พื้นที่ใช้สอย (ตร.ม.) *</label>
+              <label className="fw600 mb10">
+                พื้นที่ใช้สอย (ตร.ม.) <span className="text-danger">*</span>
+              </label>
               <input
                 type="number"
                 className="form-control"
@@ -448,7 +519,9 @@ const DetailsFiled = ({
             </div>
 
             <div className="col-sm-6 col-md-3 mb20">
-              <label className="fw600 mb10">ขนาดที่ดิน (ตร.ว.) *</label>
+              <label className="fw600 mb10">
+                ขนาดที่ดิน (ตร.ว.) <span className="text-danger">*</span>
+              </label>
               <input
                 type="number"
                 className="form-control"
@@ -459,7 +532,9 @@ const DetailsFiled = ({
             </div>
 
             <div className="col-sm-6 col-md-3 mb20">
-              <label className="fw600 mb10">เอกสารสิทธิ *</label>
+              <label className="fw600 mb10">
+                เอกสารสิทธิ <span className="text-danger">*</span>
+              </label>
               <input
                 type="text"
                 className="form-control"
@@ -470,17 +545,17 @@ const DetailsFiled = ({
               />
             </div>
 
-            {/* รูปโฉนด (ไม่บังคับ) */}
+            {/* ✅ รูปโฉนด (บังคับ) */}
             <div className="col-sm-6 col-md-6 mb20">
-              <label className="fw600 mb10">รูปโฉนด (ไม่บังคับ)</label>
+              <label className="fw600 mb10">
+                รูปเอกสารโฉนด <span className="text-danger">*</span>
+              </label>
               <input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 className="form-control"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  setTitleDeedImage(file || null);
-                }}
+                required={mustHaveDeedImage}
+                onChange={handleDeedFileChange}
                 style={{ height: "55px", paddingTop: "12px" }}
               />
               {deedPreviewText && (
@@ -496,7 +571,9 @@ const DetailsFiled = ({
         {isLandOnly(propertyType) && (
           <>
             <div className="col-sm-6 col-md-3 mb20">
-              <label className="fw600 mb10">ขนาดที่ดิน (ตร.ว.) *</label>
+              <label className="fw600 mb10">
+                ขนาดที่ดิน (ตร.ว.) <span className="text-danger">*</span>
+              </label>
               <input
                 type="number"
                 className="form-control"
@@ -507,7 +584,9 @@ const DetailsFiled = ({
             </div>
 
             <div className="col-sm-6 col-md-3 mb20">
-              <label className="fw600 mb10">ถนนหน้าที่ดินกว้าง (ม.) *</label>
+              <label className="fw600 mb10">
+                ถนนหน้าที่ดินกว้าง (ม.) <span className="text-danger">*</span>
+              </label>
               <input
                 type="number"
                 className="form-control"
@@ -518,7 +597,9 @@ const DetailsFiled = ({
             </div>
 
             <div className="col-sm-6 col-md-3 mb20">
-              <label className="fw600 mb10">เอกสารสิทธิ *</label>
+              <label className="fw600 mb10">
+                เอกสารสิทธิ <span className="text-danger">*</span>
+              </label>
               <input
                 type="text"
                 className="form-control"
@@ -529,17 +610,17 @@ const DetailsFiled = ({
               />
             </div>
 
-            {/* รูปโฉนด (ไม่บังคับ) */}
+            {/* ✅ รูปโฉนด (บังคับ) */}
             <div className="col-sm-6 col-md-6 mb20">
-              <label className="fw600 mb10">รูปโฉนด (ไม่บังคับ)</label>
+              <label className="fw600 mb10">
+                รูปเอกสารโฉนด <span className="text-danger">*</span>
+              </label>
               <input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 className="form-control"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  setTitleDeedImage(file || null);
-                }}
+                required={mustHaveDeedImage}
+                onChange={handleDeedFileChange}
                 style={{ height: "55px", paddingTop: "12px" }}
               />
               {deedPreviewText && (
@@ -551,22 +632,13 @@ const DetailsFiled = ({
           </>
         )}
 
-        {/* คอนโด */}
+        {/* คอนโด (required เหลือแค่ชั้น + ขนาดห้อง) */}
         {isCondo(propertyType) && (
           <>
-            <div className="col-sm-6 col-md-4 mb20">
-              <label className="fw600 mb10">ชื่อโครงการ *</label>
-              <input
-                type="text"
-                className="form-control"
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                style={{ height: "55px" }}
-              />
-            </div>
-
             <div className="col-sm-6 col-md-2 mb20">
-              <label className="fw600 mb10">ชั้น *</label>
+              <label className="fw600 mb10">
+                ชั้น <span className="text-danger">*</span>
+              </label>
               <input
                 type="number"
                 className="form-control"
@@ -577,7 +649,9 @@ const DetailsFiled = ({
             </div>
 
             <div className="col-sm-6 col-md-3 mb20">
-              <label className="fw600 mb10">ขนาดห้อง (ตร.ม.) *</label>
+              <label className="fw600 mb10">
+                ขนาดห้อง (ตร.ม.) <span className="text-danger">*</span>
+              </label>
               <input
                 type="number"
                 className="form-control"
@@ -593,7 +667,9 @@ const DetailsFiled = ({
         {isRoomRent(propertyType) && (
           <>
             <div className="col-sm-6 col-md-3 mb20">
-              <label className="fw600 mb10">ขนาดห้อง (ตร.ม.) *</label>
+              <label className="fw600 mb10">
+                ขนาดห้อง (ตร.ม.) <span className="text-danger">*</span>
+              </label>
               <input
                 type="number"
                 className="form-control"
@@ -604,7 +680,9 @@ const DetailsFiled = ({
             </div>
 
             <div className="col-sm-6 col-md-3 mb20">
-              <label className="fw600 mb10">ชั้นที่อยู่ *</label>
+              <label className="fw600 mb10">
+                ชั้นที่อยู่ <span className="text-danger">*</span>
+              </label>
               <input
                 type="number"
                 className="form-control"
@@ -616,11 +694,7 @@ const DetailsFiled = ({
           </>
         )}
 
-        {/* =========================
-            OPTIONAL (แสดงทันที ไม่ต้องมีปุ่ม และไม่บังคับกรอก)
-        ========================= */}
-
-        {/* บ้านและที่ดิน: เพิ่มเติม */}
+        {/* OPTIONAL: บ้านและที่ดิน */}
         {isHouseLand(propertyType) && (
           <>
             <div className="col-sm-6 col-md-3 mb20">
@@ -681,7 +755,7 @@ const DetailsFiled = ({
           </>
         )}
 
-        {/* ที่ดินเปล่า: เพิ่มเติม */}
+        {/* OPTIONAL: ที่ดินเปล่า */}
         {isLandOnly(propertyType) && (
           <>
             <div className="col-sm-6 col-md-3 mb20">
@@ -708,7 +782,7 @@ const DetailsFiled = ({
           </>
         )}
 
-        {/* คอนโด: เพิ่มเติม */}
+        {/* OPTIONAL: คอนโด */}
         {isCondo(propertyType) && (
           <>
             <div className="col-sm-6 col-md-3 mb20">
@@ -748,7 +822,7 @@ const DetailsFiled = ({
           </>
         )}
 
-        {/* ห้องเช่า: เพิ่มเติม */}
+        {/* OPTIONAL: ห้องเช่า */}
         {isRoomRent(propertyType) && (
           <>
             <div className="col-sm-6 col-md-3 mb20">
@@ -814,7 +888,7 @@ const DetailsFiled = ({
       {/* note */}
       <div className="row mt30">
         <div className="col-12">
-          <label className="fw600 mb10">หมายเหตุ (เจ้าของ/นายหน้า)</label>
+          <label className="fw600 mb10">รายละเอียดเพิ่มเติม</label>
           <textarea
             className="form-control"
             rows={4}
@@ -840,7 +914,11 @@ const DetailsFiled = ({
           </button>
 
           <div className="d-flex gap-2">
-            <button type="button" className="ud-btn btn-light" onClick={handleSaveDraft}>
+            <button
+              type="button"
+              className="ud-btn btn-light"
+              onClick={handleSaveDraft}
+            >
               บันทึกร่าง
             </button>
             <button type="submit" className="ud-btn btn-thm">
