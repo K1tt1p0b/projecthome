@@ -1,12 +1,12 @@
 "use client";
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
 import { usePathname } from "next/navigation";
 
 const SidebarDashboard = () => {
   const pathname = usePathname();
+  const [hovered, setHovered] = useState(null);
 
-  // เพิ่ม: active แบบรองรับ /dashboard-banners/new ด้วย
   const isActive = (href) => {
     if (!href) return false;
     return pathname === href || pathname.startsWith(href + "/");
@@ -43,11 +43,6 @@ const SidebarDashboard = () => {
     {
       title: "การจัดการทรัพย์สิน",
       items: [
-        //{
-        //  href: "/dashboard-add-property",
-        //  icon: "flaticon-new-tab",
-        //  text: "เพิ่มทรัพย์ใหม่",
-        //},
         {
           href: "/dashboard-my-properties",
           icon: "flaticon-home",
@@ -63,16 +58,6 @@ const SidebarDashboard = () => {
     {
       title: "การตั้งค่าบัญชี",
       items: [
-        //{
-        //  href: "/dashboard-points",
-        //  icon: "flaticon-like",
-        //  text: "เติมพอยต์",
-        //},
-        // {
-        //   href: "/dashboard-points/promote",
-        //   //icon: "far fa-bullhorn",
-        //   //text: "โปรโมทประกาศ",
-        // },
         {
           href: "/pricing",
           icon: "flaticon-protection",
@@ -117,42 +102,48 @@ const SidebarDashboard = () => {
 
             {section.items.map((item, itemIndex) => {
               const active = isActive(item.href);
+              const isHover = hovered === `${sectionIndex}-${itemIndex}`;
+              const highlight = active || isHover;
 
               return (
                 <div key={itemIndex} className="sidebar_list_item">
                   <Link
                     href={item.href}
-                    className={`items-center ${active ? "-is-active" : ""}`}
-                    // ปรับ: ถ้า active ให้พื้นหลังดำแบบรูป
+                    onMouseEnter={() =>
+                      setHovered(`${sectionIndex}-${itemIndex}`)
+                    }
+                    onMouseLeave={() => setHovered(null)}
+                    className={`items-center ${
+                      active ? "-is-active" : ""
+                    }`}
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
                       padding: "12px 14px",
                       borderRadius: "14px",
-                      backgroundColor: active ? "#0f1115" : "transparent",
-                      color: active ? "#fff" : "inherit",
+                      backgroundColor: highlight
+                        ? "#0f1115"
+                        : "transparent",
+                      color: highlight ? "#fff" : "inherit",
                       transition: "all .15s ease",
+                      cursor: "pointer",
                     }}
                   >
-                    {/* กลุ่มก้อน ไอคอน + ชื่อเมนู */}
+                    {/* icon + text */}
                     <div style={{ display: "flex", alignItems: "center" }}>
                       <i
                         className={`${item.icon} mr15`}
                         style={{
-                          opacity: item.icon.includes("bullhorn") ? 0.9 : 1,
-                          fontSize: item.icon.includes("bullhorn")
-                            ? "14px"
-                            : "",
-                          color: active ? "#fff" : "", // เพิ่ม: icon ขาวเมื่อ active
+                          color: highlight ? "#fff" : "",
                         }}
                       />
-                      <span style={{ color: active ? "#fff" : "" }}>
+                      <span style={{ color: highlight ? "#fff" : "" }}>
                         {item.text}
                       </span>
                     </div>
 
-                    {/* เลขแจ้งเตือน */}
+                    {/* badge */}
                     {item.unreadCount > 0 && (
                       <span
                         className="badge rounded-pill"
