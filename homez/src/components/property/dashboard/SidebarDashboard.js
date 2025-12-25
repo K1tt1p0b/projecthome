@@ -63,16 +63,6 @@ const SidebarDashboard = () => {
     {
       title: "การตั้งค่าบัญชี",
       items: [
-        {
-          href: "/pricing",
-          icon: "flaticon-protection",
-          text: "แพ็กเกจสมาชิก",
-        },
-      ],
-    },
-    {
-      title: "การตั้งค่าบัญชี",
-      items: [
         //{
         //  href: "/dashboard-points",
         //  icon: "flaticon-like",
@@ -83,6 +73,11 @@ const SidebarDashboard = () => {
         //   //icon: "far fa-bullhorn",
         //   //text: "โปรโมทประกาศ",
         // },
+        {
+          href: "/pricing",
+          icon: "flaticon-protection",
+          text: "แพ็กเกจสมาชิก",
+        },
         {
           href: "/dashboard-my-package",
           icon: "flaticon-review",
