@@ -51,11 +51,6 @@ const DashboardHeader = () => {
       title: "การตั้งค่าบัญชี",
       items: [
         {
-          icon: "flaticon-like",
-          text: "เติมพอยต์",
-          href: "/dashboard-points",
-        },
-        {
           href: "/pricing",
           icon: "flaticon-protection",
           text: "แพ็กเกจสมาชิก",

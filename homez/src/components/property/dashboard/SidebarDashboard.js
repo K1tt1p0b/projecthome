@@ -52,11 +52,6 @@ const SidebarDashboard = () => {
       title: "การตั้งค่าบัญชี",
       items: [
         {
-          href: "/dashboard-points",
-          icon: "flaticon-like",
-          text: "เติมพอยต์",
-        },
-        {
           href: "/pricing",
           icon: "flaticon-protection",
           text: "แพ็กเกจสมาชิก",

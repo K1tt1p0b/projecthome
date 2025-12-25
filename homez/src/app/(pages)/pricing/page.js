@@ -1,69 +1,62 @@
+"use client"; // อย่าลืมบรรทัดนี้ถ้าใช้ Next.js 13+ (App Router)
+
 import CallToActions from "@/components/common/CallToActions";
-import DefaultHeader from "@/components/common/DefaultHeader";
-import Footer from "@/components/common/default-footer";
+import DashboardHeader from "@/components/common/DashboardHeader";
+import Footer from "@/components/property/dashboard/Footer";
 import MobileMenu from "@/components/common/mobile-menu";
 import Pricing from "@/components/pages/pricing/Pricing";
-
-export const metadata = {
-  title: "Pricing  || Homez - Real Estate NextJS Template",
-};
+import SidebarDashboard from "@/components/property/dashboard/SidebarDashboard";
 
 const PricingPlan = () => {
   return (
     <>
-      {/* Main Header Nav */}
-      <DefaultHeader />
-      {/* End Main Header Nav */}
+      {/* 1. Header ของ Dashboard */}
+      <DashboardHeader />
 
-      {/* Mobile Nav  */}
+      {/* 2. Mobile Menu (สำหรับมือถือ) */}
       <MobileMenu />
-      {/* End Mobile Nav  */}
 
-      {/* Breadcrumb Sections */}
-      <section className="breadcumb-section">
-        <div className="container">
-          <div className="row">
-            <div className="col-lg-12">
-              <div className="breadcumb-style1">
-                <h2 className="title">Membership Plans</h2>
-                <div className="breadcumb-list">
-                  <a href="#">Home</a>
-                  <a href="#">Plans</a>
+      {/* 3. โครงสร้าง Layout ของ Dashboard */}
+      <div className="dashboard_content_wrapper">
+        <div className="dashboard dashboard_wrapper pr30 pr0-md">
+
+          {/* --- Sidebar ด้านซ้าย --- */}
+          <div className="dashboard_content_wrapper">
+            <div className="dashboard dashboard_wrapper pr30 pr0-xl">
+              <SidebarDashboard />
+            </div>
+          </div>
+
+          {/* --- เนื้อหาหลัก ด้านขวา --- */}
+          <div className="dashboard__main pl0-md">
+            <div className="dashboard__content bg-light pt30 pb30">
+
+              {/* หัวข้อหน้า (Breadcrumb & Title) */}
+              <div className="row align-items-center pb40">
+                <div className="col-lg-12">
+                  <div className="dashboard_title_area">
+                    <h2 className="fw700">Membership Plans</h2>
+                    <p className="text-muted">เลือกแพ็กเกจที่เหมาะกับคุณ</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      {/* End Breadcrumb Sections */}
 
-      {/* Pricing Section Area */}
-      <section className="our-pricing pb90 pt-0">
-        <div className="container">
-          <div className="row" data-aos="fade-up" data-aos-delay="100">
-            <div className="col-lg-6 offset-lg-3">
-              <div className="main-title text-center mb30">
-                <h2>Membership Plans</h2>
-                <p>Lorem ipsum dolor sit amet, consectetur.</p>
+              {/* ส่วนแสดงตารางราคา (Pricing Component) */}
+              <div className="row">
+                <div className="col-xl-12">
+                  {/* เรียกใช้ Component Pricing ที่คุณเตรียมไว้ */}
+                  <Pricing />
+                </div>
               </div>
+
+
+
             </div>
+                      <Footer />
           </div>
-          {/* End .row */}
-          <Pricing />
+
         </div>
-        {/* End .container */}
-      </section>
-      {/* End Pricing Section Area */}
-
-      {/* Our CTA */}
-      <CallToActions />
-      {/* Our CTA */}
-
-      {/* Start Our Footer */}
-      <section className="footer-style1 pt60 pb-0">
-        <Footer />
-      </section>
-      {/* End Our Footer */}
+      </div>
     </>
   );
 };
