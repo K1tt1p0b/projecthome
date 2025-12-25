@@ -30,12 +30,11 @@ const PropertySummary = ({
 
   const safeBasic = basicInfo || {};
   const safeLocation = location || {};
-  const safeImages = images || [];
+  const safeImages = Array.isArray(images) ? images : [];
   const safeDetails = details || {};
 
   const isEmptyObject = (obj) => !obj || Object.keys(obj).length === 0;
 
-  // ---------- helpers ----------
   const isBlank = (v) => v === undefined || v === null || String(v).trim() === "";
 
   const formatPrice = (p) => {
@@ -67,22 +66,18 @@ const PropertySummary = ({
     onSubmit?.(payload);
   };
 
-  // ---------- map label (รองรับทั้ง summary ไทย และ raw detailsForm) ----------
+  // ----- detailsView (รองรับทั้ง summary ไทย และ raw detailsForm) -----
   const detailsView = useMemo(() => {
     const d = safeDetails || {};
-
-    // ถ้าเป็น summary ไทยอยู่แล้ว ใช้เลย
     const hasThaiKeys = Object.keys(d).some((k) => /[ก-๙]/.test(k));
     if (hasThaiKeys) return d;
 
-    // ถ้าเป็น raw -> map เป็นไทย
     const out = {};
     const pick = (label, value) => {
       if (isBlank(value)) return;
       out[label] = value;
     };
 
-    // บ้าน/บ้าน+ที่ดิน/ที่ดิน
     pick("ห้องนอน", d.bedrooms?.label ?? d.bedrooms);
     pick("ห้องน้ำ", d.bathrooms?.label ?? d.bathrooms);
     pick("จำนวนชั้น", d.floors);
@@ -94,7 +89,15 @@ const PropertySummary = ({
     pick("หน้ากว้างที่ดิน (ม.)", d.frontage);
     pick("ความลึกที่ดิน (ม.)", d.depth);
 
-    // คอนโด
+    // รูปโฉนด
+    if (d.titleDeedImage) {
+      const name =
+        typeof d.titleDeedImage === "string"
+          ? d.titleDeedImage
+          : d.titleDeedImage?.name || "มีไฟล์แนบ";
+      pick("รูปโฉนด", name);
+    }
+
     pick("ชื่อโครงการ", d.projectName);
     pick("อาคาร/ตึก", d.building);
     pick("ชั้น", d.unitFloor);
@@ -102,7 +105,6 @@ const PropertySummary = ({
     pick("ประเภทห้อง", d.roomType);
     pick("สิทธิ์ที่จอดรถ", d.condoParking);
 
-    // ห้องเช่า
     pick("ขนาดห้อง (ตร.ม.)", d.roomAreaRent);
     pick("ชั้นที่อยู่", d.rentFloor);
     if (d.bathroomPrivate !== undefined) pick("ห้องน้ำในตัว", d.bathroomPrivate ? "มี" : "ไม่มี");
@@ -110,10 +112,6 @@ const PropertySummary = ({
     pick("ค่าไฟ (บาท/หน่วย)", d.electricRate);
     pick("ค่าน้ำ", d.waterRate);
 
-    // common
-    pick("ทิศหน้าทรัพย์", d.direction?.label ?? d.direction);
-    pick("การตกแต่ง", d.furnishing?.label ?? d.furnishing);
-    pick("ปีที่สร้าง", d.yearBuilt);
     pick("หมายเหตุ(เจ้าของ/นายหน้า)", d.note);
 
     if (Array.isArray(d.amenities)) out.amenities = d.amenities;
@@ -123,46 +121,33 @@ const PropertySummary = ({
 
   const amenities = Array.isArray(detailsView.amenities) ? detailsView.amenities : [];
 
-  // ---------- ✅ ORDER: เรียงตามฟอร์มที่กรอก ----------
+  // เรียง key รายละเอียด (ไม่บังคับ แต่ช่วยให้ไม่มั่ว)
   const DETAILS_ORDER = [
-    // กลุ่มหลัก (เหมือนในฟอร์มบ้าน/ที่ดิน)
     "ห้องนอน",
     "ห้องน้ำ",
     "พื้นที่ใช้สอย (ตร.ม.)",
     "ขนาดที่ดิน (ตร.ว.)",
-
     "เอกสารสิทธิ",
-    "ทิศหน้าทรัพย์",
-    "การตกแต่ง",
-    "ปีที่สร้าง",
-
-    // กลุ่ม “ข้อมูลเพิ่มเติม”
+    "รูปโฉนด",
     "จำนวนชั้น",
     "ที่จอดรถ",
     "ถนนหน้าบ้าน/ที่ดินกว้าง (ม.)",
     "หน้ากว้างที่ดิน (ม.)",
     "ความลึกที่ดิน (ม.)",
-
-    // คอนโด
     "ชื่อโครงการ",
     "อาคาร/ตึก",
     "ชั้น",
     "ขนาดห้อง (ตร.ม.)",
     "ประเภทห้อง",
     "สิทธิ์ที่จอดรถ",
-
-    // ห้องเช่า
     "ชั้นที่อยู่",
     "ห้องน้ำในตัว",
     "รวมอินเทอร์เน็ต",
     "ค่าไฟ (บาท/หน่วย)",
     "ค่าน้ำ",
-
-    // ท้ายสุด
     "หมายเหตุ(เจ้าของ/นายหน้า)",
   ];
 
-  // ---------- ✅ detailsEntries แบบเรียง order ----------
   const detailsEntries = useMemo(() => {
     const d = detailsView || {};
     const used = new Set();
@@ -183,11 +168,17 @@ const PropertySummary = ({
     return [...ordered, ...rest];
   }, [detailsView]);
 
+  // สถานะผู้ประกาศ (รองรับหลายชื่อ key กันพัง)
+  const announcerText =
+    safeBasic.announcerStatus ||
+    safeBasic.announcer_status ||
+    safeBasic.announcerStatus_label ||
+    safeBasic.announcerStatusText ||
+    "-";
+
   return (
     <div className="row">
-      {/* --------------------
-          ข้อมูลทรัพย์สิน
-      -------------------- */}
+      {/* 1) ข้อมูลทรัพย์สิน */}
       <div className="col-12 mb25">
         <div className="d-flex justify-content-between align-items-center mb10">
           <h4 className="ff-heading fw600 mb0">ข้อมูลทรัพย์สิน</h4>
@@ -206,6 +197,12 @@ const PropertySummary = ({
               <p>
                 <strong>หัวข้อประกาศ:</strong> {safeBasic.title || "-"}
               </p>
+
+              {/* เพิ่ม: สถานะผู้ประกาศ */}
+              <p>
+                <strong>สถานะผู้ประกาศ:</strong> {announcerText}
+              </p>
+
               <p>
                 <strong>ประเภทประกาศ:</strong> {safeBasic.listingType || "-"}
               </p>
@@ -228,9 +225,7 @@ const PropertySummary = ({
         </div>
       </div>
 
-      {/* --------------------
-          ที่อยู่ทรัพย์สิน
-      -------------------- */}
+      {/* 2) ที่อยู่ทรัพย์สิน */}
       <div className="col-12 mb25">
         <div className="d-flex justify-content-between align-items-center mb10">
           <h4 className="ff-heading fw600 mb0">ที่อยู่ทรัพย์สิน</h4>
@@ -274,10 +269,7 @@ const PropertySummary = ({
 
               {(!isBlank(safeLocation.latitude) || !isBlank(safeLocation.longitude)) && (
                 <div className="mt15">
-                  <Map
-                    lat={Number(safeLocation.latitude)}
-                    lng={Number(safeLocation.longitude)}
-                  />
+                  <Map lat={Number(safeLocation.latitude)} lng={Number(safeLocation.longitude)} />
                   <div className="d-flex gap-3 mt10">
                     {!isBlank(safeLocation.latitude) && (
                       <small>
@@ -297,49 +289,7 @@ const PropertySummary = ({
         </div>
       </div>
 
-      {/* --------------------
-          รูปภาพ
-      -------------------- */}
-      <div className="col-12 mb25">
-        <div className="d-flex justify-content-between align-items-center mb10">
-          <h4 className="ff-heading fw600 mb0">รูปภาพทรัพย์สิน</h4>
-          {onEditImages && (
-            <button type="button" style={editButtonStyle} onClick={onEditImages}>
-              {safeImages.length === 0 ? "เพิ่มรูป" : "แก้ไข"}
-            </button>
-          )}
-        </div>
-
-        <div style={cardStyle}>
-          {safeImages.length === 0 ? (
-            <p className="text-muted mb0">ยังไม่มีรูปภาพ</p>
-          ) : (
-            <div className="row g-3">
-              {safeImages.map((src, idx) => (
-                <div className="col-6 col-md-3" key={idx}>
-                  {/* ใช้ img ตรง ๆ เพราะเราไม่รู้ว่าคุณเก็บเป็น url/preview object */}
-                  {/* ถ้าเป็น object ให้ปรับ src={src.url} ตามจริง */}
-                  <img
-                    src={typeof src === "string" ? src : src?.url}
-                    alt={`property-${idx}`}
-                    style={{
-                      width: "100%",
-                      height: 120,
-                      objectFit: "cover",
-                      borderRadius: 8,
-                      background: "#fff",
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* --------------------
-          รายละเอียดทรัพย์เพิ่มเติม
-      -------------------- */}
+      {/* 3) รายละเอียดทรัพย์เพิ่มเติม */}
       <div className="col-12 mb25">
         <div className="d-flex justify-content-between align-items-center mb10">
           <h4 className="ff-heading fw600 mb0">รายละเอียดทรัพย์เพิ่มเติม</h4>
@@ -355,7 +305,6 @@ const PropertySummary = ({
             <p className="text-muted mb0">ยังไม่มีรายละเอียดเพิ่มเติม</p>
           ) : (
             <>
-              {/* details list (เรียงตาม order แล้ว) */}
               <div
                 style={{
                   display: "grid",
@@ -370,12 +319,9 @@ const PropertySummary = ({
                 ))}
               </div>
 
-              {/* amenities */}
               {amenities.length > 0 && (
                 <div className="mt20">
-                  <div style={{ fontWeight: 700, marginBottom: 8 }}>
-                    สิ่งอำนวยความสะดวก:
-                  </div>
+                  <div style={{ fontWeight: 700, marginBottom: 8 }}>สิ่งอำนวยความสะดวก:</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     {amenities.map((a, idx) => (
                       <span
@@ -399,31 +345,57 @@ const PropertySummary = ({
         </div>
       </div>
 
-      {/* --------------------
-          Actions
-      -------------------- */}
-      
-        <div className="col-12">
-          <div className="d-flex justify-content-end gap-2">
-              <button 
-                type="button" 
-                className="ud-btn btn-light" 
-                onClick={handleSaveDraft}
-              >
-                บันทึกร่าง
-              </button>
-              <button 
-                type="button" 
-                className="ud-btn btn-thm" 
-                onClick={handleSubmit}
-              >
-                ยืนยันลงประกาศ
-              </button>
-          </div>
+      {/* 4) รูปภาพทรัพย์สิน */}
+      <div className="col-12 mb25">
+        <div className="d-flex justify-content-between align-items-center mb10">
+          <h4 className="ff-heading fw600 mb0">รูปภาพทรัพย์สิน</h4>
+          {onEditImages && (
+            <button type="button" style={editButtonStyle} onClick={onEditImages}>
+              {safeImages.length === 0 ? "เพิ่มรูป" : "แก้ไข"}
+            </button>
+          )}
         </div>
-      
+
+        <div style={cardStyle}>
+          {safeImages.length === 0 ? (
+            // แก้ typo ตรงนี้แล้ว
+            <p className="text-muted mb0">ยังไม่มีรูปภาพ</p>
+          ) : (
+            <div className="row g-3">
+              {safeImages.map((src, idx) => (
+                <div className="col-6 col-md-3" key={idx}>
+                  <img
+                    src={typeof src === "string" ? src : src?.url}
+                    alt={`property-${idx}`}
+                    style={{
+                      width: "100%",
+                      height: 120,
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      background: "#fff",
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="col-12">
+        <div className="d-flex justify-content-end gap-2">
+          <button type="button" className="ud-btn btn-light" onClick={handleSaveDraft}>
+            บันทึกร่าง
+          </button>
+          <button type="button" className="ud-btn btn-thm" onClick={handleSubmit}>
+            ยืนยันลงประกาศ
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
 
 export default PropertySummary;
+ 

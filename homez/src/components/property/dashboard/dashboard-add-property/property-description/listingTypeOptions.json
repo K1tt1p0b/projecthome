@@ -1,5 +1,5 @@
 [
   { "value": "sell", "label": "ขาย" },
   { "value": "rent", "label": "เช่า" },
-  { "value": "supply", "label": "จัดหา" }
+  { "value": "takeover", "label": "เซ้ง" }
 ]

@@ -8,24 +8,15 @@ import Amenities from "../Amenities";
 import bedroomOptions from "./bedroomOptions.json";
 import bathroomOptions from "./bathroomOptions.json";
 import parkingOptions from "./parkingOptions.json";
-import directionOptions from "./directionOptions.json";
-import furnishOptions from "./furnishOptions.json";
 
 /* =========================
    helpers: ตรงกับ propertyTypeOptions.json ของคุณ
-   value:
-   - house-and-land (บ้านและที่ดิน)
-   - land           (ที่ดินเปล่า)
-   - condo          (คอนโด)
-   - room-rent      (ห้องเช่า)
 ========================= */
 const norm = (v) => String(v ?? "").trim();
 const isHouseLand = (t) => norm(t) === "house-and-land";
 const isLandOnly = (t) => norm(t) === "land";
 const isCondo = (t) => norm(t) === "condo";
 const isRoomRent = (t) => norm(t) === "room-rent";
-
-// เผื่ออนาคต (ถ้ายังไม่มีใน options ก็ไม่เข้า)
 const isBusiness = (t) => norm(t) === "business";
 
 /* =========================
@@ -51,8 +42,15 @@ const customStyles = {
 };
 
 /* =========================
-   Component
+  helper: map initialValue -> react-select option
 ========================= */
+const toOption = (raw, options) => {
+  if (!raw) return null;
+  if (typeof raw === "object" && raw.value != null) return raw; // already option
+  const found = options?.find((o) => String(o.value) === String(raw));
+  return found || null;
+};
+
 const DetailsFiled = ({
   propertyType, // string จาก Step1 (value)
   listingTypes, // เผื่อใช้ต่อ
@@ -64,15 +62,9 @@ const DetailsFiled = ({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // toggle แสดง/ซ่อนข้อมูลเพิ่มเติม
-  const [showMore, setShowMore] = useState(false);
-
   /* =========================
      state: common
   ========================= */
-  const [direction, setDirection] = useState(initialValue?.direction || null);
-  const [furnishing, setFurnishing] = useState(initialValue?.furnishing || null);
-  const [yearBuilt, setYearBuilt] = useState(initialValue?.yearBuilt || "");
   const [note, setNote] = useState(initialValue?.note || "");
   const [amenities, setAmenities] = useState(initialValue?.amenities || []);
   const [error, setError] = useState("");
@@ -80,10 +72,16 @@ const DetailsFiled = ({
   /* =========================
      บ้านและที่ดิน (house-and-land)
   ========================= */
-  const [bedrooms, setBedrooms] = useState(initialValue?.bedrooms || null);
-  const [bathrooms, setBathrooms] = useState(initialValue?.bathrooms || null);
+  const [bedrooms, setBedrooms] = useState(
+    toOption(initialValue?.bedrooms, bedroomOptions)
+  );
+  const [bathrooms, setBathrooms] = useState(
+    toOption(initialValue?.bathrooms, bathroomOptions)
+  );
   const [floors, setFloors] = useState(initialValue?.floors || "");
-  const [parking, setParking] = useState(initialValue?.parking || null);
+  const [parking, setParking] = useState(
+    toOption(initialValue?.parking, parkingOptions)
+  );
   const [usableArea, setUsableArea] = useState(initialValue?.usableArea || ""); // ตร.ม.
 
   // land fields (ใช้กับ house-and-land และ land)
@@ -92,6 +90,11 @@ const DetailsFiled = ({
   const [depth, setDepth] = useState(initialValue?.depth || ""); // ลึก (ม.)
   const [roadWidth, setRoadWidth] = useState(initialValue?.roadWidth || ""); // ถนนกว้าง (ม.)
   const [titleDeed, setTitleDeed] = useState(initialValue?.titleDeed || ""); // เอกสารสิทธิ
+
+  // รูปโฉนด (ไม่บังคับ) รองรับได้ทั้ง File หรือ URL/string
+  const [titleDeedImage, setTitleDeedImage] = useState(
+    initialValue?.titleDeedImage ?? null
+  );
 
   /* =========================
      คอนโด (condo)
@@ -126,11 +129,60 @@ const DetailsFiled = ({
   const [powerPhase, setPowerPhase] = useState(initialValue?.powerPhase || "");
 
   /* =========================
+     sync initialValue (สำคัญสำหรับหน้าแก้ไข)
+  ========================= */
+  useEffect(() => {
+    if (!initialValue) return;
+
+    setNote(initialValue.note ?? "");
+    setAmenities(Array.isArray(initialValue.amenities) ? initialValue.amenities : []);
+    setError("");
+
+    setBedrooms(toOption(initialValue.bedrooms, bedroomOptions));
+    setBathrooms(toOption(initialValue.bathrooms, bathroomOptions));
+    setParking(toOption(initialValue.parking, parkingOptions));
+
+    setFloors(initialValue.floors ?? "");
+    setUsableArea(initialValue.usableArea ?? "");
+
+    setLandSqw(initialValue.landSqw ?? "");
+    setFrontage(initialValue.frontage ?? "");
+    setDepth(initialValue.depth ?? "");
+    setRoadWidth(initialValue.roadWidth ?? "");
+    setTitleDeed(initialValue.titleDeed ?? "");
+
+    // รูปโฉนด: ถ้าเป็น list ก็หยิบตัวแรกมาโชว์
+    if (initialValue.titleDeedImage !== undefined) {
+      setTitleDeedImage(initialValue.titleDeedImage ?? null);
+    } else if (Array.isArray(initialValue.titleDeedImages) && initialValue.titleDeedImages[0]) {
+      setTitleDeedImage(initialValue.titleDeedImages[0]);
+    }
+
+    setProjectName(initialValue.projectName ?? "");
+    setBuilding(initialValue.building ?? "");
+    setUnitFloor(initialValue.unitFloor ?? "");
+    setRoomArea(initialValue.roomArea ?? "");
+    setRoomType(initialValue.roomType ?? "");
+    setCondoParking(initialValue.condoParking ?? "");
+
+    setRoomAreaRent(initialValue.roomAreaRent ?? "");
+    setRentFloor(initialValue.rentFloor ?? "");
+    setBathroomPrivate(initialValue.bathroomPrivate ?? true);
+    setInternetIncluded(initialValue.internetIncluded ?? false);
+    setElectricRate(initialValue.electricRate ?? "");
+    setWaterRate(initialValue.waterRate ?? "");
+
+    setBusinessType(initialValue.businessType ?? "");
+    setBusinessArea(initialValue.businessArea ?? "");
+    setRestrooms(initialValue.restrooms ?? "");
+    setPowerPhase(initialValue.powerPhase ?? "");
+  }, [initialValue]);
+
+  /* =========================
      reset เมื่อเปลี่ยนประเภท (กันข้อมูลค้าง)
   ========================= */
   useEffect(() => {
     setError("");
-    setShowMore(false);
 
     // reset บ้าน
     if (!isHouseLand(propertyType)) {
@@ -148,6 +200,7 @@ const DetailsFiled = ({
       setDepth("");
       setRoadWidth("");
       setTitleDeed("");
+      setTitleDeedImage(null);
     }
 
     // reset condo
@@ -187,9 +240,6 @@ const DetailsFiled = ({
     listingTypes: Array.isArray(listingTypes) ? listingTypes : [],
 
     // common
-    direction,
-    furnishing,
-    yearBuilt,
     amenities,
     note,
 
@@ -207,6 +257,9 @@ const DetailsFiled = ({
     roadWidth,
     titleDeed,
 
+    // รูปโฉนด
+    titleDeedImage,
+
     // condo
     projectName,
     building,
@@ -223,7 +276,7 @@ const DetailsFiled = ({
     electricRate,
     waterRate,
 
-    // business (optional future)
+    // business
     businessType,
     businessArea,
     restrooms,
@@ -248,7 +301,7 @@ const DetailsFiled = ({
         setError("กรุณาระบุ ขนาดที่ดิน (ตร.ว.)");
         return;
       }
-      if (!titleDeed.trim()) {
+      if (!String(titleDeed || "").trim()) {
         setError("กรุณาระบุ เอกสารสิทธิ (เช่น โฉนด/นส.3ก)");
         return;
       }
@@ -260,7 +313,7 @@ const DetailsFiled = ({
         setError("กรุณาระบุ ขนาดที่ดิน (ตร.ว.)");
         return;
       }
-      if (!titleDeed.trim()) {
+      if (!String(titleDeed || "").trim()) {
         setError("กรุณาระบุ เอกสารสิทธิ (เช่น โฉนด/นส.3ก)");
         return;
       }
@@ -272,7 +325,7 @@ const DetailsFiled = ({
 
     // คอนโด
     if (isCondo(propertyType)) {
-      if (!projectName.trim()) {
+      if (!String(projectName || "").trim()) {
         setError("กรุณาระบุ ชื่อโครงการ");
         return;
       }
@@ -298,9 +351,9 @@ const DetailsFiled = ({
       }
     }
 
-    // เชิงกิจการ (ถ้าใช้ในอนาคต)
+    // เชิงกิจการ
     if (isBusiness(propertyType)) {
-      if (!businessType.trim()) {
+      if (!String(businessType || "").trim()) {
         setError("กรุณาระบุ ประเภทเชิงกิจการ");
         return;
       }
@@ -308,7 +361,7 @@ const DetailsFiled = ({
         setError("กรุณาระบุ พื้นที่ใช้สอย (ตร.ม.)");
         return;
       }
-      if (!powerPhase.trim()) {
+      if (!String(powerPhase || "").trim()) {
         setError("กรุณาระบุ ระบบไฟ (1 เฟส / 3 เฟส)");
         return;
       }
@@ -332,6 +385,13 @@ const DetailsFiled = ({
     return "รายละเอียด";
   }, [propertyType]);
 
+  const deedPreviewText = useMemo(() => {
+    if (!titleDeedImage) return "";
+    if (typeof titleDeedImage === "string") return titleDeedImage;
+    if (titleDeedImage?.name) return titleDeedImage.name;
+    return "แนบไฟล์แล้ว";
+  }, [titleDeedImage]);
+
   return (
     <form
       className="form-style1"
@@ -343,9 +403,6 @@ const DetailsFiled = ({
       <div className="row">
         <div className="col-12 mb10">
           <h4 className="title fz17 mb10">{typeTitle}</h4>
-
-          {/* debug (เอาออกได้) */}
-          {/* <div className="text-muted">DEBUG propertyType: {String(propertyType)}</div> */}
         </div>
 
         {/* =========================
@@ -412,6 +469,26 @@ const DetailsFiled = ({
                 style={{ height: "55px" }}
               />
             </div>
+
+            {/* รูปโฉนด (ไม่บังคับ) */}
+            <div className="col-sm-6 col-md-6 mb20">
+              <label className="fw600 mb10">รูปโฉนด (ไม่บังคับ)</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="form-control"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  setTitleDeedImage(file || null);
+                }}
+                style={{ height: "55px", paddingTop: "12px" }}
+              />
+              {deedPreviewText && (
+                <div className="mt10 text-muted" style={{ fontSize: 13 }}>
+                  ไฟล์เดิม/ที่เลือก: {deedPreviewText}
+                </div>
+              )}
+            </div>
           </>
         )}
 
@@ -450,6 +527,26 @@ const DetailsFiled = ({
                 onChange={(e) => setTitleDeed(e.target.value)}
                 style={{ height: "55px" }}
               />
+            </div>
+
+            {/* รูปโฉนด (ไม่บังคับ) */}
+            <div className="col-sm-6 col-md-6 mb20">
+              <label className="fw600 mb10">รูปโฉนด (ไม่บังคับ)</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="form-control"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  setTitleDeedImage(file || null);
+                }}
+                style={{ height: "55px", paddingTop: "12px" }}
+              />
+              {deedPreviewText && (
+                <div className="mt10 text-muted" style={{ fontSize: 13 }}>
+                  ไฟล์เดิม/ที่เลือก: {deedPreviewText}
+                </div>
+              )}
             </div>
           </>
         )}
@@ -520,240 +617,188 @@ const DetailsFiled = ({
         )}
 
         {/* =========================
-            COMMON (ทุกประเภท)
+            OPTIONAL (แสดงทันที ไม่ต้องมีปุ่ม และไม่บังคับกรอก)
         ========================= */}
-        <div className="col-sm-6 col-md-3 mb20">
-          <label className="fw600 mb10">ทิศหน้าทรัพย์</label>
-          <Select
-            value={direction}
-            onChange={setDirection}
-            options={directionOptions}
-            styles={customStyles}
-            isSearchable={false}
-            menuPortalTarget={mounted ? document.body : null}
-          />
-        </div>
 
-        <div className="col-sm-6 col-md-3 mb20">
-          <label className="fw600 mb10">การตกแต่ง</label>
-          <Select
-            value={furnishing}
-            onChange={setFurnishing}
-            options={furnishOptions}
-            styles={customStyles}
-            isSearchable={false}
-            menuPortalTarget={mounted ? document.body : null}
-          />
-        </div>
-
-        <div className="col-sm-6 col-md-3 mb20">
-          <label className="fw600 mb10">ปีที่สร้าง</label>
-          <input
-            type="number"
-            className="form-control"
-            value={yearBuilt}
-            onChange={(e) => setYearBuilt(e.target.value)}
-            style={{ height: "55px" }}
-          />
-        </div>
-
-        {/* Toggle show more */}
-        <div className="col-12 mt10">
-          <button
-            type="button"
-            className="ud-btn btn-light"
-            onClick={() => setShowMore((v) => !v)}
-          >
-            {showMore ? "ซ่อนข้อมูลเพิ่มเติม" : "แสดงข้อมูลเพิ่มเติม"}
-          </button>
-        </div>
-
-        {/* =========================
-            OPTIONAL (showMore)
-        ========================= */}
-        {showMore && (
+        {/* บ้านและที่ดิน: เพิ่มเติม */}
+        {isHouseLand(propertyType) && (
           <>
-            {/* บ้านและที่ดิน: เพิ่มเติม */}
-            {isHouseLand(propertyType) && (
-              <>
-                <div className="col-sm-6 col-md-3 mb20">
-                  <label className="fw600 mb10">จำนวนชั้น</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={floors}
-                    onChange={(e) => setFloors(e.target.value)}
-                    style={{ height: "55px" }}
-                  />
-                </div>
+            <div className="col-sm-6 col-md-3 mb20">
+              <label className="fw600 mb10">จำนวนชั้น</label>
+              <input
+                type="number"
+                className="form-control"
+                value={floors}
+                onChange={(e) => setFloors(e.target.value)}
+                style={{ height: "55px" }}
+              />
+            </div>
 
-                <div className="col-sm-6 col-md-3 mb20">
-                  <label className="fw600 mb10">ที่จอดรถ (คัน)</label>
-                  <Select
-                    value={parking}
-                    onChange={setParking}
-                    options={parkingOptions}
-                    styles={customStyles}
-                    isSearchable={false}
-                    menuPortalTarget={mounted ? document.body : null}
-                  />
-                </div>
+            <div className="col-sm-6 col-md-3 mb20">
+              <label className="fw600 mb10">ที่จอดรถ (คัน)</label>
+              <Select
+                value={parking}
+                onChange={setParking}
+                options={parkingOptions}
+                styles={customStyles}
+                isSearchable={false}
+                menuPortalTarget={mounted ? document.body : null}
+              />
+            </div>
 
-                <div className="col-sm-6 col-md-3 mb20">
-                  <label className="fw600 mb10">ถนนหน้าบ้านกว้าง (ม.)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={roadWidth}
-                    onChange={(e) => setRoadWidth(e.target.value)}
-                    style={{ height: "55px" }}
-                  />
-                </div>
+            <div className="col-sm-6 col-md-3 mb20">
+              <label className="fw600 mb10">ถนนหน้าบ้านกว้าง (ม.)</label>
+              <input
+                type="number"
+                className="form-control"
+                value={roadWidth}
+                onChange={(e) => setRoadWidth(e.target.value)}
+                style={{ height: "55px" }}
+              />
+            </div>
 
-                <div className="col-sm-6 col-md-3 mb20">
-                  <label className="fw600 mb10">หน้ากว้างที่ดิน (ม.)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={frontage}
-                    onChange={(e) => setFrontage(e.target.value)}
-                    style={{ height: "55px" }}
-                  />
-                </div>
+            <div className="col-sm-6 col-md-3 mb20">
+              <label className="fw600 mb10">หน้ากว้างที่ดิน (ม.)</label>
+              <input
+                type="number"
+                className="form-control"
+                value={frontage}
+                onChange={(e) => setFrontage(e.target.value)}
+                style={{ height: "55px" }}
+              />
+            </div>
 
-                <div className="col-sm-6 col-md-3 mb20">
-                  <label className="fw600 mb10">ความลึกที่ดิน (ม.)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={depth}
-                    onChange={(e) => setDepth(e.target.value)}
-                    style={{ height: "55px" }}
-                  />
-                </div>
-              </>
-            )}
+            <div className="col-sm-6 col-md-3 mb20">
+              <label className="fw600 mb10">ความลึกที่ดิน (ม.)</label>
+              <input
+                type="number"
+                className="form-control"
+                value={depth}
+                onChange={(e) => setDepth(e.target.value)}
+                style={{ height: "55px" }}
+              />
+            </div>
+          </>
+        )}
 
-            {/* ที่ดินเปล่า: เพิ่มเติม */}
-            {isLandOnly(propertyType) && (
-              <>
-                <div className="col-sm-6 col-md-3 mb20">
-                  <label className="fw600 mb10">หน้ากว้างที่ดิน (ม.)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={frontage}
-                    onChange={(e) => setFrontage(e.target.value)}
-                    style={{ height: "55px" }}
-                  />
-                </div>
+        {/* ที่ดินเปล่า: เพิ่มเติม */}
+        {isLandOnly(propertyType) && (
+          <>
+            <div className="col-sm-6 col-md-3 mb20">
+              <label className="fw600 mb10">หน้ากว้างที่ดิน (ม.)</label>
+              <input
+                type="number"
+                className="form-control"
+                value={frontage}
+                onChange={(e) => setFrontage(e.target.value)}
+                style={{ height: "55px" }}
+              />
+            </div>
 
-                <div className="col-sm-6 col-md-3 mb20">
-                  <label className="fw600 mb10">ความลึกที่ดิน (ม.)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={depth}
-                    onChange={(e) => setDepth(e.target.value)}
-                    style={{ height: "55px" }}
-                  />
-                </div>
-              </>
-            )}
+            <div className="col-sm-6 col-md-3 mb20">
+              <label className="fw600 mb10">ความลึกที่ดิน (ม.)</label>
+              <input
+                type="number"
+                className="form-control"
+                value={depth}
+                onChange={(e) => setDepth(e.target.value)}
+                style={{ height: "55px" }}
+              />
+            </div>
+          </>
+        )}
 
-            {/* คอนโด: เพิ่มเติม */}
-            {isCondo(propertyType) && (
-              <>
-                <div className="col-sm-6 col-md-3 mb20">
-                  <label className="fw600 mb10">อาคาร/ตึก</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={building}
-                    onChange={(e) => setBuilding(e.target.value)}
-                    style={{ height: "55px" }}
-                  />
-                </div>
+        {/* คอนโด: เพิ่มเติม */}
+        {isCondo(propertyType) && (
+          <>
+            <div className="col-sm-6 col-md-3 mb20">
+              <label className="fw600 mb10">อาคาร/ตึก</label>
+              <input
+                type="text"
+                className="form-control"
+                value={building}
+                onChange={(e) => setBuilding(e.target.value)}
+                style={{ height: "55px" }}
+              />
+            </div>
 
-                <div className="col-sm-6 col-md-3 mb20">
-                  <label className="fw600 mb10">ประเภทห้อง</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="เช่น Studio / 1BR / 2BR"
-                    value={roomType}
-                    onChange={(e) => setRoomType(e.target.value)}
-                    style={{ height: "55px" }}
-                  />
-                </div>
+            <div className="col-sm-6 col-md-3 mb20">
+              <label className="fw600 mb10">ประเภทห้อง</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="เช่น Studio / 1BR / 2BR"
+                value={roomType}
+                onChange={(e) => setRoomType(e.target.value)}
+                style={{ height: "55px" }}
+              />
+            </div>
 
-                <div className="col-sm-6 col-md-3 mb20">
-                  <label className="fw600 mb10">สิทธิ์ที่จอดรถ</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="เช่น 1 คัน / ไม่มี"
-                    value={condoParking}
-                    onChange={(e) => setCondoParking(e.target.value)}
-                    style={{ height: "55px" }}
-                  />
-                </div>
-              </>
-            )}
+            <div className="col-sm-6 col-md-3 mb20">
+              <label className="fw600 mb10">สิทธิ์ที่จอดรถ</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="เช่น 1 คัน / ไม่มี"
+                value={condoParking}
+                onChange={(e) => setCondoParking(e.target.value)}
+                style={{ height: "55px" }}
+              />
+            </div>
+          </>
+        )}
 
-            {/* ห้องเช่า: เพิ่มเติม */}
-            {isRoomRent(propertyType) && (
-              <>
-                <div className="col-sm-6 col-md-3 mb20">
-                  <label className="fw600 mb10">ห้องน้ำในตัว</label>
-                  <select
-                    className="form-control"
-                    value={bathroomPrivate ? "yes" : "no"}
-                    onChange={(e) => setBathroomPrivate(e.target.value === "yes")}
-                    style={{ height: "55px" }}
-                  >
-                    <option value="yes">มี</option>
-                    <option value="no">ไม่มี</option>
-                  </select>
-                </div>
+        {/* ห้องเช่า: เพิ่มเติม */}
+        {isRoomRent(propertyType) && (
+          <>
+            <div className="col-sm-6 col-md-3 mb20">
+              <label className="fw600 mb10">ห้องน้ำในตัว</label>
+              <select
+                className="form-control"
+                value={bathroomPrivate ? "yes" : "no"}
+                onChange={(e) => setBathroomPrivate(e.target.value === "yes")}
+                style={{ height: "55px" }}
+              >
+                <option value="yes">มี</option>
+                <option value="no">ไม่มี</option>
+              </select>
+            </div>
 
-                <div className="col-sm-6 col-md-3 mb20">
-                  <label className="fw600 mb10">รวมอินเทอร์เน็ต</label>
-                  <select
-                    className="form-control"
-                    value={internetIncluded ? "yes" : "no"}
-                    onChange={(e) => setInternetIncluded(e.target.value === "yes")}
-                    style={{ height: "55px" }}
-                  >
-                    <option value="no">ไม่รวม</option>
-                    <option value="yes">รวม</option>
-                  </select>
-                </div>
+            <div className="col-sm-6 col-md-3 mb20">
+              <label className="fw600 mb10">รวมอินเทอร์เน็ต</label>
+              <select
+                className="form-control"
+                value={internetIncluded ? "yes" : "no"}
+                onChange={(e) => setInternetIncluded(e.target.value === "yes")}
+                style={{ height: "55px" }}
+              >
+                <option value="no">ไม่รวม</option>
+                <option value="yes">รวม</option>
+              </select>
+            </div>
 
-                <div className="col-sm-6 col-md-3 mb20">
-                  <label className="fw600 mb10">ค่าไฟ (บาท/หน่วย)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={electricRate}
-                    onChange={(e) => setElectricRate(e.target.value)}
-                    style={{ height: "55px" }}
-                  />
-                </div>
+            <div className="col-sm-6 col-md-3 mb20">
+              <label className="fw600 mb10">ค่าไฟ (บาท/หน่วย)</label>
+              <input
+                type="number"
+                className="form-control"
+                value={electricRate}
+                onChange={(e) => setElectricRate(e.target.value)}
+                style={{ height: "55px" }}
+              />
+            </div>
 
-                <div className="col-sm-6 col-md-3 mb20">
-                  <label className="fw600 mb10">ค่าน้ำ</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="เช่น 20/หน่วย หรือ เหมาจ่าย"
-                    value={waterRate}
-                    onChange={(e) => setWaterRate(e.target.value)}
-                    style={{ height: "55px" }}
-                  />
-                </div>
-              </>
-            )}
+            <div className="col-sm-6 col-md-3 mb20">
+              <label className="fw600 mb10">ค่าน้ำ</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="เช่น 20/หน่วย หรือ เหมาจ่าย"
+                value={waterRate}
+                onChange={(e) => setWaterRate(e.target.value)}
+                style={{ height: "55px" }}
+              />
+            </div>
           </>
         )}
       </div>

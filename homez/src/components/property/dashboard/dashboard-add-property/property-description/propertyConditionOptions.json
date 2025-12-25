@@ -1,6 +1,4 @@
 [
-  { "value": "new", "label": "ใหม่" },
-  { "value": "like-new", "label": "เหมือนใหม่" },
-  { "value": "renovated", "label": "ปรับปรุงใหม่" },
+  { "value": "new", "label": "มือหนึ่ง" },
   { "value": "used", "label": "มือสอง" }
 ]

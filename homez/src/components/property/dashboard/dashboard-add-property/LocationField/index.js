@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import SelectMulitField from "./SelectMulitField";
 import Map from "./Map";
 import { toast } from "react-toastify";
 
-const LocationField = ({ onBack, onNext, onSaveDraft }) => {
+const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
   // ที่อยู่ข้อความ
   const [address, setAddress] = useState("");
 
@@ -22,6 +22,52 @@ const LocationField = ({ onBack, onNext, onSaveDraft }) => {
   const [latitude, setLatitude] = useState(13.9869); // ค่าเริ่มต้น
   const [longitude, setLongitude] = useState(100.6184);
 
+  // sync ค่าเดิมตอน "แก้ไข"
+  useEffect(() => {
+    if (!initialValue) return;
+
+    setAddress(initialValue.address ?? "");
+
+    const zip =
+      initialValue.zipCode ??
+      initialValue.zipcode ??
+      initialValue.zip_code ??
+      "";
+
+    setLocationSelect((prev) => ({
+      ...prev,
+      // ทำเป็น object ที่มี label เพื่อให้ SelectMulitField โชว์ได้
+      province: initialValue.province
+        ? { label: initialValue.province, value: initialValue.province }
+        : null,
+      district: initialValue.district
+        ? { label: initialValue.district, value: initialValue.district }
+        : null,
+      subdistrict: initialValue.subdistrict
+        ? { label: initialValue.subdistrict, value: initialValue.subdistrict }
+        : null,
+
+      // เก็บทั้ง zipCode/neighborhood
+      zipCode: zip,
+      neighborhood: initialValue.neighborhood ?? initialValue.village ?? "",
+    }));
+
+    // รองรับหลายชื่อ field
+    const lat =
+      initialValue.latitude ??
+      initialValue.lat ??
+      initialValue.location?.latitude ??
+      initialValue.location?.lat;
+
+    const lng =
+      initialValue.longitude ??
+      initialValue.lng ??
+      initialValue.location?.longitude ??
+      initialValue.location?.lng;
+
+    if (lat !== undefined && lat !== null && lat !== "") setLatitude(Number(lat));
+    if (lng !== undefined && lng !== null && lng !== "") setLongitude(Number(lng));
+  }, [initialValue]);
 
   const handleLatChange = (e) => {
     const value = e.target.value;
@@ -36,12 +82,14 @@ const LocationField = ({ onBack, onNext, onSaveDraft }) => {
   // รวมข้อมูลที่จะส่งให้ parent
   const buildFormData = () => ({
     address,
+
     // ดึงค่าจาก SelectMulitField
     province: locationSelect.province?.label || "",
     district: locationSelect.district?.label || "",
     subdistrict: locationSelect.subdistrict?.label || "",
     zipCode: locationSelect.zipCode || "",
     neighborhood: locationSelect.neighborhood || "",
+
     latitude,
     longitude,
   });
@@ -148,13 +196,8 @@ const LocationField = ({ onBack, onNext, onSaveDraft }) => {
         {/* ปุ่มล่าง */}
         <div className="col-12">
           <div className="d-flex justify-content-between mt10">
-            {/* ปุ่มย้อนกลับ แสดงเฉพาะถ้ามี onBack */}
             {onBack ? (
-              <button
-                type="button"
-                className="ud-btn btn-light"
-                onClick={onBack}
-              >
+              <button type="button" className="ud-btn btn-light" onClick={onBack}>
                 ย้อนกลับ
               </button>
             ) : (
@@ -162,11 +205,7 @@ const LocationField = ({ onBack, onNext, onSaveDraft }) => {
             )}
 
             <div className="d-flex gap-2">
-              <button
-                type="button"
-                className="ud-btn btn-light"
-                onClick={handleSaveDraft}
-              >
+              <button type="button" className="ud-btn btn-light" onClick={handleSaveDraft}>
                 บันทึกร่าง
               </button>
               <button type="submit" className="ud-btn btn-thm">

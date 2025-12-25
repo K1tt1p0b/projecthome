@@ -9,26 +9,27 @@ const UploadPhotoGallery = ({
   minCount = 5,        // ใช้แทน MIN_IMAGE_COUNT เดิม
   hardLimit = 10,      // ใช้แทน HARD_LIMIT เดิม
 }) => {
-  const [uploadedImages, setUploadedImages] = useState(value);
+  const safeValue = Array.isArray(value) ? value : [];
+  const [uploadedImages, setUploadedImages] = useState(safeValue);
   const fileInputRef = useRef(null);
 
   // sync ค่าเริ่มต้นจาก parent เวลาเปิดหน้า / เวลา parent เปลี่ยนค่า
   useEffect(() => {
-    setUploadedImages(value);
+    setUploadedImages(Array.isArray(value) ? value : []);
   }, [value]);
 
   const isMinRequirementMet = uploadedImages.length >= minCount;
 
   // ฟังก์ชันกลางเวลาเปลี่ยนรูป
   const updateImages = (nextImages) => {
-    setUploadedImages(nextImages);
-    if (onChange) {
-      onChange(nextImages);   // ส่งกลับไปให้ UploadMedia
-    }
+    const next = Array.isArray(nextImages) ? nextImages : [];
+    setUploadedImages(next);
+    onChange?.(next); // ส่งกลับไปให้ UploadMedia
   };
 
   const handleUpload = (files) => {
-    const fileArray = Array.from(files);
+    const fileArray = Array.from(files || []);
+    if (!fileArray.length) return;
 
     if (uploadedImages.length + fileArray.length > hardLimit) {
       alert(`อัปโหลดได้สูงสุดไม่เกิน ${hardLimit} รูปครับ`);
@@ -56,7 +57,7 @@ const UploadPhotoGallery = ({
 
   const handleDrop = (event) => {
     event.preventDefault();
-    const files = event.dataTransfer.files;
+    const files = event.dataTransfer?.files;
     handleUpload(files);
   };
 
@@ -102,13 +103,7 @@ const UploadPhotoGallery = ({
           <div className="row g-3 mb30 px-3 pt-4">
             {uploadedImages.map((imageData, index) => (
               <div key={index} className="col-6 col-sm-4 col-md-3">
-                <div
-                  style={{
-                    position: "relative",
-                    height: "200px",
-                    width: "100%",
-                  }}
-                >
+                <div style={{ position: "relative", height: "200px", width: "100%" }}>
                   <Image
                     fill
                     sizes="(max-width: 768px) 50vw, 25vw"

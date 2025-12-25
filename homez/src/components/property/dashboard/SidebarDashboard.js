@@ -43,11 +43,11 @@ const SidebarDashboard = () => {
     {
       title: "การจัดการทรัพย์สิน",
       items: [
-        {
-          href: "/dashboard-add-property",
-          icon: "flaticon-new-tab",
-          text: "เพิ่มทรัพย์ใหม่",
-        },
+        //{
+        //  href: "/dashboard-add-property",
+        //  icon: "flaticon-new-tab",
+        //  text: "เพิ่มทรัพย์ใหม่",
+        //},
         {
           href: "/dashboard-my-properties",
           icon: "flaticon-home",
@@ -55,33 +55,43 @@ const SidebarDashboard = () => {
         },
         {
           href: "/dashboard-banners",
-          icon: "flaticon-images",
+          icon: "flaticon-house-price",
           text: "โฆษณาทรัพย์สิน",
-        },
-      ],
-    },
-    {
-      title: "การตั้งค่าบัญชี",
-      items: [
-        {
-          href: "/dashboard-points",
-          icon: "flaticon-like",
-          text: "เติมพอยต์",
         },
         {
           href: "/pricing",
           icon: "flaticon-protection",
           text: "แพ็กเกจสมาชิก",
         },
-        {
-          href: "/dashboard-points/promote",
-          icon: "far fa-bullhorn",
-          text: "โปรโมทประกาศ",
-        },
+      ],
+    },
+    {
+      title: "การตั้งค่าบัญชี",
+      items: [
+        //{
+        //  href: "/dashboard-points",
+        //  icon: "flaticon-like",
+        //  text: "เติมพอยต์",
+        //},
+        // {
+        //   href: "/dashboard-points/promote",
+        //   //icon: "far fa-bullhorn",
+        //   //text: "โปรโมทประกาศ",
+        // },
         {
           href: "/dashboard-my-package",
           icon: "flaticon-review",
           text: "ประวัติพอยต์",
+        },
+        {
+          href: "#",
+          icon: "flaticon-images",
+          text: "แกลเลอรี่รูปภาพ",
+        },
+        {
+          href: "#",
+          icon: "flaticon-play",
+          text: "วิดีโอของฉัน",
         },
         {
           href: "/login",

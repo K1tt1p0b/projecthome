@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useMemo, useState } from "react";
 import Select from "@/components/common/ClientSelect";
 
@@ -8,7 +9,7 @@ import propertyConditionOptions from "./propertyConditionOptions.json";
 import propertyTypeOptions from "./propertyTypeOptions.json";
 import { toast } from "react-toastify";
 
-const PropertyDescription = ({ onNext, onSaveDraft }) => {
+const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
   const customStyles = {
     option: (styles, { isFocused, isSelected }) => ({
       ...styles,
@@ -34,6 +35,101 @@ const PropertyDescription = ({ onNext, onSaveDraft }) => {
 
   useEffect(() => setShowSelect(true), []);
 
+  // ----------------------------
+  // helpers: normalize initialValue -> option objects
+  // ----------------------------
+  const toOption = (raw, options) => {
+    if (!raw) return null;
+
+    // ถ้ามาเป็น {value,label} อยู่แล้ว
+    if (typeof raw === "object" && raw.value != null) return raw;
+
+    const s = String(raw).trim();
+
+    // match ด้วย value ก่อน
+    let found = options.find((o) => String(o.value) === s);
+    if (found) return found;
+
+    // สำคัญ: match ด้วย label (เช่น "เจ้าของทรัพย์")
+    found = options.find((o) => String(o.label) === s);
+    if (found) return found;
+
+    return null;
+  };
+
+  const toMultiOptions = (raw, options) => {
+    if (!raw) return [];
+
+    const arr = Array.isArray(raw) ? raw : [raw];
+    if (!arr.length) return [];
+
+    // ถ้ามาเป็น [{value,label}] อยู่แล้ว
+    if (typeof arr[0] === "object" && arr[0]?.value != null) return arr;
+
+    // ถ้ามาเป็น ["sell","rent"] หรือ [value,value]
+    return arr
+      .map((v) => {
+        const vv = String(v).trim();
+        // match value ก่อน
+        return (
+          options.find((o) => String(o.value) === vv) ||
+          options.find((o) => String(o.label) === vv) ||
+          null
+        );
+      })
+      .filter(Boolean);
+  };
+
+  const formatNumberWithComma = (n) => {
+    const num = Number(n);
+    if (!Number.isFinite(num) || num <= 0) return "";
+    return num.toLocaleString("en-US");
+  };
+
+  // sync จาก initialValue (สำคัญสุดสำหรับหน้าแก้ไข)
+  useEffect(() => {
+    if (!initialValue) return;
+
+    setTitle(initialValue.title ?? "");
+    setDescription(initialValue.description ?? "");
+
+    // ราคา: รับได้ทั้ง price_text / priceText / price (number)
+    const initialPriceText =
+      initialValue.price_text ??
+      initialValue.priceText ??
+      (initialValue.price != null ? formatNumberWithComma(initialValue.price) : "");
+    setPrice(String(initialPriceText ?? ""));
+
+    // announcerStatus: รับได้ทั้ง value ("owner") หรือ label ("เจ้าของทรัพย์") หรือ object
+    const a =
+      toOption(initialValue.announcerStatus, announcerStatusOptions) ||
+      toOption(initialValue.announcerStatus_label, announcerStatusOptions) ||
+      toOption(initialValue.announcerStatus_value, announcerStatusOptions);
+    setAnnouncerStatus(a);
+
+    // listingTypes: แก้บั๊ก || (เพราะ [] เป็น truthy)
+    const lt1 = toMultiOptions(initialValue.listingTypes, listingTypeOptions);
+    const lt2 = toMultiOptions(initialValue.listingTypes_value, listingTypeOptions);
+    const lt3 = toMultiOptions(initialValue.listingTypes_label, listingTypeOptions);
+    setListingTypes(lt1.length ? lt1 : lt2.length ? lt2 : lt3);
+
+    // propertyType
+    const pt =
+      toOption(initialValue.propertyType, propertyTypeOptions) ||
+      toOption(initialValue.propertyType_label, propertyTypeOptions) ||
+      toOption(initialValue.propertyType_value, propertyTypeOptions);
+    setPropertyType(pt);
+
+    // condition
+    const cd =
+      toOption(initialValue.condition, propertyConditionOptions) ||
+      toOption(initialValue.condition_label, propertyConditionOptions) ||
+      toOption(initialValue.condition_value, propertyConditionOptions);
+    setCondition(cd);
+
+    setError("");
+  }, [initialValue]);
+
   const priceNumber = useMemo(() => {
     const n = Number(String(price).replace(/,/g, ""));
     return Number.isFinite(n) ? n : 0;
@@ -50,7 +146,7 @@ const PropertyDescription = ({ onNext, onSaveDraft }) => {
     announcerStatus: announcerStatus?.value ?? null,
     announcerStatus_label: announcerStatus?.label ?? null,
 
-    listingTypes: listingTypes.map((x) => x.value), // ✅ array ของ value
+    listingTypes: listingTypes.map((x) => x.value),
     listingTypes_label: listingTypes.map((x) => x.label),
 
     propertyType: propertyType?.value ?? null,
@@ -210,7 +306,6 @@ const PropertyDescription = ({ onNext, onSaveDraft }) => {
               placeholder="กรอกราคาทรัพย์"
               value={price}
               onChange={(e) => {
-                // ให้พิมพ์ได้เฉพาะตัวเลขและ comma
                 const v = e.target.value.replace(/[^\d,]/g, "");
                 setPrice(v);
               }}

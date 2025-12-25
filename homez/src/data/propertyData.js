@@ -2,14 +2,26 @@ export const propertyData = [
   {
     id: 1,
 
-    // ===== ข้อมูลพื้นฐาน (อิงของเดิม) =====
+    // ===== ข้อมูลพื้นฐาน (Step 1) =====
     title: "บ้านเดี่ยวสไตล์คันทรี",
+    description: "บ้านเดี่ยวบรรยากาศดี เงียบสงบ ใกล้ถนนใหญ่",
+
     price: 14000000,
     priceText: "14,000,000",
-    listingType: "ขาย",
-    propertyType: "บ้านพร้อมที่ดิน",
+
+    // ประเภทการประกาศ
+    listingTypes: ["sell"],
+
+    // ประเภททรัพย์ (value ใหม่)
+    propertyType: "house-and-land",
+
+    // สถานะผู้ประกาศ (Step 1)
+    announcerStatus: "owner",
+    announcerStatus_label: "เจ้าของทรัพย์",
+
     status: "รอตรวจสอบ",
     views: 120,
+    datePublished: "31 ธันวาคม 2022",
 
     // ===== รูป =====
     imageSrc: "/images/listings/list-1.jpg",
@@ -18,111 +30,157 @@ export const propertyData = [
       "/images/listings/list-2.jpg",
     ],
 
-    // ===== ที่ตั้ง (แตกจาก location string เดิม) =====
+    // ===== ที่ตั้ง (Step 2) =====
     location: {
+      address: "คลอง 4",
       province: "ปทุมธานี",
       district: "ธัญบุรี",
       subdistrict: "ประชาธิปัตย์",
-      address: "คลอง 4",
+      zipCode: "12130",
+
       latitude: 14.021,
       longitude: 100.732,
       fullText: "คลอง 4 ธัญบุรี ปทุมธานี",
+
+      // หมู่บ้าน / โครงการ
+      neighborhood: "หมู่บ้านฟิวเจอร์วิลล์",
     },
 
-    // ===== รายละเอียดทรัพย์ =====
+    // ===== รายละเอียดทรัพย์ (Step 3) =====
     details: {
-      landSize: 100, // ตร.ว.
-      usableArea: 180, // ตร.ม.
+      condition: "มือสอง",
+
+      landSqw: 100,
+      usableArea: 180,
+
       bedrooms: 3,
       bathrooms: 2,
       parking: 2,
-      floor: 2,
-      condition: "มือสอง",
+      floors: 2,
+
+      titleDeed: "โฉนด",
+      titleDeedImage: null,
+
+      amenities: ["ที่จอดรถ", "แอร์", "กล้องวงจรปิด"],
+
+      note: "",
+      frontage: "",
+      depth: "",
+      roadWidth: "",
     },
-
-    // ===== สิ่งอำนวยความสะดวก =====
-    amenities: ["ที่จอดรถ", "แอร์", "กล้องวงจรปิด"],
-
-    // ===== อื่น ๆ =====
-    description: "บ้านเดี่ยวบรรยากาศดี เงียบสงบ ใกล้ถนนใหญ่",
-    datePublished: "31 ธันวาคม 2022",
   },
 
   {
     id: 2,
     title: "วิลล่าหรู ย่านรีโกพาร์ค",
+    description: "วิลล่าหรู ใจกลางเมือง เดินทางสะดวก",
+
     price: 28000000,
     priceText: "28,000,000",
-    listingType: "ขาย",
-    propertyType: "บ้านพร้อมที่ดิน",
+
+    listingTypes: ["sell"],
+    propertyType: "house-and-land",
+
+    announcerStatus: "owner",
+    announcerStatus_label: "เจ้าของทรัพย์",
+
     status: "เผยแพร่แล้ว",
     views: 532,
+    datePublished: "31 ธันวาคม 2022",
 
     imageSrc: "/images/listings/list-2.jpg",
     gallery: ["/images/listings/list-2.jpg"],
 
     location: {
+      address: "ซอยลาดพร้าว 18",
       province: "กรุงเทพมหานคร",
       district: "ลาดพร้าว",
       subdistrict: "ลาดพร้าว",
-      address: "ซอยลาดพร้าว 18",
+      zipCode: "10230",
+
       latitude: 13.806,
       longitude: 100.574,
       fullText: "ลาดพร้าว กรุงเทพฯ",
+
+      neighborhood: "Regent Home ลาดพร้าว",
     },
 
     details: {
-      landSize: 120,
+      condition: "ใหม่",
+
+      landSqw: 120,
       usableArea: 250,
+
       bedrooms: 4,
       bathrooms: 4,
       parking: 3,
-      floor: 2,
-      condition: "ใหม่",
+      floors: 2,
+
+      titleDeed: "โฉนด",
+      titleDeedImage: null,
+
+      amenities: ["สระว่ายน้ำ", "ฟิตเนส", "CCTV", "ระบบรักษาความปลอดภัย"],
+      note: "",
+      frontage: "",
+      depth: "",
+      roadWidth: "",
     },
-
-    amenities: ["สระว่ายน้ำ", "ฟิตเนส", "CCTV", "ระบบรักษาความปลอดภัย"],
-
-    description: "วิลล่าหรู ใจกลางเมือง เดินทางสะดวก",
-    datePublished: "31 ธันวาคม 2022",
   },
 
   {
     id: 3,
     title: "วิลล่า บนถนนฮอลลีวูด",
+    description: "วิลล่าติดทะเล เหมาะสำหรับพักผ่อน",
+
     price: 18000000,
     priceText: "18,000,000",
-    listingType: "เช่า",
-    propertyType: "บ้านพร้อมที่ดิน",
+
+    listingTypes: ["rent"],
+    propertyType: "house-and-land",
+
+    announcerStatus: "owner",
+    announcerStatus_label: "เจ้าของทรัพย์",
+
     status: "กำลังดำเนินการ",
     views: 88,
+    datePublished: "31 ธันวาคม 2022",
 
     imageSrc: "/images/listings/list-3.jpg",
     gallery: ["/images/listings/list-3.jpg"],
 
     location: {
+      address: "ถนนเลียบชายหาด",
       province: "ชลบุรี",
       district: "บางละมุง",
       subdistrict: "นาเกลือ",
-      address: "ถนนเลียบชายหาด",
+      zipCode: "20150",
+
       latitude: 12.954,
       longitude: 100.889,
       fullText: "บางละมุง ชลบุรี",
+
+      neighborhood: "Hollywood Beach Villa",
     },
 
     details: {
-      landSize: 90,
+      condition: "มือสอง",
+
+      landSqw: 90,
       usableArea: 160,
+
       bedrooms: 2,
       bathrooms: 2,
       parking: 1,
-      floor: 1,
-      condition: "มือสอง",
+      floors: 1,
+
+      titleDeed: "โฉนด",
+      titleDeedImage: null,
+
+      amenities: ["วิวทะเล", "ที่จอดรถ"],
+      note: "",
+      frontage: "",
+      depth: "",
+      roadWidth: "",
     },
-
-    amenities: ["วิวทะเล", "ที่จอดรถ"],
-
-    description: "วิลล่าติดทะเล เหมาะสำหรับพักผ่อน",
-    datePublished: "31 ธันวาคม 2022",
   },
 ];
