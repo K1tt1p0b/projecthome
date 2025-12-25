@@ -50,14 +50,15 @@ const MainMenu = () => {
   }, [pathname]);
 
   const handleActive = (link) => {
-    if (link.split("/")[1] == pathname.split("/")[1]) {
+    // แก้จาก split เป็นเช็คว่าเหมือนกันเป๊ะๆ หรือไม่
+    if (link === pathname) {
       return "menuActive";
     }
   };
   return (
     <ul className="ace-responsive-menu">
       <li className="visible_list dropitem">
-        <a className="list-item" href="/"> 
+        <a className="list-item" href="/">
           <span className={topMenu == "home" ? "title menuActive" : "title"}>
             หน้าแรก
           </span>

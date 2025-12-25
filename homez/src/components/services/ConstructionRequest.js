@@ -1,282 +1,168 @@
 // src/components/service/ConstructionRequest.js
 "use client";
-import React, { useState } from "react";
-// ✅ Import Toast (ถ้าคุณใช้ library อื่น ให้เปลี่ยนตรงนี้ครับ)
-import { toast, ToastContainer } from "react-toastify";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import agents from "@/data/agents";
 
-const ConstructionRequest = () => {
-    // --- 1. State สำหรับเก็บค่าต่างๆ ---
-    const [selectedService, setSelectedService] = useState(null);
-    const [isUnsure, setIsUnsure] = useState(false);
+const ConstructionRequest = ({ initialCategory }) => {
+    // ใช้ค่าจาก URL เป็นค่าเริ่มต้น
+    const [selectedService, setSelectedService] = useState(initialCategory || null);
 
-    // เก็บข้อมูลฟอร์ม
-    const [formData, setFormData] = useState({
-        size: "",
-        name: "",
-        tel: "",
-        details: ""
-    });
-
-    // --- 2. ข้อมูลบริการ (Config) ---
     const services = [
-        { id: "land-fill", title: "รับถมที่ดิน", icon: "fas fa-truck-monster", unit: "ขนาดพื้นที่ (ตร.ว. / ไร่)" },
-        { id: "fencing", title: "รับล้อมรั้ว", icon: "fas fa-vector-square", unit: "ความยาวรอบพื้นที่ (เมตร)" },
-        { id: "renovate", title: "ต่อเติม/รีโนเวท", icon: "fas fa-tools", unit: "พื้นที่ใช้สอย (ตร.ม.)" },
-        { id: "piling", title: "ตอกเสาเข็ม", icon: "fas fa-layer-group", unit: "จำนวน (ต้น)" },
+        { id: "land-fill", title: "รับถมที่ดิน", icon: "fas fa-truck-monster" },
+        { id: "fencing", title: "รับล้อมรั้ว", icon: "fas fa-vector-square" },
+        { id: "renovate", title: "ต่อเติม/รีโนเวท", icon: "fas fa-tools" },
+        { id: "piling", title: "ตอกเสาเข็ม", icon: "fas fa-layer-group" },
     ];
 
-    // --- 3. Functions จัดการ Events ---
-
-    // เมื่อพิมพ์ข้อมูล
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        // ✅ เพิ่มเงื่อนไข: ถ้าเป็นช่องเบอร์โทร (tel)
-        if (name === "tel") {
-            // ใช้ Regex ลบทุกตัวอักษรที่ไม่ใช่ 0-9 ทิ้งทันที
-            const onlyNums = value.replace(/[^0-9]/g, "");
-
-            // (Option) จำกัดความยาวไม่เกิน 10 หลัก (เบอร์มือถือไทย)
-            if (onlyNums.length <= 10) {
-                setFormData({ ...formData, [name]: onlyNums });
-            }
-        } else {
-            // ช่องอื่นๆ (ชื่อ, รายละเอียด) พิมพ์ได้ปกติ
-            setFormData({ ...formData, [name]: value });
+    useEffect(() => {
+        if (initialCategory) {
+            setSelectedService(initialCategory);
         }
-    };
+    }, [initialCategory]);
 
-    // เมื่อเลือกบริการ
-    const handleServiceSelect = (id) => {
-        // เช็คว่ากดตัวเดิมซ้ำหรือเปล่า?
-        if (selectedService === id) {
-            // 1. ถ้ากดซ้ำ -> ให้ปิด (หุบฟอร์ม)
-            setSelectedService(null);
-        } else {
-            // 2. ถ้ากดตัวใหม่ -> ให้เปิดฟอร์มตามปกติ
-            setSelectedService(id);
-            setIsUnsure(false); // รีเซ็ตสถานะไม่รู้ขนาด
-            setFormData(prev => ({ ...prev, size: "" })); // รีเซ็ตขนาด
-        }
-    };
-
-    // เมื่อติ๊ก Checkbox ไม่ทราบขนาด
-    const handleUnsureChange = (e) => {
-        const checked = e.target.checked;
-        setIsUnsure(checked);
-        if (checked) {
-            setFormData(prev => ({ ...prev, size: "" })); // ล้างค่าขนาดออก
-        }
-    };
-
-    // ✅ เมื่อกดส่งฟอร์ม (Submit Logic)
-    const handleSubmit = (e) => {
-        e.preventDefault();
-
-        // เช็ค 1: ชื่อและเบอร์โทร (สำคัญสุด)
-        if (!formData.name.trim() || !formData.tel.trim()) {
-            toast.error("กรุณากรอก ชื่อผู้ติดต่อ และ เบอร์โทรศัพท์");
-            return;
-        }
-
-        // เช็ค 2: ขนาด (ถ้าไม่ได้ติ๊กไม่รู้ ต้องกรอก)
-        if (!isUnsure && !formData.size.trim()) {
-            toast.warning('กรุณาระบุขนาด หรือติ๊กช่อง "ยังไม่ทราบขนาด"');
-            return;
-        }
-
-        // ผ่านทุกด่าน -> ส่งข้อมูล (จำลอง)
-        toast.success("ส่งข้อมูลสำเร็จ! เจ้าหน้าที่จะติดต่อกลับใน 24 ชม.");
-
-        // ตรงนี้คือจุดที่คุณจะยิง API ไปหา Admin หรือ Line Notify
-        console.log("Payload to Send:", {
-            service: selectedService,
-            isUnsure: isUnsure,
-            ...formData
-        });
-    };
+    // กรองรายชื่อช่าง
+    const filteredAgents = selectedService 
+        ? agents.filter(agent => agent.tags && agent.tags.includes(selectedService))
+        : [];
 
     return (
-        <div className="container">
-            {/* ใส่ Container ไว้แสดงผล Toast (ถ้าใน Layout มีแล้ว บรรทัดนี้ลบได้) */}
-            <ToastContainer
-                position="top-center"
-                autoClose={3000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-                theme="colored" // แนะนำให้ใส่ theme="colored" ด้วย จะได้เห็นสีชัดๆ ครับ
-            />
-
-            {/* --- ส่วนที่ 1: Grid เลือกบริการ --- */}
-            <div className="text-center mb-5 fade-in-animation">
-                <h2 className="mb-2">เลือกบริการที่คุณต้องการ</h2>
-                <p className="text-muted">เลือกประเภทงานเพื่อประเมินราคาเบื้องต้น หรือนัดดูหน้างานฟรี</p>
-            </div>
-
-            <div className="row justify-content-center mb-4">
-                {services.map((service) => (
-                    <div key={service.id} className="col-6 col-md-3 mb-3">
-                        <div
-                            onClick={() => handleServiceSelect(service.id)}
-                            className={`p-4 text-center rounded-4 border cursor-pointer h-100 position-relative ${selectedService === service.id
-                                ? "bg-white border-primary shadow transform-scale" // สไตล์ตอนเลือก
-                                : "bg-white border-light hover-shadow" // สไตล์ปกติ
-                                }`}
-                            style={{
-                                cursor: "pointer",
-                                transition: "all 0.3s ease",
-                                borderColor: selectedService === service.id ? "#eb6753" : "#eee",
-                                transform: selectedService === service.id ? "translateY(-5px)" : "none"
-                            }}
-                        >
-                            <i className={`${service.icon} fz40 mb-3 d-block ${selectedService === service.id ? "text-thm" : "text-dark"}`} />
-                            <h6 className="m-0 fw600">{service.title}</h6>
-
-                            {/* เครื่องหมายถูก */}
-                            {selectedService === service.id && (
-                                <div className="position-absolute top-0 end-0 m-2 text-success">
-                                    <i className="fas fa-check-circle fz20"></i>
-                                </div>
-                            )}
-                        </div>
+        <div className="container pb-5 mb-5">
+            <ToastContainer position="top-center" autoClose={3000} theme="colored" />
+            
+            {/* ส่วนเลือกบริการแบบปุ่มใหญ่ (ซ่อนถ้าเข้ามาผ่าน URL เจาะจง) */}
+            {!initialCategory && (
+                <>
+                    <div className="text-center mb-5 fade-in-animation pt-5">
+                        <h2 className="mb-2">เลือกบริการที่คุณต้องการ</h2>
+                        <p className="text-muted">เลือกประเภทงานเพื่อดูรายชื่อช่างในหมวดหมู่นั้น</p>
                     </div>
-                ))}
-            </div>
 
-            {/* --- ส่วนที่ 2: ฟอร์ม (แสดงเมื่อเลือกบริการแล้ว) --- */}
-            {selectedService && (
-                <div className="row justify-content-center fade-in-animation">
-                    <div className="col-lg-8">
-                        <div className="bg-white p-4 p-md-5 shadow-sm rounded-4 border position-relative">
-
-                            <h4 className="mb-4 pb-3 border-bottom d-flex align-items-center">
-                                <span className="flaticon-discovery-1 me-2 text-thm"></span>
-                                รายละเอียด: {services.find(s => s.id === selectedService)?.title}
-                            </h4>
-
-                            <form onSubmit={handleSubmit}>
-
-                                {/* 1. ขนาดพื้นที่ */}
-                                <div className="mb-4 bg-light p-4 rounded-3">
-                                    <label className="form-label fw600 mb-2">
-                                        {services.find(s => s.id === selectedService)?.unit}
-                                    </label>
-
-                                    <div className="input-group mb-2">
-                                        <input
-                                            type="number"
-                                            name="size"
-                                            value={formData.size}
-                                            onChange={handleInputChange}
-                                            className="form-control form-control-lg bg-white"
-                                            placeholder={isUnsure ? "-" : "ระบุตัวเลขคร่าวๆ"}
-                                            disabled={isUnsure} // ปิดการพิมพ์ถ้าไม่รู้
-                                        />
-                                    </div>
-
-                                    <div className="form-check mt-2">
-                                        <input
-                                            className="form-check-input"
-                                            type="checkbox"
-                                            id="unsureCheck"
-                                            checked={isUnsure}
-                                            onChange={handleUnsureChange}
-                                            style={{ cursor: "pointer" }}
-                                        />
-                                        <label className="form-check-label text-muted cursor-pointer user-select-none" htmlFor="unsureCheck">
-                                            ยังไม่ทราบขนาด / ต้องการนัดช่างเข้าวัดหน้างาน
-                                        </label>
-                                    </div>
-                                </div>
-
-                                {/* 2. อัปโหลดรูป (UI Only) */}
-                                <div className="mb-4">
-                                    <label className="form-label fw600">รูปถ่ายหน้างาน / โฉนด (ถ้ามี)</label>
+                    <div className="row justify-content-center mb-4">
+                        {services.map((service) => (
+                            <div key={service.id} className="col-6 col-md-3 mb-3">
+                                <Link href={`/services/${service.id}`} className="text-decoration-none">
                                     <div
-                                        className="p-4 text-center rounded position-relative hover-bg-light transition-all"
-                                        style={{ border: '2px dashed #ccc', backgroundColor: '#f9f9f9' }}
+                                        className={`p-4 text-center rounded-4 border cursor-pointer h-100 position-relative bg-white border-light hover-shadow`}
+                                        style={{ transition: "all 0.3s ease" }}
                                     >
-                                        <i className="fas fa-cloud-upload-alt fz30 text-muted mb-2"></i>
-                                        <p className="mb-0 text-muted fz14">คลิกเพื่อเลือกรูปภาพประกอบ</p>
-                                        <input
-                                            type="file"
-                                            className="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer"
-                                            accept="image/*"
-                                            multiple
-                                        />
+                                        <i className={`${service.icon} fz40 mb-3 d-block text-dark`} />
+                                        <h6 className="m-0 fw600 text-muted">{service.title}</h6>
                                     </div>
+                                </Link>
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )}
+
+            {/* --- ส่วนที่ 2: แสดงรายชื่อช่าง --- */}
+            {selectedService ? (
+                <div className="fade-in-animation" style={{ marginTop: "-230px" }}>
+                    
+                    {/* ✅✅✅ เพิ่มส่วน Header หัวข้อตรงนี้ครับ ✅✅✅ */}
+                    <div className="row align-items-end mb-5 mt-4">
+                        <div className="col-lg-9">
+                            <div className="d-flex align-items-center">
+                                {/* ไอคอนวงกลมสีส้มจางๆ */}
+                                <div className="p-3 rounded-circle bg-opacity-10 me-4 d-none d-md-block" 
+                                     style={{backgroundColor: '#eb675320', color: '#eb6753'}}>
+                                    <i className={`${services.find(s => s.id === selectedService)?.icon} fz30`}></i>
                                 </div>
-
-                                {/* 3. ข้อมูลติดต่อ */}
-                                <div className="row">
-                                    <div className="col-md-6 mb-3">
-                                        <label className="form-label fw600">ชื่อผู้ติดต่อ <span className="text-danger">*</span></label>
-                                        <input
-                                            type="text"
-                                            name="name"
-                                            value={formData.name}
-                                            onChange={handleInputChange}
-                                            className="form-control"
-                                            placeholder="ชื่อ-นามสกุล"
-                                        />
-                                    </div>
-                                    <div className="col-md-6 mb-3">
-                                        <label className="form-label fw600">เบอร์โทรศัพท์ <span className="text-danger">*</span></label>
-                                        <input
-                                            type="tel"
-                                            name="tel"
-                                            value={formData.tel}
-                                            onChange={handleInputChange}
-                                            className="form-control"
-                                            placeholder="08x-xxx-xxxx"
-                                        />
-                                    </div>
-                                    <div className="col-12 mb-4">
-                                        <label className="form-label fw600">รายละเอียดเพิ่มเติม</label>
-                                        <textarea
-                                            name="details"
-                                            value={formData.details}
-                                            onChange={handleInputChange}
-                                            className="form-control"
-                                            rows="3"
-                                            placeholder="เช่น ต้องการเริ่มงานด่วน, รถสิบล้อเข้าไม่ได้"
-                                        ></textarea>
-                                    </div>
+                                
+                                <div>
+                                    {/* Breadcrumb (เส้นทาง) */}
+                                    <p className="text-muted fz14 mb-1">
+                                        <Link href="/" className="text-decoration-none text-muted">หน้าแรก</Link> 
+                                        <span className="mx-2">/</span>
+                                        <Link href="/services" className="text-decoration-none text-muted">บริการ</Link> 
+                                        <span className="mx-2">/</span>
+                                        <span className="text-thm">{services.find(s => s.id === selectedService)?.title}</span>
+                                    </p>
+                                    
+                                    {/* ชื่อหัวข้อหลัก */}
+                                    <h2 className="fw700 mb-1">
+                                        บริการ{services.find(s => s.id === selectedService)?.title}
+                                    </h2>
+                                    <p className="text-muted mb-0">
+                                        รวบรวมช่างและผู้รับเหมามืออาชีพ ที่ผ่านการตรวจสอบแล้วในพื้นที่ของคุณ
+                                    </p>
                                 </div>
-
-                                {/* 4. ปุ่มกดส่ง */}
-                                <button type="submit" className="ud-btn btn-thm w-100 btn-lg shadow-sm">
-                                    {isUnsure ? (
-                                        <>
-                                            <i className="fas fa-map-marker-alt me-2"></i> ยืนยันนัดวัดหน้างาน (ฟรี)
-                                        </>
-                                    ) : (
-                                        <>
-                                            <i className="fas fa-paper-plane me-2"></i> ขอใบเสนอราคา
-                                        </>
-                                    )}
-                                </button>
-
-                            </form>
-
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                    {/* ✅ จบส่วน Header */}
 
-            {/* State ว่าง (ยังไม่เลือก) */}
-            {!selectedService && (
-                <div className="text-center py-5 opacity-50 fade-in-animation">
-                    <i className="fas fa-hand-pointer fz50 mb-3 text-muted"></i>
-                    <p>กรุณาเลือกประเภทงานด้านบน เพื่อเริ่มกรอกข้อมูล</p>
-                </div>
-            )}
+                    {/* แสดงจำนวนที่พบ */}
+                    <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                        <h5 className="fw600 mb-0">
+                             พบช่างทั้งหมด <span className="text-thm">{filteredAgents.length}</span> ราย
+                        </h5>
+                    </div>
 
+                    {/* Grid แสดงการ์ดช่าง */}
+                    {filteredAgents.length > 0 ? (
+                        <div className="row">
+                            {filteredAgents.map((agent) => (
+                                <div key={agent.id} className="col-md-6 col-lg-4 mb-4">
+                                    <div className="bg-white p-4 rounded-4 shadow-sm border h-100 position-relative hover-card-up">
+                                        {agent.verified && (
+                                            <span className="position-absolute top-0 end-0 m-3 badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2">
+                                                <i className="fas fa-certificate me-1"></i> Verified
+                                            </span>
+                                        )}
+                                        
+                                        <div className="d-flex align-items-center mb-3">
+                                            <Link href={`/agent-single/${agent.id}`}>
+                                                <img 
+                                                    src={agent.image} 
+                                                    className="rounded-circle object-fit-cover border shadow-sm cursor-pointer" 
+                                                    width="70" height="70" 
+                                                    alt={agent.name} 
+                                                />
+                                            </Link>
+                                            <div className="ms-3">
+                                                <Link href={`/agent-single/${agent.id}`} className="text-decoration-none text-dark">
+                                                    <h6 className="fw700 mb-1 hover-text-thm cursor-pointer">{agent.name}</h6>
+                                                </Link>
+                                                <p className="text-muted fz12 mb-0">{agent.category}</p>
+                                            </div>
+                                        </div>
+
+                                        <p className="text-muted fz14 mb-3">
+                                            <i className="fas fa-map-marker-alt me-2 text-thm"></i>
+                                            พื้นที่: {agent.location}
+                                        </p>
+
+                                        <div className="d-grid gap-2 mt-4">
+                                            <Link href={`/agent-single/${agent.id}`} className="btn btn-light rounded-pill fw600 text-thm border-0 bg-opacity-10" style={{backgroundColor: '#eb675320'}}>
+                                                ดูรายละเอียด
+                                            </Link>
+                                            <div className="d-flex gap-2">
+                                                <a href={`tel:${agent.tel}`} className="btn btn-outline-dark rounded-pill fw600 flex-fill">
+                                                    <i className="fas fa-phone-alt me-1"></i> โทร
+                                                </a>
+                                                {agent.line && (
+                                                    <a href={`https://line.me/ti/p/~${agent.line}`} target="_blank" className="btn btn-success text-white rounded-pill fw600 flex-fill border-0" style={{backgroundColor: '#00B900'}}>
+                                                        <i className="fab fa-line me-1"></i> ไลน์
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-5 bg-light rounded-4 border border-dashed">
+                            <i className="fas fa-tools fz50 text-muted mb-3 opacity-50"></i>
+                            <h5>ยังไม่มีช่างในหมวดหมู่นี้</h5>
+                        </div>
+                    )}
+                </div>
+            ) : null}
         </div>
     );
 };

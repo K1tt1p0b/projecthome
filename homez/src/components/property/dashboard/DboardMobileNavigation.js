@@ -47,11 +47,6 @@ const DboardMobileNavigation = () => {
       title: "การตั้งค่าบัญชี",
       items: [
         {
-          href: "/dashboard-points",
-          icon: "flaticon-like",
-          text: "เติมพอยต์",
-        },
-        {
           href: "/dashboard-my-package",
           icon: "flaticon-review",
           text: "ประวัติพอยต์",

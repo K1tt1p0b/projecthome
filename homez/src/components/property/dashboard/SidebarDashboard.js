@@ -58,6 +58,11 @@ const SidebarDashboard = () => {
           icon: "flaticon-house-price",
           text: "โฆษณาทรัพย์สิน",
         },
+      ],
+    },
+    {
+      title: "การตั้งค่าบัญชี",
+      items: [
         {
           href: "/pricing",
           icon: "flaticon-protection",
