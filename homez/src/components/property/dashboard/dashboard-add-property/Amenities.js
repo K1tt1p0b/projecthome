@@ -6,19 +6,25 @@ const amenitiesData = {
     { label: "เคเบิลทีวี", defaultChecked: false },
     { label: "สนามบาส", defaultChecked: false },
     { label: "เครื่องปรับอากาศ", defaultChecked: true },
-    { label: "เครื่องอบผ้า", defaultChecked: true },
-    { label: "ที่จอดรถ", defaultChecked: false },
-    { label: "เครื่องซักผ้า", defaultChecked: false },
-    { label: "ตู้เย็น", defaultChecked: false },
   ],
   column2: [
     { label: "กล้องวงจรปิด", defaultChecked: false },
     { label: "ฟิตเนส", defaultChecked: false },
     { label: "WiFi", defaultChecked: false },
-    { label: "สวน", defaultChecked: true },
-    { label: "ไมโครเวฟ", defaultChecked: false },
-    { label: "สระว่ายน้ำ", defaultChecked: false },
     //{ label: "พื้นที่ส่วนตัว", defaultChecked: false },
+  ],
+  column3: [
+    { label: "ที่จอดรถ", defaultChecked: false },
+    { label: "เครื่องซักผ้า", defaultChecked: false },
+    { label: "ตู้เย็น", defaultChecked: false },
+  ],
+  column4: [
+    { label: "สวน", defaultChecked: true },
+    { label: "สระว่ายน้ำ", defaultChecked: false },
+    { label: "เครื่องอบผ้า", defaultChecked: true },
+  ],
+  column5: [
+    { label: "ไมโครเวฟ", defaultChecked: false },
   ],
 };
 

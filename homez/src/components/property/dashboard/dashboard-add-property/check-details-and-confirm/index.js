@@ -98,7 +98,7 @@ const PropertySummary = ({
       pick("รูปโฉนด", name);
     }
 
-    pick("ชื่อโครงการ", d.projectName);
+    // ✅ เอา "ชื่อโครงการ" ออกจาก details แล้ว (ย้ายไปที่อยู่: location.neighborhood)
     pick("อาคาร/ตึก", d.building);
     pick("ชั้น", d.unitFloor);
     pick("ขนาดห้อง (ตร.ม.)", d.roomArea);
@@ -112,7 +112,7 @@ const PropertySummary = ({
     pick("ค่าไฟ (บาท/หน่วย)", d.electricRate);
     pick("ค่าน้ำ", d.waterRate);
 
-    pick("หมายเหตุ(เจ้าของ/นายหน้า)", d.note);
+    pick("รายละเอียดเพิ่มเติม", d.note);
 
     if (Array.isArray(d.amenities)) out.amenities = d.amenities;
 
@@ -122,6 +122,7 @@ const PropertySummary = ({
   const amenities = Array.isArray(detailsView.amenities) ? detailsView.amenities : [];
 
   // เรียง key รายละเอียด (ไม่บังคับ แต่ช่วยให้ไม่มั่ว)
+  // ✅ เอา "ชื่อโครงการ" ออก
   const DETAILS_ORDER = [
     "ห้องนอน",
     "ห้องน้ำ",
@@ -134,7 +135,6 @@ const PropertySummary = ({
     "ถนนหน้าบ้าน/ที่ดินกว้าง (ม.)",
     "หน้ากว้างที่ดิน (ม.)",
     "ความลึกที่ดิน (ม.)",
-    "ชื่อโครงการ",
     "อาคาร/ตึก",
     "ชั้น",
     "ขนาดห้อง (ตร.ม.)",
@@ -145,7 +145,7 @@ const PropertySummary = ({
     "รวมอินเทอร์เน็ต",
     "ค่าไฟ (บาท/หน่วย)",
     "ค่าน้ำ",
-    "หมายเหตุ(เจ้าของ/นายหน้า)",
+    "รายละเอียดเพิ่มเติม",
   ];
 
   const detailsEntries = useMemo(() => {
@@ -175,6 +175,13 @@ const PropertySummary = ({
     safeBasic.announcerStatus_label ||
     safeBasic.announcerStatusText ||
     "-";
+
+  // ✅ ช่องเดียว: หมู่บ้าน / โครงการ (ถ้ามี)
+  const neighborhoodText =
+    safeLocation.neighborhood ||
+    safeLocation.village ||
+    safeLocation.projectName || // เผื่อข้อมูลเก่าเคยเก็บชื่อนี้ใน location
+    "";
 
   return (
     <div className="row">
@@ -216,9 +223,8 @@ const PropertySummary = ({
                 <strong>ราคา:</strong> {formatPrice(safeBasic.price ?? safeBasic.price_text)}
               </p>
               <p className="mt10">
-                <strong>รายละเอียดประกาศ:</strong>
+                <strong>รายละเอียดประกาศ:</strong> {safeBasic.description || "-"}
                 <br />
-                {safeBasic.description || "-"}
               </p>
             </>
           )}
@@ -241,6 +247,13 @@ const PropertySummary = ({
             <p className="text-muted mb0">ยังไม่มีข้อมูลที่อยู่ทรัพย์สิน</p>
           ) : (
             <>
+              {/* ✅ หมู่บ้าน / โครงการ (ถ้ามี) */}
+              {!isBlank(neighborhoodText) && (
+                <p>
+                  <strong>หมู่บ้าน / โครงการ:</strong> {neighborhoodText}
+                </p>
+              )}
+
               {!isBlank(safeLocation.address) && (
                 <p>
                   <strong>ที่อยู่:</strong> {safeLocation.address}
@@ -358,7 +371,6 @@ const PropertySummary = ({
 
         <div style={cardStyle}>
           {safeImages.length === 0 ? (
-            // แก้ typo ตรงนี้แล้ว
             <p className="text-muted mb0">ยังไม่มีรูปภาพ</p>
           ) : (
             <div className="row g-3">
@@ -398,4 +410,3 @@ const PropertySummary = ({
 };
 
 export default PropertySummary;
- 

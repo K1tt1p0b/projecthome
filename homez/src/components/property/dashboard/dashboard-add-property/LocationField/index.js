@@ -9,13 +9,13 @@ const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
   // ที่อยู่ข้อความ
   const [address, setAddress] = useState("");
 
-  // จังหวัด / เขต / ตำบล / ZIP / หมู่บ้าน
+  // จังหวัด / เขต / ตำบล / ZIP / หมู่บ้าน/โครงการ
   const [locationSelect, setLocationSelect] = useState({
     province: null,
     district: null,
     subdistrict: null,
     zipCode: "",
-    neighborhood: "",
+    neighborhood: "", // ✅ หมู่บ้าน / โครงการ (ถ้ามี)
   });
 
   // lat / lng
@@ -34,6 +34,13 @@ const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
       initialValue.zip_code ??
       "";
 
+    // ✅ neighborhood รองรับชื่ออื่น ๆ เผื่อของเดิมเคยใช้คนละ key
+    const neighborhood =
+      initialValue.neighborhood ??
+      initialValue.village ??
+      initialValue.projectName ?? // เผื่อเคยเก็บชื่อโครงการคอนโดใน location มาก่อน
+      "";
+
     setLocationSelect((prev) => ({
       ...prev,
       // ทำเป็น object ที่มี label เพื่อให้ SelectMulitField โชว์ได้
@@ -47,9 +54,8 @@ const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
         ? { label: initialValue.subdistrict, value: initialValue.subdistrict }
         : null,
 
-      // เก็บทั้ง zipCode/neighborhood
       zipCode: zip,
-      neighborhood: initialValue.neighborhood ?? initialValue.village ?? "",
+      neighborhood,
     }));
 
     // รองรับหลายชื่อ field
@@ -79,15 +85,16 @@ const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
     setLongitude(value === "" ? "" : Number(value));
   };
 
-  // รวมข้อมูลที่จะส่งให้ parent
+  // ✅ รวมข้อมูลที่จะส่งให้ parent (ชื่อ key แน่นอน)
   const buildFormData = () => ({
-    address,
+    address: address || "",
 
-    // ดึงค่าจาก SelectMulitField
     province: locationSelect.province?.label || "",
     district: locationSelect.district?.label || "",
     subdistrict: locationSelect.subdistrict?.label || "",
     zipCode: locationSelect.zipCode || "",
+
+    // ✅ ช่องเดียว: “หมู่บ้าน / โครงการ”
     neighborhood: locationSelect.neighborhood || "",
 
     latitude,
@@ -95,27 +102,43 @@ const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
   });
 
   const handleNext = () => {
-    // validate ขั้นต่ำก่อน
-    if (!address.trim() || latitude === "" || longitude === "") {
-      toast.warn("กรุณากรอกที่อยู่ และละติจูด/ลองจิจูดให้ครบถ้วน");
+    const province = locationSelect.province?.label?.trim();
+    const district = locationSelect.district?.label?.trim();
+    const subdistrict = locationSelect.subdistrict?.label?.trim();
+
+    // ✅ validate: บังคับที่อยู่ + จังหวัด + อำเภอ/เขต + ตำบล/แขวง + lat/lng
+    if (!address.trim()) {
+      toast.warn("กรุณากรอกที่อยู่ของทรัพย์สิน");
+      return;
+    }
+    if (!province) {
+      toast.warn("กรุณาเลือกจังหวัด");
+      return;
+    }
+    if (!district) {
+      toast.warn("กรุณาเลือกอำเภอ/เขต");
+      return;
+    }
+    if (!subdistrict) {
+      toast.warn("กรุณาเลือกตำบล/แขวง");
+      return;
+    }
+    if (latitude === "" || latitude === null || Number.isNaN(Number(latitude))) {
+      toast.warn("กรุณากรอกละติจูด (Latitude)");
+      return;
+    }
+    if (longitude === "" || longitude === null || Number.isNaN(Number(longitude))) {
+      toast.warn("กรุณากรอกลองจิจูด (Longitude)");
       return;
     }
 
     const data = buildFormData();
-    if (onNext) {
-      onNext(data);
-    } else {
-      console.log("Location next:", data);
-    }
+    onNext?.(data);
   };
 
   const handleSaveDraft = () => {
     const data = buildFormData();
-    if (onSaveDraft) {
-      onSaveDraft(data);
-    } else {
-      console.log("Location draft:", data);
-    }
+    onSaveDraft?.(data);
     alert("บันทึกร่างตำแหน่งทรัพย์เรียบร้อย (mock)");
   };
 
@@ -132,7 +155,7 @@ const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
         <div className="col-sm-12">
           <div className="mb20">
             <label className="heading-color ff-heading fw600 mb10">
-              ที่อยู่ของทรัพย์สิน *
+              ที่อยู่ของทรัพย์สิน <span className="text-danger">*</span>
             </label>
             <input
               type="text"
@@ -144,11 +167,8 @@ const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
           </div>
         </div>
 
-        {/* จังหวัด / อำเภอ / ตำบล / ZIP / หมู่บ้าน */}
-        <SelectMulitField
-          value={locationSelect}
-          onChange={(val) => setLocationSelect(val)}
-        />
+        {/* จังหวัด / อำเภอ / ตำบล / ZIP / หมู่บ้าน/โครงการ */}
+        <SelectMulitField value={locationSelect} onChange={setLocationSelect} />
 
         {/* แผนที่ */}
         <div className="col-sm-12">
@@ -156,44 +176,46 @@ const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
             <label className="heading-color ff-heading fw600 mb30">
               Place the listing pin on the map
             </label>
-            <Map lat={latitude || 0} lng={longitude || 0} zoom={14} />
+
+            <div className="row">
+              <div className="col-sm-6 col-xl-4">
+                <div className="mb30">
+                  <label className="heading-color ff-heading fw600 mb10">
+                    ละติจูด (Latitude) <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={latitude}
+                    onChange={handleLatChange}
+                    placeholder="เช่น 13.7563"
+                  />
+                </div>
+              </div>
+
+              <div className="col-sm-6 col-xl-4">
+                <div className="mb30">
+                  <label className="heading-color ff-heading fw600 mb10">
+                    ลองจิจูด (Longitude) <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={longitude}
+                    onChange={handleLngChange}
+                    placeholder="เช่น 100.5018"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <Map lat={Number(latitude) || 0} lng={Number(longitude) || 0} zoom={14} />
           </div>
         </div>
       </div>
 
-      {/* Lat / Lng + ปุ่ม */}
+      {/* ปุ่มล่าง */}
       <div className="row">
-        <div className="col-sm-6 col-xl-4">
-          <div className="mb30">
-            <label className="heading-color ff-heading fw600 mb10">
-              ละติจูด (Latitude) *
-            </label>
-            <input
-              type="number"
-              className="form-control"
-              value={latitude}
-              onChange={handleLatChange}
-              placeholder="เช่น 13.7563"
-            />
-          </div>
-        </div>
-
-        <div className="col-sm-6 col-xl-4">
-          <div className="mb30">
-            <label className="heading-color ff-heading fw600 mb10">
-              ลองจิจูด (Longitude) *
-            </label>
-            <input
-              type="number"
-              className="form-control"
-              value={longitude}
-              onChange={handleLngChange}
-              placeholder="เช่น 100.5018"
-            />
-          </div>
-        </div>
-
-        {/* ปุ่มล่าง */}
         <div className="col-12">
           <div className="d-flex justify-content-between mt10">
             {onBack ? (
@@ -205,7 +227,11 @@ const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
             )}
 
             <div className="d-flex gap-2">
-              <button type="button" className="ud-btn btn-light" onClick={handleSaveDraft}>
+              <button
+                type="button"
+                className="ud-btn btn-light"
+                onClick={handleSaveDraft}
+              >
                 บันทึกร่าง
               </button>
               <button type="submit" className="ud-btn btn-thm">
