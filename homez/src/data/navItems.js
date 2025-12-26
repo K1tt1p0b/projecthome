@@ -21,7 +21,6 @@ export const listingItems = [
       { label: "รับล้อมรั้ว", href: "/services/fencing" },
       { label: "ต่อเติม/รีโนเวท", href: "/services/renovate" },
       { label: "ตอกเสาเข็ม", href: "/services/piling" },
-      { label: "คอร์สเรียน", href: "/courses" },
       /*{ label: "Map V1", href: "/map-v1" },
       { label: "Map V2", href: "/map-v2" },
       { label: "Map V3", href: "/map-v3" },
@@ -29,10 +28,11 @@ export const listingItems = [
     ],
   },
   {
-    title: "List View",
+    title: "คอร์สเรียน",
     submenu: [
-      { label: "List v1", href: "/list-v1" },
-      { label: "List All Style", href: "/list-all-style" },
+      { label: "คอร์สเรียน", href: "/courses" },
+      /*{ label: "List v1", href: "/list-v1" },
+      { label: "List All Style", href: "/list-all-style" },*/
     ],
   },
 ];

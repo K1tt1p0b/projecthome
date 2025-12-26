@@ -1,0 +1,154 @@
+"use client";
+import React, { useState } from "react";
+import Image from "next/image";
+
+const AddCourseForm = () => {
+  // --- State ---
+  const [formData, setFormData] = useState({
+    title: "",
+    category: "",
+    price: "",
+    description: "",
+    type: "course", // ฟิกไว้ว่าเป็นคอร์ส
+  });
+  const [imagePreview, setImagePreview] = useState(null);
+
+  // Handle ทั่วไป
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  // Handle รูปภาพ
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setImagePreview(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log("Submitting Online Course:", formData);
+    // ยิง API บันทึกข้อมูลตรงนี้
+  };
+
+  return (
+    <div className="row">
+      {/* --- ฝั่งซ้าย: ฟอร์มกรอกข้อมูล --- */}
+      <div className="col-lg-12">
+        <div className="ps-widget bg-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
+          <h4 className="mb-4"><i className="fas fa-laptop-code me-2"></i>ลงประกาศคอร์สออนไลน์</h4>
+          
+          <form className="form-style1" onSubmit={handleSubmit}>
+            <div className="row">
+              
+              <div className="col-sm-12">
+                <div className="mb20">
+                  <label className="heading-color ff-heading fw600 mb10">ชื่อคอร์สเรียน</label>
+                  <input 
+                    type="text" 
+                    name="title" 
+                    className="form-control" 
+                    placeholder="เช่น สอนยิงแอด Facebook รวยด้วยมือถือ..." 
+                    value={formData.title} 
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              <div className="col-sm-6 col-xl-6">
+                <div className="mb20">
+                  <label className="heading-color ff-heading fw600 mb10">ราคาคอร์ส (บาท)</label>
+                  <input 
+                    type="number" 
+                    name="price" 
+                    className="form-control" 
+                    placeholder="เช่น 1290" 
+                    value={formData.price} 
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              <div className="col-sm-6 col-xl-6">
+                <div className="mb20">
+                  <label className="heading-color ff-heading fw600 mb10">หมวดหมู่</label>
+                  <select className="form-select" name="category" onChange={handleChange} value={formData.category}>
+                    <option value="">เลือกหมวดหมู่...</option>
+                    <option value="marketing">การตลาดออนไลน์</option>
+                    <option value="investment">การเงิน/การลงทุน</option>
+                    <option value="language">ภาษาต่างประเทศ</option>
+                    <option value="technology">เขียนโปรแกรม/IT</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="col-md-12">
+                <div className="mb20">
+                  <label className="heading-color ff-heading fw600 mb10">รายละเอียดบทเรียน</label>
+                  <textarea 
+                    cols="30" 
+                    rows="6" 
+                    name="description"
+                    className="form-control"
+                    placeholder="รายละเอียดสิ่งที่จะได้รับ, เนื้อหาที่สอน, ช่องทางการเรียน (เช่น Facebook Group, Website)..." 
+                    value={formData.description}
+                    onChange={handleChange}
+                  ></textarea>
+                </div>
+              </div>
+
+              <div className="col-md-12">
+                <div className="mb20">
+                  <label className="heading-color ff-heading fw600 mb10">รูปภาพปกคอร์ส</label>
+                  <div className="upload-field text-center p-4 border border-dashed rounded-3 bg-light position-relative">
+                    {imagePreview ? (
+                      <div className="position-relative d-inline-block">
+                        <Image src={imagePreview} width={300} height={200} alt="preview" className="rounded-3 object-fit-cover shadow-sm"/>
+                        <button 
+                          type="button" 
+                          onClick={() => setImagePreview(null)} 
+                          className="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 rounded-circle shadow"
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mb-3">
+                          <i className="fas fa-cloud-upload-alt fz40 text-thm"></i>
+                        </div>
+                        <p className="mb-2 fw600">คลิกเพื่ออัปโหลดรูปปก</p>
+                        <input 
+                          type="file" 
+                          className="form-control w-50 mx-auto mt-3 opacity-0 position-absolute top-0 start-0 h-100 cursor-pointer" 
+                          onChange={handleImageUpload}
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="col-md-12">
+                <div className="d-grid mt-3">
+                  <button className="ud-btn btn-thm btn-lg rounded-3" type="submit">
+                    ลงประกาศขายคอร์ส <i className="fal fa-arrow-right-long ms-2"></i>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </form>
+        </div>
+      </div>
+
+
+    </div>
+  );
+};
+
+export default AddCourseForm;

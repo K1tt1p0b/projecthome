@@ -53,6 +53,16 @@ const SidebarDashboard = () => {
           icon: "flaticon-house-price",
           text: "โฆษณาทรัพย์สิน",
         },
+        {
+          href: "/add-listing",
+          icon: "fas fa-plus-circle",
+          text: "เพิ่มบริการเพิ่มเติม",
+        },
+        {
+          href: "/add-course",
+          icon: "fas fa-bullhorn",
+          text: "ลงประกาศงานบริการ",
+        },
       ],
     },
     {
@@ -93,9 +103,8 @@ const SidebarDashboard = () => {
         {sidebarItems.map((section, sectionIndex) => (
           <div key={sectionIndex}>
             <p
-              className={`fz15 fw400 ff-heading ${
-                sectionIndex === 0 ? "mt-0" : "mt30"
-              }`}
+              className={`fz15 fw400 ff-heading ${sectionIndex === 0 ? "mt-0" : "mt30"
+                }`}
             >
               {section.title}
             </p>
@@ -113,9 +122,8 @@ const SidebarDashboard = () => {
                       setHovered(`${sectionIndex}-${itemIndex}`)
                     }
                     onMouseLeave={() => setHovered(null)}
-                    className={`items-center ${
-                      active ? "-is-active" : ""
-                    }`}
+                    className={`items-center ${active ? "-is-active" : ""
+                      }`}
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
