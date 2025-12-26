@@ -80,9 +80,9 @@ const SocialField = () => {
       <div className="row">
         {[
           { name: "facebook", label: "Facebook Url" },
-          { name: "pinterest", label: "Pinterest Url" },
+          { name: "line", label: "Line ID" },
           { name: "instagram", label: "Instagram Url" },
-          { name: "twitter", label: "Twitter Url" },
+          { name: "tiktok", label: "Tiktok Url" },
           { name: "linkedin", label: "Linkedin Url" },
         ].map((item) => (
           <div className="col-sm-6 col-xl-4" key={item.name}>
@@ -102,23 +102,6 @@ const SocialField = () => {
             </div>
           </div>
         ))}
-
-        <div className="col-sm-6 col-xl-4">
-          <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              Website Url (ไม่ต้องใส่ http)
-            </label>
-            <input
-              type="text"
-              name="website"
-              className="form-control"
-              placeholder="example.com"
-              value={form.website}
-              onChange={handleChange}
-              disabled={loading}
-            />
-          </div>
-        </div>
 
         <div className="col-md-12">
           <div className="text-end">

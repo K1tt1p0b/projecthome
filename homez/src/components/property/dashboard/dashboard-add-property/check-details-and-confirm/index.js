@@ -1,6 +1,6 @@
 "use client";
 import React, { useMemo } from "react";
-import Map from "./Map";
+import LeafletMap from "@/components/common/LeafletMap";
 
 const PropertySummary = ({
   basicInfo,
@@ -34,7 +34,6 @@ const PropertySummary = ({
   const safeDetails = details || {};
 
   const isEmptyObject = (obj) => !obj || Object.keys(obj).length === 0;
-
   const isBlank = (v) => v === undefined || v === null || String(v).trim() === "";
 
   const formatPrice = (p) => {
@@ -98,7 +97,7 @@ const PropertySummary = ({
       pick("รูปโฉนด", name);
     }
 
-    // ✅ เอา "ชื่อโครงการ" ออกจาก details แล้ว (ย้ายไปที่อยู่: location.neighborhood)
+    // ✅ ชื่อโครงการย้ายไป location.neighborhood แล้ว
     pick("อาคาร/ตึก", d.building);
     pick("ชั้น", d.unitFloor);
     pick("ขนาดห้อง (ตร.ม.)", d.roomArea);
@@ -121,8 +120,7 @@ const PropertySummary = ({
 
   const amenities = Array.isArray(detailsView.amenities) ? detailsView.amenities : [];
 
-  // เรียง key รายละเอียด (ไม่บังคับ แต่ช่วยให้ไม่มั่ว)
-  // ✅ เอา "ชื่อโครงการ" ออก
+  // เรียง key รายละเอียด
   const DETAILS_ORDER = [
     "ห้องนอน",
     "ห้องน้ำ",
@@ -180,8 +178,13 @@ const PropertySummary = ({
   const neighborhoodText =
     safeLocation.neighborhood ||
     safeLocation.village ||
-    safeLocation.projectName || // เผื่อข้อมูลเก่าเคยเก็บชื่อนี้ใน location
+    safeLocation.projectName ||
     "";
+
+  // ✅ map lat/lng safe
+  const mapLat = Number(safeLocation.latitude ?? safeLocation.lat);
+  const mapLng = Number(safeLocation.longitude ?? safeLocation.lng);
+  const hasMap = Number.isFinite(mapLat) && Number.isFinite(mapLng);
 
   return (
     <div className="row">
@@ -205,7 +208,6 @@ const PropertySummary = ({
                 <strong>หัวข้อประกาศ:</strong> {safeBasic.title || "-"}
               </p>
 
-              {/* เพิ่ม: สถานะผู้ประกาศ */}
               <p>
                 <strong>สถานะผู้ประกาศ:</strong> {announcerText}
               </p>
@@ -247,7 +249,6 @@ const PropertySummary = ({
             <p className="text-muted mb0">ยังไม่มีข้อมูลที่อยู่ทรัพย์สิน</p>
           ) : (
             <>
-              {/* ✅ หมู่บ้าน / โครงการ (ถ้ามี) */}
               {!isBlank(neighborhoodText) && (
                 <p>
                   <strong>หมู่บ้าน / โครงการ:</strong> {neighborhoodText}
@@ -280,20 +281,29 @@ const PropertySummary = ({
                 </p>
               )}
 
-              {(!isBlank(safeLocation.latitude) || !isBlank(safeLocation.longitude)) && (
+              {hasMap && (
                 <div className="mt15">
-                  <Map lat={Number(safeLocation.latitude)} lng={Number(safeLocation.longitude)} />
+                  {/* ✅ เปลี่ยนมาใช้ LeafletMap (แสดงอย่างเดียว ไม่ต้องมี search/gps) */}
+                  <LeafletMap
+                    lat={mapLat}
+                    lng={mapLng}
+                    zoom={15}
+                    height={360}
+                    draggable={false}
+                    clickToMove={false}
+                    enableSearch={false}
+                    enableGPS={false}
+                    restrictToThailand={true}
+                    initialPosition={{ lat: mapLat, lng: mapLng }}
+                  />
+
                   <div className="d-flex gap-3 mt10">
-                    {!isBlank(safeLocation.latitude) && (
-                      <small>
-                        <strong>Lat:</strong> {safeLocation.latitude}
-                      </small>
-                    )}
-                    {!isBlank(safeLocation.longitude) && (
-                      <small>
-                        <strong>Lng:</strong> {safeLocation.longitude}
-                      </small>
-                    )}
+                    <small>
+                      <strong>Lat:</strong> {mapLat}
+                    </small>
+                    <small>
+                      <strong>Lng:</strong> {mapLng}
+                    </small>
                   </div>
                 </div>
               )}

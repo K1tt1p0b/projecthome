@@ -5,14 +5,10 @@ import { toast } from "react-toastify";
 
 const PersonalInfo = () => {
   const [form, setForm] = useState({
-    username: "",
     email: "",
     phone: "",
     firstName: "",
     lastName: "",
-    position: "",
-    language: "",
-    company: "",
     taxId: "",
     address: "",
     about: "",
@@ -27,14 +23,10 @@ const PersonalInfo = () => {
 
   const validate = () => {
     const requiredFields = [
-      { key: "username", label: "ชื่อผู้ใช้" },
       { key: "email", label: "อีเมล" },
       { key: "phone", label: "เบอร์โทรศัพท์" },
       { key: "firstName", label: "ชื่อจริง" },
       { key: "lastName", label: "นามสกุล" },
-      { key: "position", label: "ตำแหน่ง" },
-      { key: "language", label: "ภาษา" },
-      { key: "company", label: "ชื่อบริษัท" },
       { key: "taxId", label: "เลขประจำตัวผู้เสียภาษี" },
       { key: "address", label: "ที่อยู่" },
     ];
@@ -94,23 +86,6 @@ const PersonalInfo = () => {
   return (
     <form className="form-style1" onSubmit={handleSubmit}>
       <div className="row">
-        {/** Username */}
-        <div className="col-sm-6 col-xl-4">
-          <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              ชื่อผู้ใช้ (Username)
-            </label>
-            <input
-              name="username"
-              type="text"
-              className="form-control"
-              placeholder="ระบุชื่อผู้ใช้"
-              value={form.username}
-              onChange={handleChange}
-              disabled={loading}
-            />
-          </div>
-        </div>
 
         {/** Email */}
         <div className="col-sm-6 col-xl-4">
@@ -180,56 +155,7 @@ const PersonalInfo = () => {
           </div>
         </div>
 
-        {/** Position */}
-        <div className="col-sm-6 col-xl-4">
-          <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              ตำแหน่ง
-            </label>
-            <input
-              name="position"
-              type="text"
-              className="form-control"
-              value={form.position}
-              onChange={handleChange}
-              disabled={loading}
-            />
-          </div>
-        </div>
 
-        {/** Language */}
-        <div className="col-sm-6 col-xl-4">
-          <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              ภาษา
-            </label>
-            <input
-              name="language"
-              type="text"
-              className="form-control"
-              value={form.language}
-              onChange={handleChange}
-              disabled={loading}
-            />
-          </div>
-        </div>
-
-        {/** Company */}
-        <div className="col-sm-6 col-xl-4">
-          <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              ชื่อบริษัท
-            </label>
-            <input
-              name="company"
-              type="text"
-              className="form-control"
-              value={form.company}
-              onChange={handleChange}
-              disabled={loading}
-            />
-          </div>
-        </div>
 
         {/** Tax ID */}
         <div className="col-sm-6 col-xl-4">

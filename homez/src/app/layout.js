@@ -11,6 +11,8 @@ import { Prompt } from "next/font/google";
 import { useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import "leaflet/dist/leaflet.css";
+
 
 //  Thai font (Prompt) - ผูกกับ variable ของธีมเดิม
 const promptBody = Prompt({

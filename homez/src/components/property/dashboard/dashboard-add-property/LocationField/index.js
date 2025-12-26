@@ -2,27 +2,23 @@
 
 import React, { useEffect, useState } from "react";
 import SelectMulitField from "./SelectMulitField";
-import Map from "./Map";
+import LeafletMap from "@/components/common/LeafletMap";
 import { toast } from "react-toastify";
 
 const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
-  // ที่อยู่ข้อความ
   const [address, setAddress] = useState("");
 
-  // จังหวัด / เขต / ตำบล / ZIP / หมู่บ้าน/โครงการ
   const [locationSelect, setLocationSelect] = useState({
     province: null,
     district: null,
     subdistrict: null,
     zipCode: "",
-    neighborhood: "", // ✅ หมู่บ้าน / โครงการ (ถ้ามี)
+    neighborhood: "",
   });
 
-  // lat / lng
-  const [latitude, setLatitude] = useState(13.9869); // ค่าเริ่มต้น
+  const [latitude, setLatitude] = useState(13.9869);
   const [longitude, setLongitude] = useState(100.6184);
 
-  // sync ค่าเดิมตอน "แก้ไข"
   useEffect(() => {
     if (!initialValue) return;
 
@@ -34,16 +30,14 @@ const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
       initialValue.zip_code ??
       "";
 
-    // ✅ neighborhood รองรับชื่ออื่น ๆ เผื่อของเดิมเคยใช้คนละ key
     const neighborhood =
       initialValue.neighborhood ??
       initialValue.village ??
-      initialValue.projectName ?? // เผื่อเคยเก็บชื่อโครงการคอนโดใน location มาก่อน
+      initialValue.projectName ??
       "";
 
     setLocationSelect((prev) => ({
       ...prev,
-      // ทำเป็น object ที่มี label เพื่อให้ SelectMulitField โชว์ได้
       province: initialValue.province
         ? { label: initialValue.province, value: initialValue.province }
         : null,
@@ -53,12 +47,10 @@ const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
       subdistrict: initialValue.subdistrict
         ? { label: initialValue.subdistrict, value: initialValue.subdistrict }
         : null,
-
       zipCode: zip,
       neighborhood,
     }));
 
-    // รองรับหลายชื่อ field
     const lat =
       initialValue.latitude ??
       initialValue.lat ??
@@ -85,18 +77,13 @@ const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
     setLongitude(value === "" ? "" : Number(value));
   };
 
-  // ✅ รวมข้อมูลที่จะส่งให้ parent (ชื่อ key แน่นอน)
   const buildFormData = () => ({
     address: address || "",
-
     province: locationSelect.province?.label || "",
     district: locationSelect.district?.label || "",
     subdistrict: locationSelect.subdistrict?.label || "",
     zipCode: locationSelect.zipCode || "",
-
-    // ✅ ช่องเดียว: “หมู่บ้าน / โครงการ”
     neighborhood: locationSelect.neighborhood || "",
-
     latitude,
     longitude,
   });
@@ -106,41 +93,28 @@ const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
     const district = locationSelect.district?.label?.trim();
     const subdistrict = locationSelect.subdistrict?.label?.trim();
 
-    // ✅ validate: บังคับที่อยู่ + จังหวัด + อำเภอ/เขต + ตำบล/แขวง + lat/lng
-    if (!address.trim()) {
-      toast.warn("กรุณากรอกที่อยู่ของทรัพย์สิน");
-      return;
-    }
-    if (!province) {
-      toast.warn("กรุณาเลือกจังหวัด");
-      return;
-    }
-    if (!district) {
-      toast.warn("กรุณาเลือกอำเภอ/เขต");
-      return;
-    }
-    if (!subdistrict) {
-      toast.warn("กรุณาเลือกตำบล/แขวง");
-      return;
-    }
+    if (!address.trim()) return toast.warn("กรุณากรอกที่อยู่ของทรัพย์สิน");
+    if (!province) return toast.warn("กรุณาเลือกจังหวัด");
+    if (!district) return toast.warn("กรุณาเลือกอำเภอ/เขต");
+    if (!subdistrict) return toast.warn("กรุณาเลือกตำบล/แขวง");
+
     if (latitude === "" || latitude === null || Number.isNaN(Number(latitude))) {
-      toast.warn("กรุณากรอกละติจูด (Latitude)");
-      return;
+      return toast.warn("กรุณากรอกละติจูด (Latitude)");
     }
     if (longitude === "" || longitude === null || Number.isNaN(Number(longitude))) {
-      toast.warn("กรุณากรอกลองจิจูด (Longitude)");
-      return;
+      return toast.warn("กรุณากรอกลองจิจูด (Longitude)");
     }
 
-    const data = buildFormData();
-    onNext?.(data);
+    onNext?.(buildFormData());
   };
 
   const handleSaveDraft = () => {
-    const data = buildFormData();
-    onSaveDraft?.(data);
+    onSaveDraft?.(buildFormData());
     alert("บันทึกร่างตำแหน่งทรัพย์เรียบร้อย (mock)");
   };
+
+  const safeLat = Number.isFinite(Number(latitude)) ? Number(latitude) : 13.9869;
+  const safeLng = Number.isFinite(Number(longitude)) ? Number(longitude) : 100.6184;
 
   return (
     <form
@@ -151,7 +125,6 @@ const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
       }}
     >
       <div className="row">
-        {/* ที่อยู่ของทรัพย์สิน */}
         <div className="col-sm-12">
           <div className="mb20">
             <label className="heading-color ff-heading fw600 mb10">
@@ -167,10 +140,8 @@ const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
           </div>
         </div>
 
-        {/* จังหวัด / อำเภอ / ตำบล / ZIP / หมู่บ้าน/โครงการ */}
         <SelectMulitField value={locationSelect} onChange={setLocationSelect} />
 
-        {/* แผนที่ */}
         <div className="col-sm-12">
           <div className="mb20 mt30">
             <label className="heading-color ff-heading fw600 mb30">
@@ -209,12 +180,37 @@ const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
               </div>
             </div>
 
-            <Map lat={Number(latitude) || 0} lng={Number(longitude) || 0} zoom={14} />
+            <LeafletMap
+              lat={safeLat}
+              lng={safeLng}
+              zoom={14}
+              height={550}
+              draggable
+              clickToMove
+              enableSearch
+              enableGPS
+              restrictToThailand={true}
+              // (optional) ถ้าอยากให้ reset กลับค่าที่โหลดมาตอนแรก
+              initialPosition={{ lat: safeLat, lng: safeLng }}
+              onChange={({ lat, lng }) => {
+              setLatitude(lat);
+              setLongitude(lng);
+              }}
+              onAddressChange={({ displayName, address }) => {
+              // displayName = ที่อยู่เต็มแบบสตริง
+              // address = object แยกส่วน เช่น { province, state, county, ... } (แล้วแต่พื้นที่)
+              // ตัวอย่าง: ถ้าอยากเอาไปเติม address input:
+              // setAddress(displayName);
+
+              // หรือ log ดูโครงก่อน:
+              // console.log(displayName, address);
+              }}
+            />
+
           </div>
         </div>
       </div>
 
-      {/* ปุ่มล่าง */}
       <div className="row">
         <div className="col-12">
           <div className="d-flex justify-content-between mt10">
@@ -227,11 +223,7 @@ const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
             )}
 
             <div className="d-flex gap-2">
-              <button
-                type="button"
-                className="ud-btn btn-light"
-                onClick={handleSaveDraft}
-              >
+              <button type="button" className="ud-btn btn-light" onClick={handleSaveDraft}>
                 บันทึกร่าง
               </button>
               <button type="submit" className="ud-btn btn-thm">
