@@ -6,14 +6,14 @@ import { motion } from "framer-motion";
 
 // 📦 ข้อมูลจำลอง (เอา rating กับ students ออกแล้ว)
 const allCourses = [
-  { id: 1, title: "P01: พื้นฐานนายหน้าอสังหาฯ", price: "2,990", fullPrice: "5,900", image: "/images/listings/g1-1.jpg", tag: "Best Seller", instructor: "โค้ชพี่ทอม" },
-  { id: 2, title: "M02: ยิงแอดอสังหาฯ ขั้นเทพ", price: "1,590", fullPrice: "3,500", image: "/images/listings/g1-2.jpg", tag: "New", instructor: "คุณเจน Digital" },
-  { id: 3, title: "L03: กฎหมายที่ดินฉบับนายหน้า", price: "990", fullPrice: "1,990", image: "/images/listings/g1-3.jpg", tag: "Recommended", instructor: "ทนายวิชัย" },
-  { id: 4, title: "S04: เทคนิคถ่ายภาพบ้านให้แพง", price: "1,290", fullPrice: "2,500", image: "/images/listings/g1-4.jpg", tag: "Hot", instructor: "ช่างภาพเอก" },
-  { id: 5, title: "P05: ปิดการขายทางโทรศัพท์", price: "890", fullPrice: "1,500", image: "/images/listings/g1-1.jpg", tag: "Popular", instructor: "โค้ชพี่ทอม" },
-  { id: 6, title: "M06: TikTok Marketing 2024", price: "2,500", fullPrice: "4,900", image: "/images/listings/g1-2.jpg", tag: "New", instructor: "คุณเจน Digital" },
-  { id: 7, title: "L07: สัญญาจะซื้อจะขาย", price: "590", fullPrice: "990", image: "/images/listings/g1-3.jpg", tag: "Basic", instructor: "ทนายวิชัย" },
-  { id: 8, title: "inv08: ลงทุนคอนโดเงินเหลือ", price: "3,900", fullPrice: "7,900", image: "/images/listings/g1-4.jpg", tag: "Premium", instructor: "โค้ชรวย" },
+  { id: 1, title: "P01: พื้นฐานนายหน้าอสังหาฯ", image: "/images/listings/g1-1.jpg", tag: "Best Seller", instructor: "โค้ชพี่ทอม" },
+  { id: 2, title: "M02: ยิงแอดอสังหาฯ ขั้นเทพ", image: "/images/listings/g1-2.jpg", tag: "New", instructor: "คุณเจน Digital" },
+  { id: 3, title: "L03: กฎหมายที่ดินฉบับนายหน้า", image: "/images/listings/g1-3.jpg", tag: "Recommended", instructor: "ทนายวิชัย" },
+  { id: 4, title: "S04: เทคนิคถ่ายภาพบ้านให้แพง", image: "/images/listings/g1-4.jpg", tag: "Hot", instructor: "ช่างภาพเอก" },
+  { id: 5, title: "P05: ปิดการขายทางโทรศัพท์", image: "/images/listings/g1-1.jpg", tag: "Popular", instructor: "โค้ชพี่ทอม" },
+  { id: 6, title: "M06: TikTok Marketing 2024", image: "/images/listings/g1-2.jpg", tag: "New", instructor: "คุณเจน Digital" },
+  { id: 7, title: "L07: สัญญาจะซื้อจะขาย", image: "/images/listings/g1-3.jpg", tag: "Basic", instructor: "ทนายวิชัย" },
+  { id: 8, title: "inv08: ลงทุนคอนโดเงินเหลือ", image: "/images/listings/g1-4.jpg", tag: "Premium", instructor: "โค้ชรวย" },
 ];
 
 const CourseLanding = () => {
@@ -72,14 +72,6 @@ const CourseLanding = () => {
                   >
                     {course.title}
                   </motion.h5>
-
-                  {/* ✅ ส่วนราคา (ตัดรีวิวออกแล้ว) */}
-                  <div className="border-top pt-3 mt-auto d-flex justify-content-end align-items-center">
-                    <div>
-                      <span className="fw700 text-thm fz18">฿{course.price}</span>
-                      <span className="text-decoration-line-through text-muted fz12 ms-2">฿{course.fullPrice}</span>
-                    </div>
-                  </div>
                 </div>
               </motion.div>
             </Link>

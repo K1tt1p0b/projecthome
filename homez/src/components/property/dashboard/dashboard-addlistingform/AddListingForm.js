@@ -4,6 +4,10 @@ import Image from "next/image";
 import Select from "react-select";
 import geographyData from "@/components/property/dashboard/dashboard-add-property/LocationField/geography.json";
 
+// ✅ 1. Import จาก react-toastify แทน
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; // ⚠️ สำคัญ: ต้องมีบรรทัดนี้ CSS ถึงจะขึ้น
+
 const AddListingForm = () => {
   // --- State ---
   const [formData, setFormData] = useState({
@@ -11,9 +15,65 @@ const AddListingForm = () => {
     category: "",
     provinces: [],
     description: "",
-    type: "service", // ✅ ฟิกค่าเป็น service ไปเลย
+    type: "service",
   });
-  const [imagePreview, setImagePreview] = useState(null);
+  const [images, setImages] = useState([]);
+
+  // ✅ Handle รูปภาพ
+  const handleImageUpload = async (e) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (files.length === 0) return;
+
+    if (images.length + files.length > 5) {
+      // ❌ เปลี่ยนเป็น toast.error ของ toastify
+      toast.error("อัปโหลดได้สูงสุดรวมกันไม่เกิน 5 รูปครับ");
+      e.target.value = ""; 
+      return;
+    }
+
+    const fileReaders = files.map((file) => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+      });
+    });
+
+    try {
+      const newImages = await Promise.all(fileReaders);
+      setImages((prevImages) => [...prevImages, ...newImages]); 
+      
+      // ✅ Toast สีเขียว
+      toast.success(`อัปโหลดเพิ่ม ${newImages.length} รูปเรียบร้อย`);
+    } catch (error) {
+      console.error("Error reading files:", error);
+      toast.error("เกิดข้อผิดพลาดในการอ่านไฟล์");
+    }
+
+    e.target.value = ""; 
+  };
+
+  // ✅ Handle ลบรูปภาพ
+  const handleRemoveImage = (indexToRemove) => {
+    setImages((prev) => prev.filter((_, index) => index !== indexToRemove));
+    toast.success("ลบรูปภาพแล้ว");
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.title) {
+        toast.error("กรุณากรอกหัวข้อประกาศ");
+        return;
+    }
+
+    if (images.length < 3) {
+      toast.error("กรุณาอัปโหลดรูปภาพอย่างน้อย 3 รูปครับ");
+      return;
+    }
+    
+    console.log("Submitting:", { ...formData, images });
+    toast.success("ลงประกาศเรียบร้อยแล้ว!");
+  };
 
   // --- Logic กรองจังหวัด ---
   const provinceOptions = useMemo(() => {
@@ -31,30 +91,16 @@ const AddListingForm = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Submitting Service:", formData);
-  };
 
   return (
     <div className="ps-widget bg-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
 
-      {/* ❌ ลบปุ่ม Tab Switch ออกแล้ว ใส่หัวข้อแทน */}
       <h4 className="mb-4"><i className="fas fa-tools me-2"></i>ลงประกาศงานช่าง/บริการ</h4>
 
-      {/* Form */}
       <form className="form-style1" onSubmit={handleSubmit}>
         <div className="row">
-
+          {/* ... (ส่วน Input เหมือนเดิมเป๊ะ ไม่ต้องแก้ครับ) ... */}
+          
           <div className="col-sm-12">
             <div className="mb20">
               <label className="heading-color ff-heading fw600 mb10">หัวข้อประกาศ</label>
@@ -62,7 +108,6 @@ const AddListingForm = () => {
                 type="text"
                 name="title"
                 className="form-control"
-                // ✅ ลบเงื่อนไข ternary operator ออก
                 placeholder="เช่น รับถมที่ดิน ปรับพื้นที่..."
                 value={formData.title}
                 onChange={handleChange}
@@ -110,7 +155,6 @@ const AddListingForm = () => {
               <label className="heading-color ff-heading fw600 mb10">หมวดหมู่</label>
               <select className="form-select" name="category" onChange={handleChange} value={formData.category}>
                 <option value="">เลือกหมวดหมู่...</option>
-                {/* ✅ เหลือเฉพาะหมวดหมู่งานช่าง */}
                 <option value="piling">ตอกเสาเข็ม</option>
                 <option value="land-fill">ถมที่ดิน</option>
                 <option value="renovate">รีโนเวท</option>
@@ -137,36 +181,51 @@ const AddListingForm = () => {
 
           <div className="col-md-12">
             <div className="mb20">
-              <label className="heading-color ff-heading fw600 mb10">รูปภาพผลงาน</label>
-              <div className="upload-field text-center p-4 border border-dashed rounded-3 bg-light position-relative">
-                {imagePreview ? (
-                  <div className="position-relative d-inline-block">
-                    <Image src={imagePreview} width={300} height={200} alt="preview" className="rounded-3 object-fit-cover shadow-sm" />
-                    <button
-                      type="button"
-                      onClick={() => setImagePreview(null)}
-                      className="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 rounded-circle shadow"
-                    >
-                      <i className="fas fa-times"></i>
-                    </button>
+              <label className="heading-color ff-heading fw600 mb10">
+                รูปภาพผลงาน (อย่างน้อย 3 รูป, สูงสุด 5 รูป)
+              </label>
+              
+              <div className="upload-field p-4 border border-dashed rounded-3 bg-light position-relative">
+                {images.length > 0 && (
+                  <div className="row mb-3 g-3">
+                    {images.map((imgSrc, index) => (
+                      <div key={index} className="col-6 col-sm-4 col-md-3 position-relative">
+                        <div className="position-relative" style={{ aspectRatio: '4/3' }}>
+                          <Image src={imgSrc} fill alt={`preview-${index}`} className="rounded-3 object-fit-cover shadow-sm" />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(index)}
+                            className="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 rounded-circle shadow p-0 d-flex align-items-center justify-content-center"
+                            style={{ width: '24px', height: '24px', zIndex: 10 }}
+                          >
+                            <i className="fas fa-times fz10"></i>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {images.length < 5 ? (
+                  <div className="text-center position-relative py-4 hover-bg-gray" style={{ cursor: 'pointer' }}>
+                    <div className="mb-3"><i className="fas fa-cloud-upload-alt fz40 text-thm"></i></div>
+                    <p className="mb-2 fw600">คลิกเพื่ออัปโหลดรูปภาพเพิ่ม</p>
+                    <p className="text-muted fz14 mb-0">(ตอนนี้มี {images.length} / 5 รูป)</p>
+                    {images.length > 0 && images.length < 3 && (
+                       <p className="text-danger fz12 mt-1">* ต้องเพิ่มอีก {3 - images.length} รูป</p>
+                    )}
+                    <input type="file" multiple accept="image/*" className="position-absolute top-0 start-0 w-100 h-100 opacity-0" style={{ cursor: 'pointer', zIndex: 5 }} onChange={handleImageUpload} />
                   </div>
                 ) : (
-                  <>
-                    <div className="mb-3">
-                      <i className="fas fa-cloud-upload-alt fz40 text-thm"></i>
-                    </div>
-                    <p className="mb-2 fw600">คลิกเพื่ออัปโหลดรูปภาพ</p>
-                    <input
-                      type="file"
-                      className="form-control w-50 mx-auto mt-3 opacity-0 position-absolute top-0 start-0 h-100 cursor-pointer"
-                      onChange={handleImageUpload}
-                    />
-                  </>
+                  <div className="text-center py-3 text-success">
+                     <i className="fas fa-check-circle fz30 mb-2"></i>
+                     <p className="mb-0 fw600">อัปโหลดครบ 5 รูปแล้ว</p>
+                     <p className="text-muted fz12">ลบรูปบางส่วนออกหากต้องการเพิ่มใหม่</p>
+                  </div>
                 )}
               </div>
             </div>
           </div>
-
+          
           <div className="col-md-12">
             <div className="d-grid mt-3">
               <button className="ud-btn btn-thm btn-lg rounded-3" type="submit">
@@ -174,7 +233,6 @@ const AddListingForm = () => {
               </button>
             </div>
           </div>
-
         </div>
       </form>
     </div>
