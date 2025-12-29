@@ -56,12 +56,12 @@ const SidebarDashboard = () => {
         {
           href: "/add-listing",
           icon: "fas fa-plus-circle",
-          text: "เพิ่มบริการเพิ่มเติม",
+          text: "ลงประกาศงานรับเหมา",
         },
         {
           href: "/add-course",
           icon: "fas fa-bullhorn",
-          text: "ลงประกาศงานบริการ",
+          text: "ลงประกาศคอร์สเรียน",
         },
       ],
     },
@@ -76,7 +76,7 @@ const SidebarDashboard = () => {
         {
           href: "/dashboard-my-package",
           icon: "flaticon-review",
-          text: "ประวัติพอยต์",
+          text: "ประวัติการชำระเงิน",
         },
         {
           href: "#",
