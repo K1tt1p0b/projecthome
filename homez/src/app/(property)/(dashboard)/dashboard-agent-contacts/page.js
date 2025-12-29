@@ -38,7 +38,7 @@ const DashboardAgentContacts = () => {
               <div className="row align-items-center pb40">
                 <div className="col-lg-12">
                   <div className="dashboard_title_area">
-                    <h2>ข้อความจากผู้สนใจ</h2>
+                    <h2>รายการผู้ติดต่อ</h2>
                     <p className="text">
                       ผู้ใช้ที่ติดต่อจากฟอร์ม Contact Us ของ Agent (ดูได้อย่างเดียว)
                     </p>

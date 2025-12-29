@@ -42,6 +42,18 @@ const FormContact = () => {
         {/* End .col-12 */}
 
         <div className="col-md-12">
+          <div className="mb20">
+            <input
+              type="Line ID"
+              className="form-control"
+              placeholder="Line ID"
+              required
+            />
+          </div>
+        </div>
+        {/* End .col-12 */}
+
+        <div className="col-md-12">
           <div className="mb10">
             <textarea
               cols={30}
@@ -60,10 +72,6 @@ const FormContact = () => {
               Send Message
               <i className="fal fa-arrow-right-long" />
             </button>
-            <Link className="ud-btn btn-white2" href="/contact">
-              Call
-              <i className="fal fa-arrow-right-long" />
-            </Link>
           </div>
         </div>
         {/* End .col-12 */}
