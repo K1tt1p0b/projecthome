@@ -20,6 +20,10 @@ const getStatusStyle = (status) => {
   }
 };
 
+// ✅ ปรับพาธ 2 อันนี้ให้ตรงกับหน้าที่คุณทำไว้ตอนแรก
+const BOOST_URL = (id) => `/dashboard-boost-property/${id}`;
+const VIDEO_URL = (id) => `/dashboard-property-video/${id}`;
+
 // skeleton row (ไม่ต้องมี css เพิ่ม ใช้ class เดิมได้)
 const SkeletonRow = () => (
   <tr>
@@ -36,9 +40,32 @@ const SkeletonRow = () => (
           />
         </div>
         <div className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4 w-100">
-          <div style={{ width: "45%", height: 14, background: "#eee", borderRadius: 6 }} />
-          <div style={{ width: "60%", height: 12, background: "#eee", borderRadius: 6, marginTop: 10 }} />
-          <div style={{ width: "30%", height: 12, background: "#eee", borderRadius: 6, marginTop: 10 }} />
+          <div
+            style={{
+              width: "45%",
+              height: 14,
+              background: "#eee",
+              borderRadius: 6,
+            }}
+          />
+          <div
+            style={{
+              width: "60%",
+              height: 12,
+              background: "#eee",
+              borderRadius: 6,
+              marginTop: 10,
+            }}
+          />
+          <div
+            style={{
+              width: "30%",
+              height: 12,
+              background: "#eee",
+              borderRadius: 6,
+              marginTop: 10,
+            }}
+          />
         </div>
       </div>
     </th>
@@ -63,14 +90,14 @@ const SkeletonRow = () => (
 const PropertyDataTable = () => {
   const router = useRouter();
 
-  // loading ตอนโหลดข้อมูลหน้าแรก
+  // ✅ loading ตอนโหลดข้อมูลหน้าแรก (คืนมาเหมือนเดิม)
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
 
   // ข้อมูล
   const [properties, setProperties] = useState([]);
 
-  // loading เฉพาะแถว (edit/delete)
+  // ✅ loading เฉพาะแถว (edit/delete) (คืนมาเหมือนเดิม)
   const [editingId, setEditingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
@@ -85,10 +112,7 @@ const PropertyDataTable = () => {
       // ---- mock delay ----
       await new Promise((r) => setTimeout(r, 900));
 
-      // ---- mock result ----
-      // ถ้าอยากเทส "ไม่มีข้อมูล" ให้เปลี่ยนเป็น []
       const data = mockData;
-
       setProperties(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error(e);
@@ -140,11 +164,20 @@ const PropertyDataTable = () => {
     }
   };
 
+  // ✅ action ใหม่
+  const handleBoost = (id) => {
+    router.push(BOOST_URL(id));
+  };
+
+  const handleVideo = (id) => {
+    router.push(VIDEO_URL(id));
+  };
+
   const hasData = useMemo(() => properties?.length > 0, [properties]);
 
   return (
     <>
-      {/* แถบเล็กๆ บอกสถานะโหลดด้านบน (optional แต่ช่วย UX) */}
+      {/* แถบเล็กๆ บอกสถานะโหลดด้านบน (เหมือนเดิม) */}
       {isLoading && (
         <div className="mb-3 d-flex align-items-center gap-2">
           <span className="fas fa-spinner fa-spin" />
@@ -156,11 +189,7 @@ const PropertyDataTable = () => {
       {loadError && !isLoading && (
         <div className="mb-3 d-flex align-items-center justify-content-between">
           <div className="text-danger">{loadError}</div>
-          <button
-            type="button"
-            className="ud-btn btn-thm"
-            onClick={fetchProperties}
-          >
+          <button type="button" className="ud-btn btn-thm" onClick={fetchProperties}>
             ลองโหลดใหม่
           </button>
         </div>
@@ -179,17 +208,14 @@ const PropertyDataTable = () => {
 
         <tbody className="t-body">
           {/* loading state: โชว์ skeleton 4 แถว */}
-          {isLoading &&
-            Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}
+          {isLoading && Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}
 
           {/* empty state */}
           {!isLoading && !loadError && !hasData && (
             <tr>
               <td colSpan={5} className="text-center py-5">
                 <div className="mb-2 fw-semibold">ยังไม่มีประกาศของคุณ</div>
-                <div className="text-muted mb-3">
-                  เมื่อคุณสร้างประกาศแล้ว รายการจะแสดงที่นี่
-                </div>
+                <div className="text-muted mb-3">เมื่อคุณสร้างประกาศแล้ว รายการจะแสดงที่นี่</div>
                 <button
                   type="button"
                   className="ud-btn btn-thm"
@@ -208,6 +234,13 @@ const PropertyDataTable = () => {
             properties.map((property) => {
               const rowBusy = isRowBusy(property.id);
 
+              // ✅ ถ้ามีวิดีโอ (รองรับหลายชื่อ field)
+              const hasVideo =
+                Boolean(property?.videoUrl) ||
+                Boolean(property?.videoURL) ||
+                Boolean(property?.video) ||
+                property?.hasVideo === true;
+
               return (
                 <tr key={property.id}>
                   <th scope="row">
@@ -223,11 +256,38 @@ const PropertyDataTable = () => {
                       </div>
 
                       <div className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4">
-                        <div className="h6 list-title">
-                          <Link href={`/single-v1/${property.id}`}>
-                            {property.title}
-                          </Link>
+                        <div className="h6 list-title d-flex align-items-center gap-2">
+                          <Link href={`/single-v1/${property.id}`}>{property.title}</Link>
+
+                          {/* ✅ ไอคอนวิดีโอ + ลิงก์ไปหน้าวิดีโอ (เฉพาะประกาศที่มีวิดีโอ) */}
+                          {hasVideo && (
+                            <>
+                              <button
+                                type="button"
+                                className="icon"
+                                disabled={rowBusy}
+                                style={{
+                                  border: "none",
+                                  background: "transparent",
+                                  padding: 0,
+                                  opacity: rowBusy ? 0.5 : 1,
+                                  cursor: rowBusy ? "not-allowed" : "pointer",
+                                }}
+                                data-tooltip-id={`video-${property.id}`}
+                                onClick={() => handleVideo(property.id)}
+                                aria-label="video"
+                              >
+                                <span className="fas fa-video" />
+                              </button>
+                              <ReactTooltip
+                                id={`video-${property.id}`}
+                                place="top"
+                                content="วิดีโอ"
+                              />
+                            </>
+                          )}
                         </div>
+
                         <p className="list-text mb-0">
                           {typeof property.location === "string"
                             ? property.location
@@ -266,59 +326,96 @@ const PropertyDataTable = () => {
                     {property.views}
                   </td>
 
+                  {/* ✅ แก้เฉพาะเมนูจัดการ: ใช้ "..." dropdown */}
                   <td className="vam">
                     <div className="d-flex align-items-center gap-2">
-                      {/* edit */}
-                      <button
-                        type="button"
-                        className="icon"
-                        disabled={rowBusy}
-                        style={{
-                          border: "none",
-                          background: "transparent",
-                          opacity: rowBusy ? 0.5 : 1,
-                          cursor: rowBusy ? "not-allowed" : "pointer",
-                        }}
-                        data-tooltip-id={`edit-${property.id}`}
-                        onClick={() => handleEdit(property.id)}
-                      >
-                        {editingId === property.id ? (
-                          <span className="fas fa-spinner fa-spin" />
-                        ) : (
-                          <span className="fas fa-pen fa" />
-                        )}
-                      </button>
+                      <div className="dropdown">
+                        <button
+                          type="button"
+                          className="icon dropdown-toggle"
+                          disabled={rowBusy}
+                          style={{
+                            border: "none",
+                            background: "transparent",
+                            opacity: rowBusy ? 0.5 : 1,
+                            cursor: rowBusy ? "not-allowed" : "pointer",
+                          }}
+                          data-bs-toggle="dropdown"
+                          aria-expanded="false"
+                          aria-label="actions"
+                        >
+                          {/* "ขีดๆ" */}
+                          <span className="fas fa-ellipsis-h" />
+                        </button>
 
-                      {/* delete */}
-                      <button
-                        type="button"
-                        className="icon"
-                        disabled={rowBusy}
-                        style={{
-                          border: "none",
-                          background: "transparent",
-                          opacity: rowBusy ? 0.5 : 1,
-                          cursor: rowBusy ? "not-allowed" : "pointer",
-                        }}
-                        data-tooltip-id={`delete-${property.id}`}
-                        onClick={() => handleDelete(property.id)}
-                      >
-                        {deletingId === property.id ? (
-                          <span className="fas fa-spinner fa-spin" />
-                        ) : (
-                          <span className="flaticon-bin" />
-                        )}
-                      </button>
+                        <ul className="dropdown-menu dropdown-menu-end">
+                          <li>
+                            <button
+                              type="button"
+                              className="dropdown-item d-flex align-items-center gap-2"
+                              disabled={rowBusy}
+                              onClick={() => handleEdit(property.id)}
+                            >
+                              {editingId === property.id ? (
+                                <span className="fas fa-spinner fa-spin" />
+                              ) : (
+                                <span className="fas fa-pen" />
+                              )}
+                              แก้ไข
+                            </button>
+                          </li>
 
+                          <li>
+                            <button
+                              type="button"
+                              className="dropdown-item d-flex align-items-center gap-2"
+                              disabled={rowBusy}
+                              onClick={() => handleBoost(property.id)}
+                            >
+                              <span className="fas fa-bolt" />
+                              ดันประกาศ
+                            </button>
+                          </li>
+
+                          <li>
+                            <button
+                              type="button"
+                              className="dropdown-item d-flex align-items-center gap-2"
+                              disabled={rowBusy}
+                              onClick={() => handleVideo(property.id)}
+                            >
+                              <span className="fas fa-video" />
+                              {hasVideo ? "จัดการวิดีโอ" : "เพิ่มวิดีโอ"}
+                            </button>
+                          </li>
+
+                          <li>
+                            <hr className="dropdown-divider" />
+                          </li>
+
+                          <li>
+                            <button
+                              type="button"
+                              className="dropdown-item d-flex align-items-center gap-2 text-danger"
+                              disabled={rowBusy}
+                              onClick={() => handleDelete(property.id)}
+                            >
+                              {deletingId === property.id ? (
+                                <span className="fas fa-spinner fa-spin" />
+                              ) : (
+                                <span className="flaticon-bin" />
+                              )}
+                              ลบ
+                            </button>
+                          </li>
+                        </ul>
+                      </div>
+
+                      {/* Tooltip ของปุ่ม ... */}
                       <ReactTooltip
-                        id={`edit-${property.id}`}
+                        id={`actions-${property.id}`}
                         place="top"
-                        content="แก้ไข"
-                      />
-                      <ReactTooltip
-                        id={`delete-${property.id}`}
-                        place="top"
-                        content="ลบ"
+                        content="จัดการ"
                       />
                     </div>
                   </td>
