@@ -10,7 +10,6 @@ import { usePathname } from "next/navigation";
 const DashboardHeader = () => {
   const pathname = usePathname();
 
-  // 🔥 ปรับให้ตรงกับ SidebarDashboard (ภาษาไทย + ลิงก์ตรงกัน)
   const menuItems = [
     {
       title: "เมนูหลัก",

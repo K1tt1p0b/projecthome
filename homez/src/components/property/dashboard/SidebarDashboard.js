@@ -109,6 +109,11 @@ const SidebarDashboard = () => {
           text: "ประวัติการชำระเงิน",
         },
         {
+          href: "/agent-faq",
+          icon: "fas fa-question-circle",
+          text: "คำถามที่พบบ่อย",
+        },
+        {
           href: "/login",
           icon: "flaticon-logout",
           text: "ออกจากระบบ",
