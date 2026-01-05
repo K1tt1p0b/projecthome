@@ -40,8 +40,8 @@ const DashboardMyPackage = () => {
               <div className="row align-items-center pb40">
                 <div className="col-lg-12">
                   <div className="dashboard_title_area">
-                    <h2>Points & Credits</h2>
-                    <p className="text">ดูพอยต์คงเหลือ และประวัติการใช้งานของคุณ</p>
+                    <h2>Payment History</h2>
+                    <p className="text">ดูรายการธุรกรรมและสถานะการชำระเงินทั้งหมดของคุณ</p>
                   </div>
                 </div>
               </div>
