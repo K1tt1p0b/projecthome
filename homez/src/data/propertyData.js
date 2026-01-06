@@ -25,10 +25,7 @@ export const propertyData = [
 
     // ===== รูป =====
     imageSrc: "/images/listings/list-1.jpg",
-    gallery: [
-      "/images/listings/list-1.jpg",
-      "/images/listings/list-2.jpg",
-    ],
+    gallery: ["/images/listings/list-1.jpg", "/images/listings/list-2.jpg"],
 
     // ===== ที่ตั้ง (Step 2) =====
     location: {
@@ -68,6 +65,9 @@ export const propertyData = [
       depth: "",
       roadWidth: "",
     },
+
+    // ✅ mock: ไม่มีวิดีโอ
+    videos: [],
   },
 
   {
@@ -125,6 +125,16 @@ export const propertyData = [
       depth: "",
       roadWidth: "",
     },
+
+    // ✅ mock: ให้มีวิดีโอแค่โพสต์เดียว (id:2)
+    videos: [
+      {
+        url: "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+        provider: "youtube",
+        category: "ทั่วไป",
+        createdAt: "2026-01-05T00:00:00.000Z",
+      },
+    ],
   },
 
   {
@@ -182,5 +192,8 @@ export const propertyData = [
       depth: "",
       roadWidth: "",
     },
+
+    // ✅ mock: ไม่มีวิดีโอ
+    videos: [],
   },
 ];

@@ -1,4 +1,5 @@
 "use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
@@ -20,52 +21,70 @@ const getStatusStyle = (status) => {
   }
 };
 
-// ✅ ปรับพาธ 2 อันนี้ให้ตรงกับหน้าที่คุณทำไว้ตอนแรก
 const BOOST_URL = (id) => `/dashboard-boost-property/${id}`;
-const VIDEO_URL = (id) => `/dashboard-property-video/${id}`;
+const VIDEO_URL = (id) => `/dashboard-video-gallery?propertyId=${id}`;
 
-// skeleton row (ไม่ต้องมี css เพิ่ม ใช้ class เดิมได้)
+// ===== LocalStorage Video Store (Front-only DB) =====
+const VIDEO_STORE_KEY = "landx_property_videos_v1";
+/**
+ * ✅ shape (1:1 enforced in UI):
+ * {
+ *   [propertyId: string]: Array<{ id: string, url: string, provider: "youtube"|"tiktok", createdAt: string }>
+ * }
+ *
+ * 🔒 rule:
+ * - 1 propertyId => max 1 video (array length should be 0 or 1)
+ */
+function safeParse(json) {
+  try {
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+function readVideoStore() {
+  if (typeof window === "undefined") return {};
+  const raw = window.localStorage.getItem(VIDEO_STORE_KEY);
+  const parsed = raw ? safeParse(raw) : null;
+  return parsed && typeof parsed === "object" ? parsed : {};
+}
+function writeVideoStore(store) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(VIDEO_STORE_KEY, JSON.stringify(store ?? {}));
+}
+function detectProvider(url) {
+  const u = (url || "").trim();
+  if (u.includes("tiktok.com/")) return "tiktok";
+  return "youtube";
+}
+function isValidVideoUrl(url) {
+  if (!url) return false;
+  const u = url.trim();
+  const isYoutube = u.includes("youtube.com/watch") || u.includes("youtu.be/") || u.includes("youtube.com/shorts/");
+  const isTiktok = u.includes("tiktok.com/");
+  return isYoutube || isTiktok;
+}
+function uid() {
+  return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
+// ===== skeleton row =====
 const SkeletonRow = () => (
   <tr>
     <th scope="row">
       <div className="listing-style1 dashboard-style d-xxl-flex align-items-center mb-0">
-        <div className="list-thumb">
-          <div
-            style={{
-              width: 110,
-              height: 94,
-              borderRadius: 8,
-              background: "#eee",
-            }}
-          />
-        </div>
+        <div
+          style={{
+            width: 110,
+            height: 94,
+            borderRadius: 12,
+            background: "#eee",
+            flexShrink: 0,
+          }}
+        />
         <div className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4 w-100">
-          <div
-            style={{
-              width: "45%",
-              height: 14,
-              background: "#eee",
-              borderRadius: 6,
-            }}
-          />
-          <div
-            style={{
-              width: "60%",
-              height: 12,
-              background: "#eee",
-              borderRadius: 6,
-              marginTop: 10,
-            }}
-          />
-          <div
-            style={{
-              width: "30%",
-              height: 12,
-              background: "#eee",
-              borderRadius: 6,
-              marginTop: 10,
-            }}
-          />
+          <div style={{ width: "60%", height: 14, background: "#eee", borderRadius: 6 }} />
+          <div style={{ width: "30%", height: 12, background: "#eee", borderRadius: 6, marginTop: 10 }} />
         </div>
       </div>
     </th>
@@ -90,36 +109,51 @@ const SkeletonRow = () => (
 const PropertyDataTable = () => {
   const router = useRouter();
 
-  // ✅ loading ตอนโหลดข้อมูลหน้าแรก (คืนมาเหมือนเดิม)
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState(null);
-
-  // ข้อมูล
+  const [loading, setLoading] = useState(true);
   const [properties, setProperties] = useState([]);
 
-  // ✅ loading เฉพาะแถว (edit/delete) (คืนมาเหมือนเดิม)
+  // row loading states
   const [editingId, setEditingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [boostingId, setBoostingId] = useState(null);
 
-  const isRowBusy = (id) => editingId === id || deletingId === id;
+  // ===== videoSummary (from localStorage) =====
+  // { [propertyId]: { hasVideo: boolean, count: number } }
+  const [videoSummary, setVideoSummary] = useState({});
 
-  // mock โหลดข้อมูล (เปลี่ยนเป็น API จริงได้เลย)
+  // ===== modal states =====
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [videoModalProperty, setVideoModalProperty] = useState(null);
+  const [videoUrlInput, setVideoUrlInput] = useState("");
+  const [videoSaving, setVideoSaving] = useState(false);
+
+  const hasData = useMemo(() => properties?.length > 0, [properties]);
+
+  // ✅ enforce 1:1 summary: count is 0 or 1
+  const refreshVideoSummaryFromLocal = (propertyIds) => {
+    const store = readVideoStore();
+    const next = {};
+    (propertyIds || []).forEach((id) => {
+      const list = store?.[String(id)] ?? [];
+      const cnt = Array.isArray(list) ? Math.min(1, list.length) : 0;
+      next[id] = { count: cnt, hasVideo: cnt > 0 };
+    });
+    setVideoSummary(next);
+  };
+
   const fetchProperties = async () => {
     try {
-      setIsLoading(true);
-      setLoadError(null);
+      setLoading(true);
+      await new Promise((r) => setTimeout(r, 350));
+      const list = Array.isArray(mockData) ? mockData : [];
+      setProperties(list);
 
-      // ---- mock delay ----
-      await new Promise((r) => setTimeout(r, 900));
-
-      const data = mockData;
-      setProperties(Array.isArray(data) ? data : []);
+      refreshVideoSummaryFromLocal(list.map((p) => p.id));
     } catch (e) {
       console.error(e);
-      setLoadError("โหลดข้อมูลไม่สำเร็จ");
-      setProperties([]);
+      toast.error("โหลดประกาศไม่สำเร็จ");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -128,78 +162,261 @@ const PropertyDataTable = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // sync ข้ามแท็บ / หน้าต่าง
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key !== VIDEO_STORE_KEY) return;
+      refreshVideoSummaryFromLocal(properties.map((p) => p.id));
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [properties]);
+
+  const rowBusy = (id) => editingId === id || deletingId === id || boostingId === id || (videoSaving && videoModalProperty?.id === id);
+
   const handleEdit = async (id) => {
     try {
       if (deletingId === id) return;
-
       setEditingId(id);
-      await new Promise((r) => setTimeout(r, 400)); // optional
+      await new Promise((r) => setTimeout(r, 250));
       router.push(`/dashboard-edit-property/${id}`);
     } catch (e) {
       console.error(e);
       toast.error("ไปหน้าแก้ไขไม่สำเร็จ");
+    } finally {
       setEditingId(null);
     }
   };
 
   const handleDelete = async (id) => {
     if (editingId === id) return;
-
     const ok = window.confirm("ยืนยันการลบประกาศนี้ใช่ไหม?");
     if (!ok) return;
 
     try {
       setDeletingId(id);
-
-      // mock delete (แทน API จริง)
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 400));
 
       setProperties((prev) => prev.filter((p) => p.id !== id));
-      toast.success("ลบประกาศเรียบร้อยแล้ว");
+
+      // ลบ summary เฉยๆ (ไม่ลบ localStorage videos อัตโนมัติ)
+      setVideoSummary((prev) => {
+        const next = { ...(prev || {}) };
+        delete next[id];
+        return next;
+      });
+
+      toast.success("ลบประกาศสำเร็จ");
     } catch (e) {
       console.error(e);
-      toast.error("ลบไม่สำเร็จ");
+      toast.error("ลบประกาศไม่สำเร็จ");
     } finally {
       setDeletingId(null);
     }
   };
 
-  // ✅ action ใหม่
-  const handleBoost = (id) => {
-    router.push(BOOST_URL(id));
+  const handleBoost = async (id) => {
+    try {
+      if (deletingId === id) return;
+      setBoostingId(id);
+      await new Promise((r) => setTimeout(r, 200));
+      router.push(BOOST_URL(id));
+    } catch (e) {
+      console.error(e);
+      toast.error("ไปหน้าดันประกาศไม่สำเร็จ");
+    } finally {
+      setBoostingId(null);
+    }
   };
 
-  const handleVideo = (id) => {
-    router.push(VIDEO_URL(id));
+  const handleVideoPage = (id) => router.push(VIDEO_URL(id));
+
+  // ✅ บังคับ: ถ้ามีวิดีโอแล้ว ห้ามเปิด modal เพิ่ม (แจ้งเตือน)
+  const openVideoModal = (property) => {
+    const id = property?.id;
+    if (!id) return;
+
+    const cnt = videoSummary?.[id]?.count ?? 0;
+    if (cnt > 0) {
+      toast.info("โพสนี้มีวิดีโอแล้ว (เพิ่มได้แค่อันเดียว) ไปที่ “จัดการวิดีโอ” เพื่อเปลี่ยน/ย้าย");
+      return;
+    }
+
+    setVideoModalProperty(property);
+    setVideoUrlInput("");
+    setVideoModalOpen(true);
   };
 
-  const hasData = useMemo(() => properties?.length > 0, [properties]);
+  const closeVideoModal = () => {
+    if (videoSaving) return;
+    setVideoModalOpen(false);
+    setVideoModalProperty(null);
+    setVideoUrlInput("");
+  };
+
+  // ✅ save url to localStorage (enforce 1 video per post)
+  const saveVideoUrlFrontOnly = async () => {
+    const property = videoModalProperty;
+    const url = videoUrlInput.trim();
+
+    if (!property?.id) return;
+
+    if (!url) return toast.warning("กรุณาใส่ลิงก์วิดีโอ");
+    if (!isValidVideoUrl(url)) return toast.error("ลิงก์ไม่ถูกต้อง (รองรับ YouTube / TikTok)");
+
+    try {
+      setVideoSaving(true);
+      await new Promise((r) => setTimeout(r, 250));
+
+      const store = readVideoStore();
+      const key = String(property.id);
+
+      // 🔒 บังคับ: 1 โพส มีได้แค่วิดีโอเดียว
+      const current = Array.isArray(store[key]) ? store[key] : [];
+      if (current.length > 0) {
+        toast.error("โพสนี้มีวิดีโอแล้ว (เพิ่มได้แค่อันเดียว)");
+        closeVideoModal();
+        return;
+      }
+
+      // (optional but good) 🔒 กัน url ซ้ำข้ามโพส
+      const all = Object.values(store || {}).flatMap((arr) => (Array.isArray(arr) ? arr : []));
+      const urlUsed = all.some((v) => (v?.url || "").trim() === url);
+      if (urlUsed) {
+        toast.error("ลิงก์นี้ถูกผูกกับโพสอื่นอยู่แล้ว");
+        return;
+      }
+
+      const item = {
+        id: uid(),
+        url,
+        provider: detectProvider(url),
+        createdAt: new Date().toISOString(),
+      };
+
+      // ✅ เก็บเป็น array ที่มี 1 ตัวเท่านั้น
+      const nextStore = { ...store, [key]: [item] };
+      writeVideoStore(nextStore);
+
+      // update summary immediately => count = 1
+      setVideoSummary((prev) => ({
+        ...(prev || {}),
+        [property.id]: { count: 1, hasVideo: true },
+      }));
+
+      toast.success("เพิ่มวิดีโอสำเร็จ");
+      closeVideoModal();
+    } catch (e) {
+      console.error(e);
+      toast.error("เพิ่มวิดีโอไม่สำเร็จ");
+    } finally {
+      setVideoSaving(false);
+    }
+  };
 
   return (
     <>
-      {/* แถบเล็กๆ บอกสถานะโหลดด้านบน (เหมือนเดิม) */}
-      {isLoading && (
-        <div className="mb-3 d-flex align-items-center gap-2">
-          <span className="fas fa-spinner fa-spin" />
-          <span>กำลังโหลดข้อมูลประกาศของคุณ...</span>
-        </div>
-      )}
+      {/* ===== Modal Popup ===== */}
+      {videoModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="เพิ่มวิดีโอ"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeVideoModal();
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+        >
+          <div
+            style={{
+              width: "min(640px, 100%)",
+              background: "#fff",
+              borderRadius: 14,
+              boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
+              overflow: "hidden",
+            }}
+          >
+            <div className="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
+              <div>
+                <div className="h6 mb-0">เพิ่มวิดีโอ</div>
+                <div style={{ fontSize: 13, opacity: 0.8 }}>
+                  ประกาศ: <b>{videoModalProperty?.title}</b>
+                </div>
+              </div>
 
-      {/* error state */}
-      {loadError && !isLoading && (
-        <div className="mb-3 d-flex align-items-center justify-content-between">
-          <div className="text-danger">{loadError}</div>
-          <button type="button" className="ud-btn btn-thm" onClick={fetchProperties}>
-            ลองโหลดใหม่
-          </button>
+              <button type="button" className="btn btn-light" onClick={closeVideoModal} disabled={videoSaving} aria-label="close">
+                <span className="fas fa-times" />
+              </button>
+            </div>
+
+            <div className="px-4 py-4">
+              <label className="form-label" style={{ fontWeight: 600 }}>
+                ลิงก์วิดีโอ (YouTube / TikTok)
+              </label>
+
+              <input
+                className="form-control"
+                value={videoUrlInput}
+                onChange={(e) => setVideoUrlInput(e.target.value)}
+                placeholder="วางลิงก์ เช่น https://youtu.be/... หรือ https://www.tiktok.com/@.../video/..."
+                disabled={videoSaving}
+              />
+
+              <div className="mt-2" style={{ fontSize: 13, opacity: 0.8 }}>
+                * จำกัด 1 วิดีโอ ต่อ 1 ประกาศ (ถ้ามีแล้วให้ไปหน้า “จัดการวิดีโอ”)
+              </div>
+
+              <div className="d-flex gap-2 justify-content-end mt-4">
+                <button 
+                  type="button"
+                  className="ud-btn btn-white2" 
+                  onClick={closeVideoModal} 
+                  disabled={videoSaving}
+                  style={{ height: 44, padding: "0 18px", borderRadius: 12 }}
+                  >
+                  ยกเลิก
+                </button>
+
+                <button 
+                  type="button" 
+                  className="ud-btn btn-thme" 
+                  onClick={saveVideoUrlFrontOnly} 
+                  disabled={videoSaving}
+                  style={{ height: 44, padding: "0 18px", borderRadius: 12 }}
+                  >
+                  {videoSaving ? (
+                    <>
+                      <span className="fas fa-spinner fa-spin me-2" />
+                      กำลังบันทึก...
+                    </>
+                  ) : (
+                    <>
+                      <span className="fas fa-plus me-2" />
+                      เพิ่มวิดีโอ
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
       <table className="table-style3 table at-savesearch">
         <thead className="t-head">
           <tr>
-            <th scope="col">ชื่อประกาศ</th>
-            <th scope="col">วันที่ลงประกาศ</th>
+            <th scope="col">รายการทรัพย์</th>
+            <th scope="col">ราคา</th>
             <th scope="col">สถานะ</th>
             <th scope="col">ยอดเข้าชม</th>
             <th scope="col">จัดการ</th>
@@ -207,144 +424,97 @@ const PropertyDataTable = () => {
         </thead>
 
         <tbody className="t-body">
-          {/* loading state: โชว์ skeleton 4 แถว */}
-          {isLoading && Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}
-
-          {/* empty state */}
-          {!isLoading && !loadError && !hasData && (
+          {loading ? (
+            <>
+              <SkeletonRow />
+              <SkeletonRow />
+              <SkeletonRow />
+            </>
+          ) : !hasData ? (
             <tr>
               <td colSpan={5} className="text-center py-5">
-                <div className="mb-2 fw-semibold">ยังไม่มีประกาศของคุณ</div>
-                <div className="text-muted mb-3">เมื่อคุณสร้างประกาศแล้ว รายการจะแสดงที่นี่</div>
-                <button
-                  type="button"
-                  className="ud-btn btn-thm"
-                  onClick={() => router.push("/dashboard-add-property")}
-                >
-                  เพิ่มประกาศใหม่
-                </button>
+                ยังไม่มีประกาศ
               </td>
             </tr>
-          )}
-
-          {/* data state */}
-          {!isLoading &&
-            !loadError &&
-            hasData &&
+          ) : (
             properties.map((property) => {
-              const rowBusy = isRowBusy(property.id);
+              const count = videoSummary?.[property.id]?.count ?? 0; // 0/1
+              const hasVideo = count > 0;
 
-              // ✅ ถ้ามีวิดีโอ (รองรับหลายชื่อ field)
-              const hasVideo =
-                Boolean(property?.videoUrl) ||
-                Boolean(property?.videoURL) ||
-                Boolean(property?.video) ||
-                property?.hasVideo === true;
+              const busy = rowBusy(property.id);
 
               return (
                 <tr key={property.id}>
                   <th scope="row">
                     <div className="listing-style1 dashboard-style d-xxl-flex align-items-center mb-0">
                       <div className="list-thumb">
-                        <Image
-                          width={110}
-                          height={94}
-                          className="w-100"
-                          src={property.imageSrc}
-                          alt="property"
-                        />
+                        <Image width={110} height={94} className="w-100" src={property.imageSrc} alt="property" />
                       </div>
 
                       <div className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4">
                         <div className="h6 list-title d-flex align-items-center gap-2">
                           <Link href={`/single-v1/${property.id}`}>{property.title}</Link>
 
-                          {/* ✅ ไอคอนวิดีโอ + ลิงก์ไปหน้าวิดีโอ (เฉพาะประกาศที่มีวิดีโอ) */}
+                          {/* ✅ ไอคอนวิดีโอ เฉพาะโพสต์ที่มีวิดีโอ */}
                           {hasVideo && (
                             <>
                               <button
                                 type="button"
                                 className="icon"
-                                disabled={rowBusy}
+                                disabled={busy}
                                 style={{
                                   border: "none",
                                   background: "transparent",
                                   padding: 0,
-                                  opacity: rowBusy ? 0.5 : 1,
-                                  cursor: rowBusy ? "not-allowed" : "pointer",
+                                  opacity: busy ? 0.5 : 1,
+                                  cursor: busy ? "not-allowed" : "pointer",
                                 }}
                                 data-tooltip-id={`video-${property.id}`}
-                                onClick={() => handleVideo(property.id)}
+                                onClick={() => handleVideoPage(property.id)}
                                 aria-label="video"
                               >
                                 <span className="fas fa-video" />
                               </button>
-                              <ReactTooltip
-                                id={`video-${property.id}`}
-                                place="top"
-                                content="วิดีโอ"
-                              />
+
+                              <ReactTooltip id={`video-${property.id}`} place="top" content={`วิดีโอ (${count})`} />
                             </>
                           )}
                         </div>
 
                         <p className="list-text mb-0">
-                          {typeof property.location === "string"
-                            ? property.location
-                            : property.location.fullText || ""}
+                          {property?.location?.province ? `${property.location.province} ${property.location.district ?? ""}` : property.location || "-"}
                         </p>
-                        <div className="list-price">
-                          <a href="#">{property.price}</a>
-                        </div>
                       </div>
                     </div>
                   </th>
 
-                  <td className="vam" style={{ whiteSpace: "nowrap" }}>
-                    {property.datePublished}
-                  </td>
+                  <td className="vam">{property.priceText || property.price?.toLocaleString?.() || "-"}</td>
 
                   <td className="vam">
-                    <span
-                      className={getStatusStyle(property.status)}
-                      style={{
-                        padding: "8px 16px",
-                        borderRadius: "20px",
-                        fontSize: "13px",
-                        fontWeight: "600",
-                        display: "inline-block",
-                        whiteSpace: "nowrap",
-                        minWidth: "110px",
-                        textAlign: "center",
-                      }}
-                    >
-                      {property.status}
-                    </span>
+                    <span className={getStatusStyle(property.status)}>{property.status}</span>
                   </td>
 
-                  <td className="vam" style={{ whiteSpace: "nowrap" }}>
-                    {property.views}
-                  </td>
+                  <td className="vam">{property.views ?? "-"}</td>
 
-                  {/* ✅ แก้เฉพาะเมนูจัดการ: ใช้ "..." dropdown */}
                   <td className="vam">
-                    <div className="d-flex align-items-center gap-2">
+                    <div className="d-flex align-items-center justify-content-end">
                       <div className="dropdown">
                         <button
                           type="button"
-                          className="icon dropdown-toggle"
-                          disabled={rowBusy}
+                          className="icon"
+                          disabled={busy}
                           style={{
                             border: "none",
                             background: "transparent",
-                            opacity: rowBusy ? 0.5 : 1,
-                            cursor: rowBusy ? "not-allowed" : "pointer",
+                            padding: 0,
+                            opacity: busy ? 0.5 : 1,
+                            cursor: busy ? "not-allowed" : "pointer",
                           }}
                           data-bs-toggle="dropdown"
                           aria-expanded="false"
                           aria-label="actions"
+                          data-tooltip-id={`actions-${property.id}`}
                         >
-                          {/* "ขีดๆ" */}
                           <span className="fas fa-ellipsis-h" />
                         </button>
 
@@ -353,14 +523,10 @@ const PropertyDataTable = () => {
                             <button
                               type="button"
                               className="dropdown-item d-flex align-items-center gap-2"
-                              disabled={rowBusy}
+                              disabled={busy}
                               onClick={() => handleEdit(property.id)}
                             >
-                              {editingId === property.id ? (
-                                <span className="fas fa-spinner fa-spin" />
-                              ) : (
-                                <span className="fas fa-pen" />
-                              )}
+                              {editingId === property.id ? <span className="fas fa-spinner fa-spin" /> : <span className="fas fa-pen" />}
                               แก้ไข
                             </button>
                           </li>
@@ -369,10 +535,10 @@ const PropertyDataTable = () => {
                             <button
                               type="button"
                               className="dropdown-item d-flex align-items-center gap-2"
-                              disabled={rowBusy}
+                              disabled={busy}
                               onClick={() => handleBoost(property.id)}
                             >
-                              <span className="fas fa-bolt" />
+                              {boostingId === property.id ? <span className="fas fa-spinner fa-spin" /> : <span className="fas fa-bolt" />}
                               ดันประกาศ
                             </button>
                           </li>
@@ -381,47 +547,47 @@ const PropertyDataTable = () => {
                             <button
                               type="button"
                               className="dropdown-item d-flex align-items-center gap-2"
-                              disabled={rowBusy}
-                              onClick={() => handleVideo(property.id)}
+                              disabled={busy}
+                              onClick={() => openVideoModal(property)}
                             >
                               <span className="fas fa-video" />
-                              {hasVideo ? "จัดการวิดีโอ" : "เพิ่มวิดีโอ"}
+                              เพิ่มวิดีโอ
                             </button>
                           </li>
 
                           <li>
-                            <hr className="dropdown-divider" />
+                            <button
+                              type="button"
+                              className="dropdown-item d-flex align-items-center gap-2"
+                              disabled={busy}
+                              onClick={() => handleVideoPage(property.id)}
+                            >
+                              <span className="fas fa-folder-open" />
+                              จัดการวิดีโอ
+                            </button>
                           </li>
 
                           <li>
                             <button
                               type="button"
                               className="dropdown-item d-flex align-items-center gap-2 text-danger"
-                              disabled={rowBusy}
+                              disabled={busy}
                               onClick={() => handleDelete(property.id)}
                             >
-                              {deletingId === property.id ? (
-                                <span className="fas fa-spinner fa-spin" />
-                              ) : (
-                                <span className="flaticon-bin" />
-                              )}
+                              {deletingId === property.id ? <span className="fas fa-spinner fa-spin" /> : <span className="flaticon-bin" />}
                               ลบ
                             </button>
                           </li>
                         </ul>
-                      </div>
 
-                      {/* Tooltip ของปุ่ม ... */}
-                      <ReactTooltip
-                        id={`actions-${property.id}`}
-                        place="top"
-                        content="จัดการ"
-                      />
+                        <ReactTooltip id={`actions-${property.id}`} place="top" content="จัดการ" />
+                      </div>
                     </div>
                   </td>
                 </tr>
               );
-            })}
+            })
+          )}
         </tbody>
       </table>
     </>

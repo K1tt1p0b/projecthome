@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   sassOptions: {
-    quietDeps: true, // This will silence deprecation warnings
+    quietDeps: true,
     silenceDeprecations: [
       "mixed-decls",
       "legacy-js-api",
@@ -12,19 +12,27 @@ const nextConfig = {
   },
 
   images: {
-    domains: [
-      "i.ytimg.com", 
-      "img.youtube.com", 
-      "www.youtube.com",
+    remotePatterns: [
+      // ✅ YouTube
+      {
+        protocol: "https",
+        hostname: "**.ytimg.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.youtube.com",
+      },
 
-      "p16-sign-sg.tiktokcdn.com",
-      "p16-sign-va.tiktokcdn.com",
-      "p16-sign.tiktokcdn.com",
-      "p16.tiktokcdn.com",
-      "p19-sign.tiktokcdn.com",
-      "p77-sign.tiktokcdn.com",
+      // ✅ TikTok (ครอบทุก region / ทุก subdomain)
+      {
+        protocol: "https",
+        hostname: "**.tiktokcdn.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.tiktokcdn-us.com",
+      },
     ],
-      
   },
 };
 
