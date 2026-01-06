@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Select from "@/components/common/ClientSelect";
 
 import announcerStatusOptions from "./announcerStatusOptions.json";
 import listingTypeOptions from "./listingTypeOptions.json";
 import propertyConditionOptions from "./propertyConditionOptions.json";
-import propertyTypeOptions from "./propertyTypeOptions.json";
+import propertyTypeOptionsRaw from "./propertyTypeOptions.json";
 import { toast } from "react-toastify";
 
 const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
@@ -19,14 +19,46 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     menu: (base) => ({ ...base, zIndex: 9999 }),
   };
 
+  // ✅ dropdown "ราคาประมาณ" (ช่วงราคาประมาณ)
+  const APPROX_PRICE_OPTIONS = useMemo(
+    () => [
+      { value: "0-100000", label: "ต่ำกว่า 100,000", min: 0, max: 100000 },
+      { value: "100000-300000", label: "100,000 - 300,000", min: 100000, max: 300000 },
+      { value: "300000-500000", label: "300,000 - 500,000", min: 300000, max: 500000 },
+      { value: "500000-1000000", label: "500,000 - 1,000,000", min: 500000, max: 1000000 },
+      { value: "1000000-3000000", label: "1,000,000 - 3,000,000", min: 1000000, max: 3000000 },
+      { value: "3000000-5000000", label: "3,000,000 - 5,000,000", min: 3000000, max: 5000000 },
+      { value: "5000000-10000000", label: "5,000,000 - 10,000,000", min: 5000000, max: 10000000 },
+      { value: "10000000-20000000", label: "10,000,000 - 20,000,000", min: 10000000, max: 20000000 },
+      { value: "20000000+", label: "มากกว่า 20,000,000", min: 20000000, max: null },
+    ],
+    []
+  );
+
+  // ✅ เพิ่ม "ร้านค้า" ในประเภททรัพย์
+  const propertyTypeOptions = useMemo(() => {
+    const existsShop = (propertyTypeOptionsRaw || []).some(
+      (o) => String(o?.value) === "shop" || String(o?.label) === "ร้านค้า"
+    );
+    if (existsShop) return propertyTypeOptionsRaw;
+    return [...(propertyTypeOptionsRaw || []), { value: "shop", label: "ร้านค้า" }];
+  }, []);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
-  // ราคา: เก็บเป็น string แต่บังคับให้พิมพ์ได้แค่เลข+comma
+  // ✅ ราคา + แสดงราคา
+  const [showPrice, setShowPrice] = useState(true);
   const [price, setPrice] = useState("");
 
+  // ✅ ราคาประมาณ (dropdown)
+  const [approxPrice, setApproxPrice] = useState(null);
+
   const [announcerStatus, setAnnouncerStatus] = useState(null);
-  const [listingTypes, setListingTypes] = useState([]);
+
+  // ✅ ประเภทการขาย: เลือกได้อย่างเดียว
+  const [listingType, setListingType] = useState(null);
+
   const [propertyType, setPropertyType] = useState(null);
   const [condition, setCondition] = useState(null);
 
@@ -41,43 +73,17 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
   const toOption = (raw, options) => {
     if (!raw) return null;
 
-    // ถ้ามาเป็น {value,label} อยู่แล้ว
     if (typeof raw === "object" && raw.value != null) return raw;
 
     const s = String(raw).trim();
 
-    // match ด้วย value ก่อน
     let found = options.find((o) => String(o.value) === s);
     if (found) return found;
 
-    // สำคัญ: match ด้วย label (เช่น "เจ้าของทรัพย์")
     found = options.find((o) => String(o.label) === s);
     if (found) return found;
 
     return null;
-  };
-
-  const toMultiOptions = (raw, options) => {
-    if (!raw) return [];
-
-    const arr = Array.isArray(raw) ? raw : [raw];
-    if (!arr.length) return [];
-
-    // ถ้ามาเป็น [{value,label}] อยู่แล้ว
-    if (typeof arr[0] === "object" && arr[0]?.value != null) return arr;
-
-    // ถ้ามาเป็น ["sell","rent"] หรือ [value,value]
-    return arr
-      .map((v) => {
-        const vv = String(v).trim();
-        // match value ก่อน
-        return (
-          options.find((o) => String(o.value) === vv) ||
-          options.find((o) => String(o.label) === vv) ||
-          null
-        );
-      })
-      .filter(Boolean);
   };
 
   const formatNumberWithComma = (n) => {
@@ -86,6 +92,62 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     return num.toLocaleString("en-US");
   };
 
+  // ✅ ตรวจว่าประเภทการขาย = "เซ้ง" ไหม (กันพลาดทั้ง value/label)
+  const isTransferListing = useMemo(() => {
+    const v = String(listingType?.value ?? "").toLowerCase();
+    const l = String(listingType?.label ?? "");
+    return (
+      l.includes("เซ้ง") ||
+      v === "เซ้ง" ||
+      v === "seung" ||
+      v === "transfer" ||
+      v === "takeover" ||
+      v === "cession"
+    );
+  }, [listingType]);
+
+  // ✅ option ร้านค้า
+  const shopOption = useMemo(() => {
+    return (
+      propertyTypeOptions.find((o) => String(o.value) === "shop") ||
+      propertyTypeOptions.find((o) => String(o.label) === "ร้านค้า") ||
+      { value: "shop", label: "ร้านค้า" }
+    );
+  }, [propertyTypeOptions]);
+
+  // ✅ options ของประเภททรัพย์: ถ้า "เซ้ง" → เหลือแค่ร้านค้า
+  const filteredPropertyTypeOptions = useMemo(() => {
+    if (!isTransferListing) return propertyTypeOptions;
+    return [shopOption];
+  }, [isTransferListing, propertyTypeOptions, shopOption]);
+
+  // ✅ สำคัญ: จับ “การเปลี่ยนจาก เซ้ง -> ไม่เซ้ง” เพื่อ reset ประเภททรัพย์เป็นค่าว่าง
+  const didHydrateRef = useRef(false);
+  const prevIsTransferRef = useRef(false);
+
+  useEffect(() => {
+    // หลัง render ครั้งแรกให้เริ่มจับ transition
+    if (!didHydrateRef.current) {
+      prevIsTransferRef.current = isTransferListing;
+      didHydrateRef.current = true;
+      return;
+    }
+
+    const prev = prevIsTransferRef.current;
+
+    // ✅ ตอนนี้เป็น "เซ้ง" → บังคับร้านค้า
+    if (isTransferListing) {
+      setPropertyType(shopOption);
+    }
+
+    // ✅ ถ้าเคยเป็น "เซ้ง" แล้วเปลี่ยนกลับ "ขาย/เช่า/อื่นๆ" → reset เป็นค่าว่าง
+    if (prev === true && isTransferListing === false) {
+      setPropertyType(null); // << รีใหม่เลย ให้เลือกใหม่
+    }
+
+    prevIsTransferRef.current = isTransferListing;
+  }, [isTransferListing, shopOption]);
+
   // sync จาก initialValue (สำคัญสุดสำหรับหน้าแก้ไข)
   useEffect(() => {
     if (!initialValue) return;
@@ -93,27 +155,48 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     setTitle(initialValue.title ?? "");
     setDescription(initialValue.description ?? "");
 
-    // ราคา: รับได้ทั้ง price_text / priceText / price (number)
+    // ✅ showPrice
+    const show =
+      initialValue.showPrice ??
+      (Number(initialValue.price ?? 0) > 0 || !!(initialValue.price_text ?? initialValue.priceText));
+    setShowPrice(Boolean(show));
+
+    // ✅ price
     const initialPriceText =
       initialValue.price_text ??
       initialValue.priceText ??
       (initialValue.price != null ? formatNumberWithComma(initialValue.price) : "");
     setPrice(String(initialPriceText ?? ""));
 
-    // announcerStatus: รับได้ทั้ง value ("owner") หรือ label ("เจ้าของทรัพย์") หรือ object
+    // ✅ approxPrice
+    const ap =
+      toOption(initialValue.approxPrice, APPROX_PRICE_OPTIONS) ||
+      toOption(initialValue.approxPrice_value, APPROX_PRICE_OPTIONS) ||
+      toOption(initialValue.approxPrice_label, APPROX_PRICE_OPTIONS);
+    setApproxPrice(ap);
+
+    // announcerStatus
     const a =
       toOption(initialValue.announcerStatus, announcerStatusOptions) ||
       toOption(initialValue.announcerStatus_label, announcerStatusOptions) ||
       toOption(initialValue.announcerStatus_value, announcerStatusOptions);
     setAnnouncerStatus(a);
 
-    // listingTypes: แก้บั๊ก || (เพราะ [] เป็น truthy)
-    const lt1 = toMultiOptions(initialValue.listingTypes, listingTypeOptions);
-    const lt2 = toMultiOptions(initialValue.listingTypes_value, listingTypeOptions);
-    const lt3 = toMultiOptions(initialValue.listingTypes_label, listingTypeOptions);
-    setListingTypes(lt1.length ? lt1 : lt2.length ? lt2 : lt3);
+    // ✅ listingType
+    const rawLT =
+      initialValue.listingType ??
+      initialValue.listingType_value ??
+      initialValue.listingType_label ??
+      initialValue.listingTypes ??
+      initialValue.listingTypes_value ??
+      initialValue.listingTypes_label;
 
-    // propertyType
+    let lt = null;
+    if (Array.isArray(rawLT)) lt = toOption(rawLT[0], listingTypeOptions);
+    else lt = toOption(rawLT, listingTypeOptions);
+    setListingType(lt);
+
+    // propertyType (ตั้งค่าตาม initial ไว้ก่อน)
     const pt =
       toOption(initialValue.propertyType, propertyTypeOptions) ||
       toOption(initialValue.propertyType_label, propertyTypeOptions) ||
@@ -128,7 +211,7 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     setCondition(cd);
 
     setError("");
-  }, [initialValue]);
+  }, [initialValue, propertyTypeOptions, APPROX_PRICE_OPTIONS]);
 
   const priceNumber = useMemo(() => {
     const n = Number(String(price).replace(/,/g, ""));
@@ -139,15 +222,22 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     title: title.trim(),
     description: description.trim(),
 
-    // เก็บทั้ง string และ number (เลือกใช้ได้)
-    price_text: price,
-    price: priceNumber,
+    // ✅ ราคา: ถ้าไม่แสดงราคา ให้เป็น xxxx
+    showPrice,
+    price_text: showPrice ? price : "xxxx",
+    price: showPrice ? priceNumber : 0,
+
+    // ✅ ราคาประมาณ (dropdown)
+    approxPrice: approxPrice?.value ?? null,
+    approxPrice_label: approxPrice?.label ?? null,
+    approxPrice_min: approxPrice?.min ?? null,
+    approxPrice_max: approxPrice?.max ?? null,
 
     announcerStatus: announcerStatus?.value ?? null,
     announcerStatus_label: announcerStatus?.label ?? null,
 
-    listingTypes: listingTypes.map((x) => x.value),
-    listingTypes_label: listingTypes.map((x) => x.label),
+    listingType: listingType?.value ?? null,
+    listingType_label: listingType?.label ?? null,
 
     propertyType: propertyType?.value ?? null,
     propertyType_label: propertyType?.label ?? null,
@@ -156,47 +246,36 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     condition_label: condition?.label ?? null,
   });
 
-  // ✅ เพิ่ม: เช็คลำดับ “ทีละ step” (ตัวแรกที่ยังขาดจะถูกแจ้ง)
+  // ✅ เช็คลำดับ “ทีละ step”
   const getFirstMissingField = () => {
     if (!title.trim()) return "หัวข้อประกาศ";
     if (!description.trim()) return "รายละเอียดประกาศ";
     if (!announcerStatus) return "สถานะผู้ประกาศ";
-    if (!listingTypes || listingTypes.length === 0) return "ประเภทการขาย";
+    if (!listingType) return "ประเภทการขาย";
     if (!propertyType) return "ประเภททรัพย์";
     if (!condition) return "สภาพทรัพย์";
-    if (!price.trim() || priceNumber <= 0) return "ราคา";
+    if (showPrice && (!price.trim() || priceNumber <= 0)) return "ราคา";
     return null;
   };
 
-  // ✅ เพิ่ม: เช็คว่า “ยังไม่กรอกเลย” ไหม
   const isAllEmpty = () => {
     const noTitle = !title.trim();
     const noDesc = !description.trim();
     const noAnnouncer = !announcerStatus;
-    const noListing = !listingTypes || listingTypes.length === 0;
+    const noListing = !listingType;
     const noPropertyType = !propertyType;
     const noCondition = !condition;
-    const noPrice = !price.trim() || priceNumber <= 0;
+    const noPrice = showPrice ? (!price.trim() || priceNumber <= 0) : true;
 
-    return (
-      noTitle &&
-      noDesc &&
-      noAnnouncer &&
-      noListing &&
-      noPropertyType &&
-      noCondition &&
-      noPrice
-    );
+    return noTitle && noDesc && noAnnouncer && noListing && noPropertyType && noCondition && noPrice;
   };
 
   const handleNext = () => {
-    // ✅ เคส 1: ไม่กรอกเลยสักช่อง
     if (isAllEmpty()) {
       toast.warn("กรุณากรอกข้อมูลให้ครบถ้วน");
       return;
     }
 
-    // ✅ เคส 2: กรอกไปบางส่วน → แจ้ง “ทีละช่อง” ตามลำดับที่ควรกรอก
     const firstMissing = getFirstMissingField();
     if (firstMissing) {
       toast.warn(`กรุณากรอก${firstMissing}`);
@@ -273,6 +352,7 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
           </div>
         </div>
 
+        {/* ✅ ประเภทการขาย: single */}
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
             <label className="heading-color ff-heading fw600 mb10">
@@ -281,21 +361,21 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
             <div className="location-area">
               {showSelect && (
                 <Select
-                  value={listingTypes}
-                  onChange={setListingTypes}
+                  value={listingType}
+                  onChange={setListingType}
                   options={listingTypeOptions}
                   styles={customStyles}
                   menuPortalTarget={document.body}
                   className="select-custom pl-0"
                   classNamePrefix="select"
                   placeholder="เลือกประเภทการขาย"
-                  isMulti
                 />
               )}
             </div>
           </div>
         </div>
 
+        {/* ✅ ประเภททรัพย์: ถ้า "เซ้ง" → เหลือแค่ร้านค้า และถ้าเปลี่ยนกลับขาย/เช่า → reset ว่าง */}
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
             <label className="heading-color ff-heading fw600 mb10">
@@ -306,15 +386,17 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
                 <Select
                   value={propertyType}
                   onChange={setPropertyType}
-                  options={propertyTypeOptions}
+                  options={filteredPropertyTypeOptions}
                   styles={customStyles}
                   menuPortalTarget={document.body}
                   className="select-custom pl-0"
                   classNamePrefix="select"
                   placeholder="เลือกประเภททรัพย์"
+                  isDisabled={isTransferListing}
                 />
               )}
             </div>
+
           </div>
         </div>
 
@@ -340,22 +422,68 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
           </div>
         </div>
 
-        <div className="col-sm-6 col-xl-4">
-          <div className="mb30">
-            <label className="heading-color ff-heading fw600 mb10">
-              ราคา <span className="text-danger">*</span>
-            </label>
-            <input
-              type="text"
-              inputMode="numeric"
-              className="form-control"
-              placeholder="กรอกราคาทรัพย์"
-              value={price}
-              onChange={(e) => {
-                const v = e.target.value.replace(/[^\d,]/g, "");
-                setPrice(v);
-              }}
-            />
+        {/* ✅ แถวราคา: ซ้าย = ราคา, ขวา = ราคาประมาณ (dropdown) */}
+        <div className="col-sm-12 col-xl-8">
+          <div className="row">
+            {/* ซ้าย: ราคา */}
+            <div className="col-sm-6">
+              <div className="mb30">
+                <div className="d-flex align-items-center justify-content-between mb10">
+                  <label className="heading-color ff-heading fw600 mb0">
+                    ราคา {showPrice && <span className="text-danger">*</span>}
+                  </label>
+
+                  <label className="d-flex align-items-center gap-2 mb-0">
+                    <input
+                      type="checkbox"
+                      checked={showPrice}
+                      onChange={(e) => setShowPrice(e.target.checked)}
+                    />
+                    <span className="heading-color ff-heading fw600">แสดงราคา</span>
+                  </label>
+                </div>
+
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  className="form-control"
+                  placeholder={showPrice ? "กรอกราคาทรัพย์" : "ไม่แสดงราคา (จะส่งเป็น xxxx)"}
+                  value={showPrice ? price : ""}
+                  disabled={!showPrice}
+                  onChange={(e) => setPrice(e.target.value.replace(/[^\d,]/g, ""))}
+                />
+
+                {!showPrice && (
+                  <small className="text-muted d-block mt-1">
+                    ตอนบันทึก/ถัดไป ระบบจะส่ง <b>price_text = "xxxx"</b>
+                  </small>
+                )}
+              </div>
+            </div>
+
+            {/* ขวา: ราคาประมาณ */}
+            <div className="col-sm-6">
+              <div className="mb30">
+                <label className="heading-color ff-heading fw600 mb10">ราคาประมาณ</label>
+                <div className="location-area">
+                  {showSelect && (
+                    <Select
+                      value={approxPrice}
+                      onChange={setApproxPrice}
+                      options={APPROX_PRICE_OPTIONS}
+                      styles={customStyles}
+                      menuPortalTarget={document.body}
+                      className="select-custom pl-0"
+                      classNamePrefix="select"
+                      placeholder="เลือกช่วงราคาโดยประมาณ"
+                    />
+                  )}
+                </div>
+                <small className="text-muted d-block mt-1">
+                  (ไม่บังคับ) ใช้เพื่อช่วยให้ผู้สนใจเห็นช่วงราคาคร่าวๆ
+                </small>
+              </div>
+            </div>
           </div>
         </div>
 

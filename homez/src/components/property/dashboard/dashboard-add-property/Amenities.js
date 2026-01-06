@@ -11,7 +11,6 @@ const amenitiesData = {
     { label: "กล้องวงจรปิด", defaultChecked: false },
     { label: "ฟิตเนส", defaultChecked: false },
     { label: "WiFi", defaultChecked: false },
-    //{ label: "พื้นที่ส่วนตัว", defaultChecked: false },
   ],
   column3: [
     { label: "ที่จอดรถ", defaultChecked: false },
@@ -25,6 +24,7 @@ const amenitiesData = {
   ],
   column5: [
     { label: "ไมโครเวฟ", defaultChecked: false },
+    { label: "ห้องน้ำ", defaultChecked: false },
   ],
 };
 
