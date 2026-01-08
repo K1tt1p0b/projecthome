@@ -37,6 +37,15 @@ const MAX_SLOTS = 4;
  * - 1 propertyId => max 4 videos
  */
 
+// ✅ convert อะไรก็ได้ -> url string แล้ว trim (กัน object หลุด)
+const toUrlText = (v) => {
+  if (!v) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "object") return v.url || v.src || v.link || "";
+  return String(v);
+};
+const toTrimmedUrl = (v) => String(toUrlText(v) || "").trim();
+
 function safeParse(json) {
   try {
     return JSON.parse(json);
@@ -58,14 +67,16 @@ function writeVideoStore(store) {
 }
 
 function detectProvider(url) {
-  const u = (url || "").trim();
+  const u = toTrimmedUrl(url);
   if (u.includes("tiktok.com/")) return "tiktok";
   return "youtube";
 }
 
+// ตอนนี้เอาเหมือน my-properties: เฉพาะ YouTube/TikTok
 function isValidVideoUrl(url) {
-  if (!url) return true; // ช่องว่างได้
-  const u = url.trim();
+  const u = toTrimmedUrl(url);
+  if (!u) return true; // ช่องว่างได้
+
   const isYoutube =
     u.includes("youtube.com/watch") ||
     u.includes("youtu.be/") ||
@@ -81,24 +92,29 @@ function uid() {
 // รองรับ store เก่า (array of string) ด้วย เผื่อมีค้าง
 function normalizeStoreValueToUrls(v) {
   if (!v) return [];
+
   if (Array.isArray(v)) {
     // array of objects
-    if (v.length && typeof v[0] === "object" && v[0]?.url) {
-      return v.map((x) => (x?.url || "").trim()).filter(Boolean);
+    if (v.length && typeof v[0] === "object") {
+      return v
+        .map((x) => toTrimmedUrl(x?.url || x?.src || x?.link))
+        .filter(Boolean);
     }
     // array of strings
-    return v.map((x) => String(x || "").trim()).filter(Boolean);
+    return v.map((x) => toTrimmedUrl(x)).filter(Boolean);
   }
+
   if (Array.isArray(v?.urls)) {
-    return v.urls.map((x) => String(x || "").trim()).filter(Boolean);
+    return v.urls.map((x) => toTrimmedUrl(x)).filter(Boolean);
   }
+
   return [];
 }
 
 function buildItemsFromUrls(urls) {
   const now = new Date().toISOString();
   return (urls || [])
-    .map((u) => (u || "").trim())
+    .map((u) => toTrimmedUrl(u))
     .filter(Boolean)
     .slice(0, MAX_SLOTS)
     .map((url) => ({
@@ -125,7 +141,15 @@ const SkeletonRow = () => (
         />
         <div className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4 w-100">
           <div style={{ width: "60%", height: 14, background: "#eee", borderRadius: 6 }} />
-          <div style={{ width: "30%", height: 12, background: "#eee", borderRadius: 6, marginTop: 10 }} />
+          <div
+            style={{
+              width: "30%",
+              height: 12,
+              background: "#eee",
+              borderRadius: 6,
+              marginTop: 10,
+            }}
+          />
         </div>
       </div>
     </th>
@@ -283,7 +307,7 @@ const PropertyDataTable = () => {
     const urls = normalizeStoreValueToUrls(existing);
 
     const nextInputs = Array(MAX_SLOTS).fill("");
-    urls.slice(0, MAX_SLOTS).forEach((u, i) => (nextInputs[i] = u));
+    urls.slice(0, MAX_SLOTS).forEach((u, i) => (nextInputs[i] = toTrimmedUrl(u)));
 
     setVideoModalProperty(property);
     setVideoInputs(nextInputs);
@@ -300,7 +324,7 @@ const PropertyDataTable = () => {
   const setVideoAt = (idx, value) => {
     setVideoInputs((prev) => {
       const next = [...prev];
-      next[idx] = value;
+      next[idx] = String(value ?? "");
       return next;
     });
   };
@@ -311,14 +335,17 @@ const PropertyDataTable = () => {
 
     // validate ทีละช่อง
     for (let i = 0; i < videoInputs.length; i++) {
-      const u = (videoInputs[i] || "").trim();
+      const u = toTrimmedUrl(videoInputs[i]);
       if (!isValidVideoUrl(u)) {
         toast.error(`ลิงก์ช่องที่ ${i + 1} ไม่ถูกต้อง (รองรับ YouTube / TikTok)`);
         return;
       }
     }
 
-    const cleaned = videoInputs.map((u) => (u || "").trim()).filter(Boolean).slice(0, MAX_SLOTS);
+    const cleaned = videoInputs
+      .map((u) => toTrimmedUrl(u))
+      .filter(Boolean)
+      .slice(0, MAX_SLOTS);
 
     try {
       setVideoSaving(true);
@@ -417,27 +444,32 @@ const PropertyDataTable = () => {
               </div>
 
               <div className="row">
-                {videoInputs.map((val, idx) => (
-                  <div className="col-12" key={idx}>
-                    <label className="form-label" style={{ fontWeight: 600 }}>
-                      URL วิดีโอ {idx + 1}
-                    </label>
+                {videoInputs.map((val, idx) => {
+                  const textVal = String(val ?? "");
+                  const trimmed = toTrimmedUrl(textVal);
 
-                    <input
-                      className="form-control mb-2"
-                      value={val}
-                      onChange={(e) => setVideoAt(idx, e.target.value)}
-                      placeholder="https://youtu.be/... หรือ https://www.tiktok.com/@.../video/..."
-                      disabled={videoSaving}
-                    />
+                  return (
+                    <div className="col-12" key={idx}>
+                      <label className="form-label" style={{ fontWeight: 600 }}>
+                        URL วิดีโอ {idx + 1}
+                      </label>
 
-                    {!!val?.trim() && !isValidVideoUrl(val.trim()) && (
-                      <div style={{ color: "#ef4444", fontSize: 12 }} className="mb-2">
-                        ลิงก์ไม่ถูกต้อง (รองรับ YouTube / TikTok)
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      <input
+                        className="form-control mb-2"
+                        value={textVal}
+                        onChange={(e) => setVideoAt(idx, e.target.value)}
+                        placeholder="https://youtu.be/... หรือ https://www.tiktok.com/@.../video/..."
+                        disabled={videoSaving}
+                      />
+
+                      {!!trimmed && !isValidVideoUrl(trimmed) && (
+                        <div style={{ color: "#ef4444", fontSize: 12 }} className="mb-2">
+                          ลิงก์ไม่ถูกต้อง (รองรับ YouTube / TikTok)
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="d-flex gap-2 justify-content-end mt-4">
@@ -547,9 +579,7 @@ const PropertyDataTable = () => {
                                 aria-label="video"
                               >
                                 <span className="fas fa-video" />
-                                <span style={{ fontSize: 12, opacity: 0.85 }}>
-                                  {count}
-                                </span>
+                                <span style={{ fontSize: 12, opacity: 0.85 }}>{count}</span>
                               </button>
 
                               <ReactTooltip
@@ -575,9 +605,7 @@ const PropertyDataTable = () => {
                   </td>
 
                   <td className="vam">
-                    <span className={getStatusStyle(property.status)}>
-                      {property.status}
-                    </span>
+                    <span className={getStatusStyle(property.status)}>{property.status}</span>
                   </td>
 
                   <td className="vam">{property.views ?? "-"}</td>

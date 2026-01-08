@@ -8,6 +8,16 @@ import { useSearchParams } from "next/navigation";
 const VIDEO_STORE_KEY = "landx_property_videos_v1";
 const MAX_SLOTS = 4;
 
+/** ✅ แปลงค่าใดๆ -> url string (รองรับ string | object {url/src/link} ) */
+const toUrlText = (v) => {
+  if (!v) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "object") return v.url || v.src || v.link || "";
+  return String(v);
+};
+
+const toTrimmedUrl = (v) => String(toUrlText(v) || "").trim();
+
 // ---------- helpers (ตรงกับที่ my-properties ใช้) ----------
 function safeParse(json) {
   try {
@@ -33,17 +43,17 @@ function uid() {
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
-function detectProvider(url) {
-  const u = (url || "").trim();
+function detectProvider(anyUrl) {
+  const u = toTrimmedUrl(anyUrl);
   if (u.includes("tiktok.com/")) return "tiktok";
   return "youtube";
 }
 
-// รองรับ youtube/tiktok หรือ http/https ก็ได้ (แล้วแต่คุณ)
 // ตอนนี้เอาเหมือน my-properties: เฉพาะ YouTube/TikTok
 function isValidVideoUrl(url) {
-  if (!url) return true; // ช่องว่างได้
-  const u = url.trim();
+  const u = toTrimmedUrl(url);
+  if (!u) return true; // ช่องว่างได้
+
   const isYoutube =
     u.includes("youtube.com/watch") ||
     u.includes("youtu.be/") ||
@@ -55,34 +65,40 @@ function isValidVideoUrl(url) {
 // อ่าน urls จาก store รองรับ 2 แบบ:
 // 1) store[id] = [{url,...}]  (แบบใหม่)
 // 2) store[id] = ["url1","url2"] (แบบเก่า)
+// 3) store[id] = { urls: [...] }
 function getUrlsFromStoreValue(v) {
   if (!v) return [];
+
   if (Array.isArray(v)) {
     // array of objects
-    if (v.length && typeof v[0] === "object" && v[0]?.url) {
-      return v.map((x) => (x?.url || "").trim()).filter(Boolean);
+    if (v.length && typeof v[0] === "object") {
+      return v
+        .map((x) => toTrimmedUrl(x?.url || x?.src || x?.link))
+        .filter(Boolean);
     }
     // array of strings
-    return v.map((x) => String(x || "").trim()).filter(Boolean);
+    return v.map((x) => toTrimmedUrl(x)).filter(Boolean);
   }
-  // maybe { urls: [...] }
+
   if (Array.isArray(v?.urls)) {
-    return v.urls.map((x) => String(x || "").trim()).filter(Boolean);
+    return v.urls.map((x) => toTrimmedUrl(x)).filter(Boolean);
   }
+
   return [];
 }
 
 // เขียนกลับให้เป็น shape แบบ my-properties (array of objects)
-// ✅ ไม่ enforce 1 ใน step นี้ (เพราะคุณอยากได้ 4 ช่อง)
-// แต่หน้า my-properties ของคุณยัง min(1) ใน summary อยู่ (จะโชว์ไอคอนถ้ามีอย่างน้อย 1)
 function toStoreItems(urls) {
   const now = new Date().toISOString();
-  return (urls || []).map((url) => ({
-    id: uid(),
-    url: url.trim(),
-    provider: detectProvider(url),
-    createdAt: now,
-  }));
+  return (urls || [])
+    .map((u) => toTrimmedUrl(u))
+    .filter(Boolean)
+    .map((u) => ({
+      id: uid(),
+      url: u,
+      provider: detectProvider(u),
+      createdAt: now,
+    }));
 }
 
 export default function UploadMediaVideoStep({
@@ -114,7 +130,11 @@ export default function UploadMediaVideoStep({
     if (!incoming.length) return;
 
     const next = Array(MAX_SLOTS).fill("");
-    incoming.slice(0, MAX_SLOTS).forEach((v, i) => (next[i] = v));
+    incoming.slice(0, MAX_SLOTS).forEach((v, i) => {
+      // ✅ แปลง object -> string ตั้งแต่ตอน set state
+      next[i] = toTrimmedUrl(v);
+    });
+
     setUrls(next);
   }, [initialValue?.videoUrls]);
 
@@ -129,29 +149,28 @@ export default function UploadMediaVideoStep({
     if (!list.length) return;
 
     const next = Array(MAX_SLOTS).fill("");
-    list.slice(0, MAX_SLOTS).forEach((v, i) => (next[i] = v));
+    list.slice(0, MAX_SLOTS).forEach((v, i) => (next[i] = toTrimmedUrl(v)));
     setUrls(next);
   }, [propertyId]);
 
   const setUrlAt = (idx, value) => {
+    // ✅ input ส่ง string มาอยู่แล้ว แต่กันไว้ให้แน่น
     setUrls((prev) => {
       const next = [...prev];
-      next[idx] = value;
+      next[idx] = String(value ?? "");
       return next;
     });
   };
 
   const cleanedUrls = useMemo(() => {
-    return urls.map((u) => (u || "").trim()).filter(Boolean);
+    return urls.map((u) => toTrimmedUrl(u)).filter(Boolean);
   }, [urls]);
 
   const validateAll = () => {
     for (let i = 0; i < urls.length; i++) {
-      const u = (urls[i] || "").trim();
+      const u = toTrimmedUrl(urls[i]); // ✅ ไม่ trim ใส่ object แล้ว
       if (!isValidVideoUrl(u)) {
-        toast.error(
-          `ลิงก์ช่องที่ ${i + 1} ไม่ถูกต้อง (รองรับ YouTube / TikTok)`
-        );
+        toast.error(`ลิงก์ช่องที่ ${i + 1} ไม่ถูกต้อง (รองรับ YouTube / TikTok)`);
         return false;
       }
     }
@@ -187,8 +206,6 @@ export default function UploadMediaVideoStep({
 
   const handleSaveDraft = () => {
     if (!validateAll()) return;
-
-    // ไม่ toast ตามที่คุณต้องการ
     onSaveDraft?.({ urls: cleanedUrls });
   };
 
@@ -196,8 +213,7 @@ export default function UploadMediaVideoStep({
     <div className="ps-widget bgc-white bdrs12 p30 overflow-hidden position-relative">
       <h4 className="title fz17 mb10">วิดีโอทรัพย์สิน</h4>
       <p className="mb30" style={{ color: "#6b7280" }}>
-        ใส่ลิงก์วิดีโอได้สูงสุด {MAX_SLOTS} อัน (เว้นว่างได้) — รองรับ
-        YouTube/TikTok
+        ใส่ลิงก์วิดีโอได้สูงสุด {MAX_SLOTS} อัน (เว้นว่างได้) — รองรับ YouTube/TikTok
       </p>
 
       <form
@@ -208,26 +224,32 @@ export default function UploadMediaVideoStep({
         }}
       >
         <div className="row">
-          {urls.map((val, idx) => (
-            <div className="col-12" key={idx}>
-              <div className="my_profile_input form-group mb20">
-                <label className="mb-2">URL วิดีโอ {idx + 1}</label>
-                <input
-                  type="url"
-                  className="form-control"
-                  placeholder="https://youtu.be/... หรือ https://www.tiktok.com/..."
-                  value={val}
-                  onChange={(e) => setUrlAt(idx, e.target.value)}
-                  disabled={saving}
-                />
-                {!!val?.trim() && !isValidVideoUrl(val.trim()) && (
-                  <small style={{ color: "#ef4444" }}>
-                    ลิงก์ไม่ถูกต้อง (รองรับ YouTube / TikTok)
-                  </small>
-                )}
+          {urls.map((val, idx) => {
+            const textVal = String(val ?? ""); // ✅ input value ต้องเป็น string เสมอ
+            const trimmed = toTrimmedUrl(textVal);
+
+            return (
+              <div className="col-12" key={idx}>
+                <div className="my_profile_input form-group mb20">
+                  <label className="mb-2">URL วิดีโอ {idx + 1}</label>
+                  <input
+                    type="url"
+                    className="form-control"
+                    placeholder="https://youtu.be/... หรือ https://www.tiktok.com/..."
+                    value={textVal}
+                    onChange={(e) => setUrlAt(idx, e.target.value)}
+                    disabled={saving}
+                  />
+
+                  {!!trimmed && !isValidVideoUrl(trimmed) && (
+                    <small style={{ color: "#ef4444" }}>
+                      ลิงก์ไม่ถูกต้อง (รองรับ YouTube / TikTok)
+                    </small>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="row mt20">
