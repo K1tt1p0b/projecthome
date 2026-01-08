@@ -1,25 +1,20 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import UploadPhotoGallery from "./UploadPhotoGallery";
 import { toast } from "react-toastify";
-
-const toArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
 
 const normalizeInitialImages = (initialValue) => {
   if (!initialValue) return [];
 
-  // 1) ถ้า initialValue เป็น { images: [] } ตรง ๆ
   if (Array.isArray(initialValue.images) && initialValue.images.length) {
     return initialValue.images.filter(Boolean);
   }
 
-  // 2) ถ้าเป็น { gallery: [] }
   if (Array.isArray(initialValue.gallery) && initialValue.gallery.length) {
     return initialValue.gallery.filter(Boolean);
   }
 
-  // 3) ถ้าเป็น { cover, gallery }
   const cover = initialValue.cover || initialValue.imageSrc || "";
   const gallery = Array.isArray(initialValue.gallery)
     ? initialValue.gallery
@@ -33,10 +28,9 @@ const normalizeInitialImages = (initialValue) => {
 const UploadMedia = ({ initialValue, onBack, onNext, onSaveDraft }) => {
   const [images, setImages] = useState([]);
 
-  // กำหนดขั้นต่ำสำหรับไปหน้าถัดไป
+  // ✅ มีขั้นต่ำเหมือนเดิม
   const MIN_IMAGES = 5;
 
-  // sync รูปเดิมตอนเข้าแก้ไข
   useEffect(() => {
     const init = normalizeInitialImages(initialValue);
     setImages(init);
@@ -49,18 +43,21 @@ const UploadMedia = ({ initialValue, onBack, onNext, onSaveDraft }) => {
   const buildPayload = () => ({ images });
 
   const handleNext = () => {
-    if (!images || images.length < MIN_IMAGES) {
-      toast.warn(`กรุณาอัปโหลดรูปภาพอย่างน้อย ${MIN_IMAGES} รูป`);
-      return;
+    // ✅ อนุญาตให้ "ไม่ใส่รูปเลย" ได้
+    // ⚠️ ถ้าใส่แล้วแต่ยังไม่ถึงขั้นต่ำ -> เตือน แต่ไปต่อได้
+    if (images.length > 0 && images.length < MIN_IMAGES) {
+      toast.warn(
+        `คุณอัปโหลด ${images.length} รูป (ขั้นต่ำ ${MIN_IMAGES} รูป) — ถ้าจะใส่รูป กรุณาเพิ่มให้ครบ หรือไม่ใส่รูปแล้วกดถัดไปได้เลย`
+      );
     }
+
     onNext?.(buildPayload());
   };
 
   const handleSaveDraft = () => {
     const payload = buildPayload();
     onSaveDraft?.(payload);
-    console.log("draft media:", payload);
-    alert("บันทึกร่างรูปภาพเรียบร้อย (mock)");
+    toast.success("บันทึกร่างรูปภาพเรียบร้อย");
   };
 
   return (

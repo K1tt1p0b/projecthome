@@ -10,6 +10,7 @@ import PropertyDescription from "@/components/property/dashboard/dashboard-add-p
 import LocationField from "@/components/property/dashboard/dashboard-add-property/LocationField";
 import DetailsFiled from "@/components/property/dashboard/dashboard-add-property/details-field";
 import UploadMedia from "@/components/property/dashboard/dashboard-add-property/upload-media";
+import UploadMediaVideoStep from "@/components/property/dashboard/dashboard-add-property/upload-media-video";
 import Checkdetailsandconfirm from "@/components/property/dashboard/dashboard-add-property/check-details-and-confirm";
 
 import announcerStatusOptions from "@/components/property/dashboard/dashboard-add-property/property-description/announcerStatusOptions.json";
@@ -78,12 +79,13 @@ const normalizeAnnouncerStatus = (rawValue, rawLabel) => {
   return { value: v, label: findLabel(announcerStatusOptions, v) || v };
 };
 
-const normalizeDetails = (detailsRaw = {}, propertyTypeValue) => {
+const normalizeDetails = (detailsRaw = {}) => {
   const d = detailsRaw || {};
-  const out = {
+  return {
     amenities: Array.isArray(d.amenities) ? d.amenities : [],
     note: d.note ?? "",
 
+    // บ้านและที่ดิน
     bedrooms: d.bedrooms ?? null,
     bathrooms: d.bathrooms ?? null,
     floors: d.floors ?? d.floor ?? "",
@@ -93,35 +95,41 @@ const normalizeDetails = (detailsRaw = {}, propertyTypeValue) => {
     frontage: d.frontage ?? "",
     depth: d.depth ?? "",
     roadWidth: d.roadWidth ?? "",
-    titleDeed: d.titleDeed ?? "",
 
+    // เอกสารสิทธิ
+    deedNumber: d.deedNumber ?? d.titleDeed ?? "",
+    titleDeed: d.titleDeed ?? d.deedNumber ?? "",
     titleDeedImage: d.titleDeedImage ?? null,
+    titleDeedImageName: d.titleDeedImageName ?? d.titleDeedImage?.name ?? "",
     titleDeedImages: Array.isArray(d.titleDeedImages)
       ? d.titleDeedImages
       : d.titleDeedImage
-        ? [d.titleDeedImage]
-        : [],
+      ? [d.titleDeedImage]
+      : [],
 
+    // ที่ดินเปล่า
+    landFillStatus: d.landFillStatus ?? "",
+    zoningColor: d.zoningColor ?? "",
+
+    // คอนโด/ห้องเช่า
     projectName: d.projectName ?? "",
     building: d.building ?? "",
-    unitFloor: d.unitFloor ?? "",
-    roomArea: d.roomArea ?? "",
+    unitFloor: d.unitFloor ?? d.rentFloor ?? "",
+    roomArea: d.roomArea ?? d.roomAreaRent ?? "",
     roomType: d.roomType ?? "",
     condoParking: d.condoParking ?? "",
 
+    // ห้องเช่า legacy
     roomAreaRent: d.roomAreaRent ?? "",
     rentFloor: d.rentFloor ?? "",
     bathroomPrivate: d.bathroomPrivate ?? true,
     internetIncluded: d.internetIncluded ?? false,
-    electricRate: d.electricRate ?? "",
-    waterRate: d.waterRate ?? "",
+
+    // ค่าน้ำ/ไฟ/ส่วนกลาง
+    waterFee: d.waterFee ?? d.waterRate ?? "",
+    electricFee: d.electricFee ?? d.electricRate ?? "",
+    commonFee: d.commonFee ?? "",
   };
-
-  if (propertyTypeValue === "house-and-land" || propertyTypeValue === "land") {
-    out.titleDeed = out.titleDeed ?? "";
-  }
-
-  return out;
 };
 
 const normalizeLocation = (loc) => {
@@ -147,47 +155,10 @@ const normalizeMedia = (p) => {
   const gallery = Array.isArray(p?.gallery)
     ? p.gallery
     : Array.isArray(p?.images)
-      ? p.images
-      : [];
+    ? p.images
+    : [];
   const images = [cover, ...gallery].filter(Boolean);
   return { cover, gallery, images };
-};
-
-// ===== Summary builders =====
-const buildBasicSummary = (basicInfoForm) => {
-  if (!basicInfoForm) return undefined;
-
-  const listingValues = (basicInfoForm.listingTypes ?? [])
-    .map((x) => pickValue(x))
-    .filter(Boolean);
-
-  const listingTypeText =
-    Array.isArray(basicInfoForm.listingTypes_label) &&
-    basicInfoForm.listingTypes_label.length > 0
-      ? basicInfoForm.listingTypes_label.join(", ")
-      : listingValues.map((v) => findLabel(listingTypeOptions, v)).join(", ");
-
-  const propertyTypeText =
-    basicInfoForm.propertyType_label ||
-    findLabel(propertyTypeOptions, pickValue(basicInfoForm.propertyType));
-
-  const conditionText =
-    basicInfoForm.condition_label ||
-    findLabel(propertyConditionOptions, pickValue(basicInfoForm.condition));
-
-  const announcerText =
-    basicInfoForm.announcerStatus_label ||
-    findLabel(announcerStatusOptions, pickValue(basicInfoForm.announcerStatus));
-
-  return {
-    title: basicInfoForm.title,
-    description: basicInfoForm.description,
-    price: basicInfoForm.price ?? basicInfoForm.price_text ?? undefined,
-    announcerStatus: announcerText || "-",
-    listingType: listingTypeText || "-",
-    propertyType: propertyTypeText || "-",
-    condition: conditionText || "-",
-  };
 };
 
 const buildLocationSummary = (locationForm) => {
@@ -205,86 +176,27 @@ const buildLocationSummary = (locationForm) => {
   };
 };
 
-const buildDetailsSummary = (detailsForm, propertyTypeValue) => {
-  if (!detailsForm) return undefined;
-
-  const add = (obj, key, value) => {
-    if (value === undefined || value === null) return obj;
-    if (typeof value === "string" && value.trim() === "") return obj;
-    obj[key] = value;
-    return obj;
-  };
-
-  const summary = {};
-  add(summary, "รายละเอียดเพิ่มเติม", detailsForm.note || "");
-  add(summary, "amenities", detailsForm.amenities || []);
-
-  const t = propertyTypeValue;
-
-  if (t === "house-and-land") {
-    add(summary, "ห้องนอน", detailsForm.bedrooms?.label || detailsForm.bedrooms || "");
-    add(summary, "ห้องน้ำ", detailsForm.bathrooms?.label || detailsForm.bathrooms || "");
-    add(summary, "พื้นที่ใช้สอย (ตร.ม.)", detailsForm.usableArea || "");
-    add(summary, "ขนาดที่ดิน (ตร.ว.)", detailsForm.landSqw || "");
-    add(summary, "เอกสารสิทธิ", detailsForm.titleDeed || "");
-    add(summary, "รูปโฉนด", detailsForm.titleDeedImage?.name || detailsForm.titleDeedImage || "");
-    add(summary, "จำนวนชั้น", detailsForm.floors || "");
-    add(summary, "ที่จอดรถ", detailsForm.parking?.label || detailsForm.parking || "");
-    add(summary, "ถนนหน้าบ้านกว้าง (ม.)", detailsForm.roadWidth || "");
-    add(summary, "หน้ากว้างที่ดิน (ม.)", detailsForm.frontage || "");
-    add(summary, "ความลึกที่ดิน (ม.)", detailsForm.depth || "");
-  }
-
-  if (t === "land") {
-    add(summary, "ขนาดที่ดิน (ตร.ว.)", detailsForm.landSqw || "");
-    add(summary, "เอกสารสิทธิ", detailsForm.titleDeed || "");
-    add(summary, "รูปโฉนด", detailsForm.titleDeedImage?.name || detailsForm.titleDeedImage || "");
-    add(summary, "ถนนหน้าที่ดินกว้าง (ม.)", detailsForm.roadWidth || "");
-    add(summary, "หน้ากว้างที่ดิน (ม.)", detailsForm.frontage || "");
-    add(summary, "ความลึกที่ดิน (ม.)", detailsForm.depth || "");
-  }
-
-  if (t === "condo") {
-    add(summary, "ชื่อโครงการ", detailsForm.projectName || "");
-    add(summary, "ชั้น", detailsForm.unitFloor || "");
-    add(summary, "ขนาดห้อง (ตร.ม.)", detailsForm.roomArea || "");
-    add(summary, "อาคาร/ตึก", detailsForm.building || "");
-    add(summary, "ประเภทห้อง", detailsForm.roomType || "");
-    add(summary, "สิทธิ์ที่จอดรถ", detailsForm.condoParking || "");
-  }
-
-  if (t === "room-rent") {
-    add(summary, "ขนาดห้อง (ตร.ม.)", detailsForm.roomAreaRent || "");
-    add(summary, "ชั้นที่อยู่", detailsForm.rentFloor || "");
-    add(summary, "ห้องน้ำในตัว", detailsForm.bathroomPrivate ? "มี" : "ไม่มี");
-    add(summary, "รวมอินเทอร์เน็ต", detailsForm.internetIncluded ? "รวม" : "ไม่รวม");
-    add(summary, "ค่าไฟ (บาท/หน่วย)", detailsForm.electricRate || "");
-    add(summary, "ค่าน้ำ", detailsForm.waterRate || "");
-  }
-
-  return summary;
-};
-
 /* ---------------------------------------
   Component
 --------------------------------------- */
 export default function DashboardEditPropertyPage({ propertyId }) {
   const router = useRouter();
   const params = useParams();
-
   const id = propertyId ?? params?.id;
 
-  // tabs
+  // tabs refs (ให้เหมือนหน้าเพิ่ม: 1..6)
   const tabBasicRef = useRef(null);
   const tabLocationRef = useRef(null);
   const tabDetailsRef = useRef(null);
   const tabMediaRef = useRef(null);
+  const tabVideoRef = useRef(null);
 
   const goBasic = () => tabBasicRef.current?.click();
   const goLocation = () => tabLocationRef.current?.click();
   const goDetails = () => tabDetailsRef.current?.click();
   const goMedia = () => tabMediaRef.current?.click();
-  const goConfirm = () => document.getElementById("nav-item5-tab")?.click();
+  const goVideo = () => tabVideoRef.current?.click();
+  const goConfirm = () => document.getElementById("nav-item6-tab")?.click();
 
   // forms state
   const [basicInfoForm, setBasicInfoForm] = useState(null);
@@ -292,8 +204,11 @@ export default function DashboardEditPropertyPage({ propertyId }) {
   const [detailsForm, setDetailsForm] = useState(null);
   const [mediaForm, setMediaForm] = useState(null);
 
-  // cache รายละเอียดตามประเภท (แก้ปัญหาเปลี่ยนไป-กลับแล้วไม่ดึง)
-  const detailsCacheRef = useRef({}); // { [propertyTypeValue]: detailsForm }
+  // ✅ เพิ่ม: วิดีโอเหมือนหน้า add
+  const [videoForm, setVideoForm] = useState({ urls: [] });
+
+  // cache รายละเอียดตามประเภท
+  const detailsCacheRef = useRef({});
   const prevTypeRef = useRef(null);
 
   // remount keys
@@ -336,7 +251,10 @@ export default function DashboardEditPropertyPage({ propertyId }) {
       title: found.title ?? "",
       description: found.description ?? "",
       price: found.price ?? "",
-      price_text: found.priceText ?? "",
+      price_text: found.priceText ?? found.price_text ?? "",
+      showPrice: found.showPrice ?? (found.price > 0 || !!found.priceText),
+      approxPrice: found.approxPrice ?? null,
+      approxPrice_label: found.approxPrice_label ?? null,
 
       announcerStatus: announcerOpt,
       announcerStatus_label: announcerOpt?.label ?? found.announcerStatus_label ?? null,
@@ -349,8 +267,7 @@ export default function DashboardEditPropertyPage({ propertyId }) {
     const loc = normalizeLocation(found.location);
 
     const ptVal = pickValue(basic.propertyType);
-    const det = normalizeDetails(found.details || {}, ptVal);
-
+    const det = normalizeDetails(found.details || {});
     const med = normalizeMedia(found);
 
     setBasicInfoForm(basic);
@@ -358,7 +275,11 @@ export default function DashboardEditPropertyPage({ propertyId }) {
     setDetailsForm(det);
     setMediaForm(med);
 
-    // seed cache ของประเภทที่โหลดมา
+    // ✅ ถ้าคุณมี field วิดีโอใน found จริง ๆ ให้ map ตรงนี้
+    // ตัวอย่าง: found.videos = ["url1","url2"]
+    const initialVideoUrls = Array.isArray(found?.videos) ? found.videos : [];
+    setVideoForm({ urls: initialVideoUrls });
+
     detailsCacheRef.current = { ...(detailsCacheRef.current || {}), [ptVal]: det };
     prevTypeRef.current = ptVal;
 
@@ -371,13 +292,10 @@ export default function DashboardEditPropertyPage({ propertyId }) {
     setTimeout(() => goBasic(), 0);
   }, [id]);
 
-  // summaries
-  const basicInfoSummary = useMemo(() => buildBasicSummary(basicInfoForm), [basicInfoForm]);
+  // ✅ summary แบบเดียวกับหน้า add (ส่งข้อมูลดิบ)
+  const basicInfoSummary = basicInfoForm;
   const locationSummary = useMemo(() => buildLocationSummary(locationForm), [locationForm]);
-  const detailsSummary = useMemo(
-    () => buildDetailsSummary(detailsForm, propertyTypeValue),
-    [detailsForm, propertyTypeValue]
-  );
+  const detailsSummary = detailsForm;
   const imagesSummary = useMemo(() => {
     if (mediaForm?.images?.length) return mediaForm.images;
     const cover = mediaForm?.cover;
@@ -402,7 +320,7 @@ export default function DashboardEditPropertyPage({ propertyId }) {
         </button>
       </div>
 
-      {/* Tabs */}
+      {/* ✅ Tabs (เรียงเหมือนหน้าเพิ่ม: 1..6) */}
       <nav>
         <div className="nav nav-tabs" id="nav-tab2" role="tablist">
           <button
@@ -416,10 +334,9 @@ export default function DashboardEditPropertyPage({ propertyId }) {
             aria-controls="nav-item1"
             aria-selected="true"
           >
-            1. ข้อมูลทรัพย์
+            1. หัวข้อทรัพย์
           </button>
 
-          {/* ไม่บังคับ step แล้ว (เอา disabled ออก) */}
           <button
             ref={tabLocationRef}
             className="nav-link fw600"
@@ -459,10 +376,11 @@ export default function DashboardEditPropertyPage({ propertyId }) {
             aria-controls="nav-item4"
             aria-selected="false"
           >
-            4. รูปภาพทรัพย์
+            4. เพิ่มรูปทรัพย์
           </button>
 
           <button
+            ref={tabVideoRef}
             className="nav-link fw600"
             id="nav-item5-tab"
             data-bs-toggle="tab"
@@ -472,7 +390,20 @@ export default function DashboardEditPropertyPage({ propertyId }) {
             aria-controls="nav-item5"
             aria-selected="false"
           >
-            5. ยืนยัน
+            5. วิดีโอทรัพย์สิน
+          </button>
+
+          <button
+            className="nav-link fw600"
+            id="nav-item6-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#nav-item6"
+            type="button"
+            role="tab"
+            aria-controls="nav-item6"
+            aria-selected="false"
+          >
+            6. ยืนยัน
           </button>
         </div>
       </nav>
@@ -491,7 +422,6 @@ export default function DashboardEditPropertyPage({ propertyId }) {
 
                 // ถ้าเปลี่ยนประเภท: cache ของเดิมไว้ แล้ว restore ของประเภทใหม่ถ้ามี
                 if (prevType && nextType && prevType !== nextType) {
-                  // เก็บรายละเอียดเดิมของประเภทเก่า
                   if (detailsForm) {
                     detailsCacheRef.current = {
                       ...detailsCacheRef.current,
@@ -503,10 +433,6 @@ export default function DashboardEditPropertyPage({ propertyId }) {
                   setDetailsForm(restored);
                   setDetailsKey((k) => k + 1);
 
-                  // ไม่ล้าง media แล้ว (รูปไม่เกี่ยวกับประเภท)
-                  // setMediaForm(null);  ❌ ยกเลิก
-                  // setMediaKey((k) => k + 1);
-
                   prevTypeRef.current = nextType;
 
                   toast.info(
@@ -517,19 +443,18 @@ export default function DashboardEditPropertyPage({ propertyId }) {
 
                   setBasicInfoForm(data);
 
-                  // เปลี่ยนประเภทแล้วเด้งไป step 3 (รายละเอียดทรัพย์)
+                  // เปลี่ยนประเภทแล้วเด้งไป step 3
                   setTimeout(() => goDetails(), 0);
                   return;
                 }
 
-                // ไม่เปลี่ยนประเภท
                 setBasicInfoForm(data);
                 prevTypeRef.current = nextType || prevType;
                 goLocation();
               }}
               onSaveDraft={(data) => {
                 setBasicInfoForm(data);
-                toast.success("บันทึกร่าง (ข้อมูลทรัพย์) แล้ว");
+                toast.success("บันทึกร่าง (หัวข้อทรัพย์) แล้ว");
               }}
             />
           </div>
@@ -566,7 +491,6 @@ export default function DashboardEditPropertyPage({ propertyId }) {
               initialValue={detailsForm}
               onBack={goLocation}
               onNext={(data) => {
-                // เก็บรายละเอียดของประเภทปัจจุบันลง cache ทันที
                 const t = propertyTypeValue;
                 if (t) {
                   detailsCacheRef.current = {
@@ -602,7 +526,7 @@ export default function DashboardEditPropertyPage({ propertyId }) {
               onBack={goDetails}
               onNext={(data) => {
                 setMediaForm(data);
-                goConfirm();
+                goVideo(); // ✅ ไป step 5
               }}
               onSaveDraft={(data) => {
                 setMediaForm(data);
@@ -615,15 +539,40 @@ export default function DashboardEditPropertyPage({ propertyId }) {
         {/* 5 */}
         <div className="tab-pane fade" id="nav-item5" role="tabpanel">
           <div className="pt20">
+            <UploadMediaVideoStep
+              initialValue={{
+                ...(basicInfoForm || {}),
+                ...(locationForm || {}),
+                ...(detailsForm || {}),
+                ...(mediaForm || {}),
+                videoUrls: videoForm?.urls || [],
+              }}
+              onBack={goMedia}
+              onNext={(data) => {
+                setVideoForm(data || { urls: [] });
+                goConfirm(); // ✅ ไป step 6
+              }}
+              onSaveDraft={(data) => {
+                if (data?.urls) setVideoForm(data);
+              }}
+            />
+          </div>
+        </div>
+
+        {/* 6 */}
+        <div className="tab-pane fade" id="nav-item6" role="tabpanel">
+          <div className="pt20">
             <Checkdetailsandconfirm
               basicInfo={basicInfoSummary}
               location={locationSummary}
               details={detailsSummary}
               images={imagesSummary}
+              videos={videoForm?.urls || []} // ✅ ส่งวิดีโอจริง
               onEditBasic={goBasic}
               onEditLocation={goLocation}
               onEditDetails={goDetails}
               onEditImages={goMedia}
+              onEditVideo={goVideo} // ✅ แก้ไขวิดีโอ
               onSaveDraft={(payload) => {
                 console.log("draft edit:", payload);
                 toast.success("บันทึกร่างทั้งหมดแล้ว (mock)");

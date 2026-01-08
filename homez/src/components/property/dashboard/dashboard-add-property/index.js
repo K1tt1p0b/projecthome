@@ -3,10 +3,12 @@
 import listingTypeOptions from "./property-description/listingTypeOptions.json";
 import propertyConditionOptions from "./property-description/propertyConditionOptions.json";
 import propertyTypeOptions from "./property-description/propertyTypeOptions.json";
+import announcerStatusOptions from "./property-description/announcerStatusOptions.json";
 
 import React, { useRef, useState, useMemo } from "react";
 import PropertyDescription from "./property-description";
 import UploadMedia from "./upload-media";
+import UploadMediaVideoStep from "./upload-media-video";
 import LocationField from "./LocationField";
 import DetailsFiled from "./details-field";
 import Checkdetailsandconfirm from "./check-details-and-confirm";
@@ -16,23 +18,27 @@ const AddPropertyTabContent = () => {
   const tabLocationRef = useRef(null);
   const tabDetailsRef = useRef(null);
   const tabMediaRef = useRef(null);
+  const tabVideoRef = useRef(null);
 
   const goBasic = () => tabBasicRef.current?.click();
   const goLocation = () => tabLocationRef.current?.click();
   const goDetails = () => tabDetailsRef.current?.click();
   const goMedia = () => tabMediaRef.current?.click();
-  const goConfirm = () => document.getElementById("nav-item5-tab")?.click();
+  const goVideo = () => tabVideoRef.current?.click();
+  const goConfirm = () => document.getElementById("nav-item6-tab")?.click();
 
   const [basicInfoForm, setBasicInfoForm] = useState(null);
   const [locationForm, setLocationForm] = useState(null);
   const [detailsForm, setDetailsForm] = useState(null);
   const [mediaForm, setMediaForm] = useState(null);
 
+  // ✅ เพิ่ม: state เก็บวิดีโอที่กรอกจาก Step 5
+  const [videoForm, setVideoForm] = useState({ urls: [] });
+
   // -----------------------------
   // helper: รองรับทั้ง object และ string (กันของเก่าค้าง)
   // -----------------------------
   const pickValue = (v) => (v && typeof v === "object" ? v.value : v);
-  const pickLabel = (v) => (v && typeof v === "object" ? v.label : v);
 
   const listingTypeValues = useMemo(() => {
     const raw = basicInfoForm?.listingTypes ?? [];
@@ -73,13 +79,29 @@ const AddPropertyTabContent = () => {
       basicInfoForm.condition_label ||
       findLabel(propertyConditionOptions, pickValue(basicInfoForm.condition));
 
+    // ✅ แปลงสถานะผู้ประกาศเป็นภาษาไทย
+    const announcerStatusValue =
+      basicInfoForm.announcerStatus ||
+      basicInfoForm.announcer_status ||
+      basicInfoForm.announcerStatus_value;
+    const announcerStatusLabel =
+      basicInfoForm.announcerStatus_label ||
+      (announcerStatusValue
+        ? findLabel(announcerStatusOptions, announcerStatusValue)
+        : null) ||
+      basicInfoForm.announcerStatusText ||
+      "-";
+
     return {
       title: basicInfoForm.title,
       description: basicInfoForm.description,
       price: basicInfoForm.price ?? basicInfoForm.price_text ?? undefined,
+      price_text: basicInfoForm.price_text, // ✅ ส่ง price_text ไปด้วย (อาจเป็น "xxxx")
+      approxPrice: basicInfoForm.approxPrice_label || basicInfoForm.approxPrice || null, // ✅ ราคาประมาณ
       listingType: listingTypeText || "-",
       propertyType: propertyTypeText || "-",
       condition: conditionText || "-",
+      announcerStatus: announcerStatusLabel, // ✅ ใช้ label ภาษาไทย
     };
   };
 
@@ -96,76 +118,25 @@ const AddPropertyTabContent = () => {
       zipCode: locationForm.zipCode,
       latitude: locationForm.latitude,
       longitude: locationForm.longitude,
+      neighborhood:
+        locationForm.neighborhood ||
+        locationForm.village ||
+        locationForm.projectName ||
+        "",
     };
   };
 
   // -----------------------------
-  // Summary: Details (คุม key ไทยเอง ระยะยาว)
-  // รองรับ propertyType value:
-  // - house-and-land
-  // - land
-  // - condo
-  // - room-rent
+  // Summary: Details
+  // ตอนนี้ให้ใช้โครงสร้างจาก DetailsFiled ตรง ๆ
+  // (ไม่ map เป็น key ภาษาไทยแล้ว เพราะฝั่ง Checkdetailsandconfirm
+  //  มี logic รองรับทั้ง key อังกฤษ/ไทย อยู่แล้ว และต้องการใช้ key ใหม่เช่น
+  //  deedNumber, titleDeedImage, landFillStatus, zoningColor, waterFee ฯลฯ)
   // -----------------------------
   const buildDetailsSummary = () => {
     if (!detailsForm) return undefined;
-
-    const add = (obj, key, value) => {
-      if (value === undefined || value === null) return obj;
-      if (typeof value === "string" && value.trim() === "") return obj;
-      obj[key] = value;
-      return obj;
-    };
-
-    const summary = {};
-
-    // common (ทุกประเภท)
-    add(summary, "หมายเหตุ(เจ้าของ/นายหน้า)", detailsForm.note || "");
-    add(summary, "amenities", detailsForm.amenities || []);
-
-    const t = propertyTypeValue;
-
-    if (t === "house-and-land") {
-      add(summary, "ห้องนอน", detailsForm.bedrooms?.label || "");
-      add(summary, "ห้องน้ำ", detailsForm.bathrooms?.label || "");
-      add(summary, "จำนวนชั้น", detailsForm.floors || "");
-      add(summary, "ที่จอดรถ", detailsForm.parking?.label || "");
-      add(summary, "พื้นที่ใช้สอย (ตร.ม.)", detailsForm.usableArea || "");
-      add(summary, "ขนาดที่ดิน (ตร.ว.)", detailsForm.landSqw || "");
-      add(summary, "เอกสารสิทธิ", detailsForm.titleDeed || "");
-      add(summary, "ถนนหน้าบ้านกว้าง (ม.)", detailsForm.roadWidth || "");
-      add(summary, "หน้ากว้างที่ดิน (ม.)", detailsForm.frontage || "");
-      add(summary, "ความลึกที่ดิน (ม.)", detailsForm.depth || "");
-      // ถ้ามีรูปโฉนดใน detailsForm และอยากโชว์ในสรุปค่อยเพิ่มทีหลังได้
-    }
-
-    if (t === "land") {
-      add(summary, "ขนาดที่ดิน (ตร.ว.)", detailsForm.landSqw || "");
-      add(summary, "เอกสารสิทธิ", detailsForm.titleDeed || "");
-      add(summary, "ถนนหน้าที่ดินกว้าง (ม.)", detailsForm.roadWidth || "");
-      add(summary, "หน้ากว้างที่ดิน (ม.)", detailsForm.frontage || "");
-      add(summary, "ความลึกที่ดิน (ม.)", detailsForm.depth || "");
-    }
-
-    if (t === "condo") {
-      add(summary, "ชื่อโครงการ", detailsForm.projectName || "");
-      add(summary, "อาคาร/ตึก", detailsForm.building || "");
-      add(summary, "ชั้น", detailsForm.unitFloor || "");
-      add(summary, "ขนาดห้อง (ตร.ม.)", detailsForm.roomArea || "");
-      add(summary, "ประเภทห้อง", detailsForm.roomType || "");
-      add(summary, "สิทธิ์ที่จอดรถ", detailsForm.condoParking || "");
-    }
-
-    if (t === "room-rent") {
-      add(summary, "ขนาดห้อง (ตร.ม.)", detailsForm.roomAreaRent || "");
-      add(summary, "ชั้นที่อยู่", detailsForm.rentFloor || "");
-      add(summary, "ห้องน้ำในตัว", detailsForm.bathroomPrivate ? "มี" : "ไม่มี");
-      add(summary, "รวมอินเทอร์เน็ต", detailsForm.internetIncluded ? "รวม" : "ไม่รวม");
-      add(summary, "ค่าไฟ (บาท/หน่วย)", detailsForm.electricRate || "");
-      add(summary, "ค่าน้ำ", detailsForm.waterRate || "");
-    }
-
-    return summary;
+    // ส่ง object เดิมจากฟอร์มไปเลย (มี key ครบตามที่ Checkdetailsandconfirm ใช้)
+    return detailsForm;
   };
 
   // -----------------------------
@@ -176,7 +147,8 @@ const AddPropertyTabContent = () => {
     return mediaForm.images || [];
   };
 
-  const basicInfoSummary = buildBasicSummary();
+  // ✅ ส่งข้อมูลดิบจาก property-description ตรงๆ ให้ PropertySummary จัดการเอง
+  const basicInfoSummary = basicInfoForm; // ส่งข้อมูลดิบแทน buildBasicSummary()
   const locationSummary = buildLocationSummary();
   const detailsSummary = buildDetailsSummary();
   const imagesSummary = buildImages();
@@ -185,7 +157,7 @@ const AddPropertyTabContent = () => {
     <>
       <nav>
         <div className="nav nav-tabs" id="nav-tab2" role="tablist">
-          {/* 1. หัวข้อทรัพย์ */}
+          {/* 1 */}
           <button
             ref={tabBasicRef}
             className="nav-link active fw600 ms-3"
@@ -200,7 +172,7 @@ const AddPropertyTabContent = () => {
             1. หัวข้อทรัพย์
           </button>
 
-          {/* 2. ที่อยู่ทรัพย์ */}
+          {/* 2 */}
           <button
             ref={tabLocationRef}
             className="nav-link fw600"
@@ -216,7 +188,7 @@ const AddPropertyTabContent = () => {
             2. ที่อยู่ทรัพย์
           </button>
 
-          {/* 3. รายละเอียดทรัพย์ (ย้ายมา Step 3) */}
+          {/* 3 */}
           <button
             ref={tabDetailsRef}
             className="nav-link fw600"
@@ -232,7 +204,7 @@ const AddPropertyTabContent = () => {
             3. รายละเอียดทรัพย์
           </button>
 
-          {/* 4. เพิ่มรูปทรัพย์ (ย้ายมา Step 4) */}
+          {/* 4 */}
           <button
             ref={tabMediaRef}
             className="nav-link fw600"
@@ -248,8 +220,9 @@ const AddPropertyTabContent = () => {
             4. เพิ่มรูปทรัพย์
           </button>
 
-          {/* 5. ยืนยัน */}
+          {/* 5 */}
           <button
+            ref={tabVideoRef}
             className="nav-link fw600"
             id="nav-item5-tab"
             data-bs-toggle="tab"
@@ -260,25 +233,34 @@ const AddPropertyTabContent = () => {
             aria-selected="false"
             disabled={!mediaForm}
           >
-            5. ยืนยัน
+            5. วิดีโอทรัพย์สิน
+          </button>
+
+          {/* 6 */}
+          <button
+            className="nav-link fw600"
+            id="nav-item6-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#nav-item6"
+            type="button"
+            role="tab"
+            aria-controls="nav-item6"
+            aria-selected="false"
+            disabled={!mediaForm}
+          >
+            6. ยืนยัน
           </button>
         </div>
       </nav>
 
       <div className="tab-content" id="nav-tabContent">
-        {/* 1. หัวข้อทรัพย์ */}
-        <div
-          className="tab-pane fade show active"
-          id="nav-item1"
-          role="tabpanel"
-          aria-labelledby="nav-item1-tab"
-        >
+        {/* 1 */}
+        <div className="tab-pane fade show active" id="nav-item1" role="tabpanel">
           <div className="ps-widget bgc-white bdrs12 p30 overflow-hidden position-relative">
             <h4 className="title fz17 mb30">หัวข้อทรัพย์</h4>
 
             <PropertyDescription
               onNext={(data) => {
-                // ถ้า propertyType เปลี่ยน -> ล้าง detailsForm กันข้อมูลค้าง
                 const prevType = pickValue(basicInfoForm?.propertyType);
                 const nextType = pickValue(data?.propertyType);
                 if (prevType && nextType && prevType !== nextType) {
@@ -287,21 +269,13 @@ const AddPropertyTabContent = () => {
                 setBasicInfoForm(data);
                 goLocation();
               }}
-              onSaveDraft={(data) => {
-                setBasicInfoForm(data);
-                console.log("draft basic:", data);
-              }}
+              onSaveDraft={(data) => setBasicInfoForm(data)}
             />
           </div>
         </div>
 
-        {/* 2. ที่อยู่ทรัพย์ */}
-        <div
-          className="tab-pane fade"
-          id="nav-item2"
-          role="tabpanel"
-          aria-labelledby="nav-item2-tab"
-        >
+        {/* 2 */}
+        <div className="tab-pane fade" id="nav-item2" role="tabpanel">
           <div className="ps-widget bgc-white bdrs12 p30 overflow-hidden position-relative">
             <h4 className="title fz17 mb30">ที่อยู่ทรัพย์</h4>
 
@@ -311,23 +285,15 @@ const AddPropertyTabContent = () => {
               onBack={goBasic}
               onNext={(data) => {
                 setLocationForm(data);
-                goDetails(); // ไป Step 3
+                goDetails();
               }}
-              onSaveDraft={(data) => {
-                setLocationForm(data);
-                console.log("draft location:", data);
-              }}
+              onSaveDraft={(data) => setLocationForm(data)}
             />
           </div>
         </div>
 
-        {/* 3. รายละเอียดทรัพย์ */}
-        <div
-          className="tab-pane fade"
-          id="nav-item3"
-          role="tabpanel"
-          aria-labelledby="nav-item3-tab"
-        >
+        {/* 3 */}
+        <div className="tab-pane fade" id="nav-item3" role="tabpanel">
           <div className="ps-widget bgc-white bdrs12 p30 overflow-hidden position-relative">
             <h4 className="title fz17 mb30">รายละเอียดทรัพย์</h4>
 
@@ -338,43 +304,51 @@ const AddPropertyTabContent = () => {
               onBack={goLocation}
               onNext={(data) => {
                 setDetailsForm(data);
-                goMedia(); // ไป Step 4
+                goMedia();
               }}
-              onSaveDraft={(data) => {
-                setDetailsForm(data);
-                console.log("draft details:", data);
-              }}
+              onSaveDraft={(data) => setDetailsForm(data)}
             />
           </div>
         </div>
 
-        {/* 4. เพิ่มรูปทรัพย์ */}
-        <div
-          className="tab-pane fade"
-          id="nav-item4"
-          role="tabpanel"
-          aria-labelledby="nav-item4-tab"
-        >
+        {/* 4 */}
+        <div className="tab-pane fade" id="nav-item4" role="tabpanel">
           <UploadMedia
             onBack={goDetails}
             onNext={(data) => {
               setMediaForm(data);
-              goConfirm(); // ไป Step 5
+              goVideo();
+            }}
+            onSaveDraft={(data) => setMediaForm(data)}
+          />
+        </div>
+
+        {/* 5 */}
+        <div className="tab-pane fade" id="nav-item5" role="tabpanel">
+          <UploadMediaVideoStep
+            // ✅ ส่งค่าที่ผู้ใช้เคยกรอกไว้กลับเข้าหน้านี้ด้วย (กันหาย)
+            initialValue={{
+              ...(basicInfoForm || {}),
+              ...(locationForm || {}),
+              ...(detailsForm || {}),
+              ...(mediaForm || {}),
+              videoUrls: videoForm?.urls || [],
+            }}
+            onBack={goMedia}
+            onNext={(data) => {
+              // data = { urls: [...] }
+              setVideoForm(data);
+              goConfirm();
             }}
             onSaveDraft={(data) => {
-              setMediaForm(data);
-              console.log("draft media:", data);
+              // data = { urls: [...] } (ถ้าคุณใช้)
+              if (data?.urls) setVideoForm(data);
             }}
           />
         </div>
 
-        {/* 5. ยืนยัน */}
-        <div
-          className="tab-pane fade"
-          id="nav-item5"
-          role="tabpanel"
-          aria-labelledby="nav-item5-tab"
-        >
+        {/* 6 */}
+        <div className="tab-pane fade" id="nav-item6" role="tabpanel">
           <div className="ps-widget bgc-white bdrs12 p30 overflow-hidden position-relative">
             <h3 className="ff-heading fw600 mb10">ตรวจสอบและยืนยัน</h3>
 
@@ -384,17 +358,21 @@ const AddPropertyTabContent = () => {
                 location={locationSummary}
                 images={imagesSummary}
                 details={detailsSummary}
+
+                // ✅ ส่งวิดีโอจาก state (ไม่อ่าน localStorage)
+                videos={videoForm?.urls || []}
+
                 onEditBasic={goBasic}
                 onEditLocation={goLocation}
-                onEditImages={goMedia}     // รูปภาพอยู่ Step 4
-                onEditDetails={goDetails}  // รายละเอียดอยู่ Step 3
+                onEditImages={goMedia}
+                onEditDetails={goDetails}
+                onEditVideo={goVideo} // ✅ เพิ่มปุ่มแก้ไขวิดีโอ
+
                 onSaveDraft={(payload) => {
                   console.log("draft confirm:", payload);
-                  // TODO: call API save draft
                 }}
                 onSubmit={(payload) => {
                   console.log("submit final:", payload);
-                  // TODO: call API submit final
                 }}
               />
             </div>

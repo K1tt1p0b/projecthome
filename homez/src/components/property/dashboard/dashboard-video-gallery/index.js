@@ -14,23 +14,8 @@ const DEFAULT_SORT = "desc";
 // ✅ key เดียวกับหน้า my-properties popup
 const VIDEO_STORE_KEY = "landx_property_videos_v1";
 
-/**
- * ✅ shape ใน localStorage (NO category)
- * {
- *   [propertyId: string]: Array<{
- *     id: string,
- *     url: string,
- *     provider: "youtube"|"tiktok",
- *     createdAt: string,
- *     preview?: { title, authorName, thumbnailUrl, providerName, embedUrl? }
- *   }>
- * }
- *
- * 🔒 Enforced:
- * - 1 propertyId => max 1 video
- * - 1 url => unique globally
- * - MUST bind to a property (no "0")
- */
+// ✅ 1 ประกาศได้สูงสุด 4 วิดีโอ
+const MAX_VIDEOS_PER_PROPERTY = 4;
 
 function safeParse(json) {
   try {
@@ -229,17 +214,15 @@ export default function DashboardVideoGalleryContent() {
   const [bulkLoading, setBulkLoading] = useState(false);
 
   const [showAdd, setShowAdd] = useState(false);
-  const [newUrl, setNewUrl] = useState("");
+
+  // ✅ 4 ช่อง input
+  const [videoUrls, setVideoUrls] = useState(["", "", "", ""]);
 
   // ✅ property filter: "ALL" | "<id>"
   const [propertyFilter, setPropertyFilter] = useState("ALL");
 
   // ✅ Add modal: selected propertyId (MUST be real property id)
   const [addPropertyId, setAddPropertyId] = useState("");
-
-  // ✅ Edit binding
-  const [bindingEditId, setBindingEditId] = useState(null);
-  const [bindingNextPid, setBindingNextPid] = useState("");
 
   // popup player
   const [playerOpen, setPlayerOpen] = useState(false);
@@ -255,17 +238,27 @@ export default function DashboardVideoGalleryContent() {
 
   const normalizeUrl = (u) => (u || "").trim();
 
-  // ✅ set ของ propertyId ที่มี video แล้ว (ใช้คัด dropdown)
-  const usedPropertyIds = useMemo(() => {
-    const s = new Set();
-    items.forEach((x) => s.add(String(x.propertyId)));
-    return s;
+  // ✅ count วิดีโอต่อประกาศ
+  const propertyVideoCount = useMemo(() => {
+    const m = new Map();
+    items.forEach((x) => {
+      const pid = String(x.propertyId);
+      m.set(pid, (m.get(pid) || 0) + 1);
+    });
+    return m;
   }, [items]);
 
-  // ✅ list ของ property ที่ "ยังว่าง" (ยังไม่มี video)
-  const availableProperties = useMemo(() => {
-    return (propertyData || []).filter((p) => !usedPropertyIds.has(String(p.id)));
-  }, [usedPropertyIds]);
+  // ✅ คำนวณ slot ที่เหลือ
+  const remainingSlots = (pid) => {
+    const p = String(pid || "");
+    const cnt = propertyVideoCount.get(p) || 0;
+    return Math.max(0, MAX_VIDEOS_PER_PROPERTY - cnt);
+  };
+
+  const urlExistsGlobally = (url, ignoreId = null) => {
+    const target = normalizeUrl(url);
+    return items.some((x) => x.id !== ignoreId && normalizeUrl(x.videoUrl) === target);
+  };
 
   // ✅ auto set propertyFilter from query ?propertyId=
   useEffect(() => {
@@ -298,6 +291,20 @@ export default function DashboardVideoGalleryContent() {
     if (!hydrated) return;
     writeItemsToStore(items);
   }, [hydrated, items]);
+
+  // ✅ ถ้าเลือกประกาศแล้ว slot น้อยลง → ล้างค่าช่องที่เกิน (กันกรอกเกินแบบเนียนๆ)
+  useEffect(() => {
+    if (!showAdd) return;
+    const slots = remainingSlots(addPropertyId);
+    setVideoUrls((prev) => {
+      const next = [...prev];
+      for (let i = slots; i < 4; i++) {
+        if (next[i]) next[i] = "";
+      }
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addPropertyId, propertyVideoCount, showAdd]);
 
   const closePlayer = () => {
     setPlayerOpen(false);
@@ -339,17 +346,6 @@ export default function DashboardVideoGalleryContent() {
       pageItems.forEach((x) => next.add(x.id));
       return next;
     });
-  };
-
-  // ✅ Constraint helpers
-  const hasVideoInProperty = (pid, ignoreId = null) => {
-    const p = String(pid);
-    return items.some((x) => x.id !== ignoreId && String(x.propertyId) === p);
-  };
-
-  const urlExistsGlobally = (url, ignoreId = null) => {
-    const target = normalizeUrl(url);
-    return items.some((x) => x.id !== ignoreId && normalizeUrl(x.videoUrl) === target);
   };
 
   // ===== Data: filter + sort =====
@@ -436,7 +432,6 @@ export default function DashboardVideoGalleryContent() {
     setSelectMode((p) => {
       const next = !p;
       if (!next) clearSelection();
-      if (next) setBindingEditId(null);
       return next;
     });
   };
@@ -448,7 +443,6 @@ export default function DashboardVideoGalleryContent() {
 
     clearSelection();
     setSelectMode(false);
-    setBindingEditId(null);
 
     toast.info("ล้างตัวกรองแล้ว");
   };
@@ -457,26 +451,21 @@ export default function DashboardVideoGalleryContent() {
 
   // ✅ Open Add modal
   const openAdd = () => {
-    setNewUrl("");
+    setVideoUrls(["", "", "", ""]);
 
-    if (availableProperties.length === 0) {
-      toast.info("ทุกประกาศมีวิดีโอแล้ว (จำกัด 1 โพส ต่อ 1 วิดีโอ)");
-      return;
-    }
-
-    // ถ้ากำลัง filter อยู่ และโพสนั้นยังว่าง ให้ default เป็นโพสนั้น
     const pid = String(propertyFilter);
-    const canUseFiltered =
-      propertyFilter !== "ALL" && availableProperties.some((p) => String(p.id) === pid);
+    const canUseFiltered = propertyFilter !== "ALL";
 
-    setAddPropertyId(canUseFiltered ? pid : String(availableProperties[0].id));
+    const fallbackPid = String(propertyData?.[0]?.id || "");
+    setAddPropertyId(canUseFiltered ? pid : fallbackPid);
+
     setShowAdd(true);
   };
 
   const closeAdd = () => {
     if (adding) return;
     setShowAdd(false);
-    setNewUrl("");
+    setVideoUrls(["", "", "", ""]);
   };
 
   /** เปิด popup player */
@@ -503,117 +492,96 @@ export default function DashboardVideoGalleryContent() {
     }
   };
 
-  /** ✅ เปิดกล่องเปลี่ยนประกาศที่ผูก */
-  const openBindingEditor = (item) => {
-    if (!item?.id) return;
-
-    // dropdown ในการแก้ไข:
-    // - ให้มี "โพสเดิม" เสมอ
-    // - และ "โพสที่ยังว่าง" เท่านั้น
-    const currentPid = String(item.propertyId);
-
-    setBindingEditId(item.id);
-    setBindingNextPid(currentPid);
+  const updateVideoUrl = (idx, value) => {
+    setVideoUrls((prev) => {
+      const next = [...prev];
+      next[idx] = value;
+      return next;
+    });
   };
 
-  /** ✅ บันทึกการเปลี่ยนการผูก (บังคับ 1:1) */
-  const applyBindingChange = async (item) => {
-    const nextPid = String(bindingNextPid);
-    const currentPid = String(item.propertyId);
-
-    if (!nextPid) return toast.info("กรุณาเลือกประกาศ");
-    if (nextPid === currentPid) {
-      setBindingEditId(null);
-      return;
-    }
-
-    // 🔒 บังคับ: โพสปลายทางต้องว่าง
-    if (hasVideoInProperty(nextPid, item.id)) {
-      toast.error("โพสนี้มีวิดีโอแล้ว (เพิ่มได้แค่อันเดียว)");
-      return;
-    }
-
-    // 🔒 บังคับ: URL ต้อง unique
-    if (urlExistsGlobally(item.videoUrl, item.id)) {
-      toast.error("ลิงก์นี้ถูกผูกกับโพสอื่นอยู่แล้ว");
-      return;
-    }
-
-    try {
-      await wait(150);
-      setItems((prev) => prev.map((x) => (x.id === item.id ? { ...x, propertyId: nextPid } : x)));
-      toast.success("เปลี่ยนการผูกประกาศแล้ว");
-      setBindingEditId(null);
-    } catch {
-      toast.error("เปลี่ยนการผูกไม่สำเร็จ");
-    }
-  };
-
-  /** ✅ เพิ่มวิดีโอ + บังคับ 1:1 */
-  const addVideo = async () => {
-    const rawUrl = normalizeUrl(newUrl);
-    if (!rawUrl) return toast.info("กรุณาวางลิงก์วิดีโอ");
+  /** ✅ เพิ่มวิดีโอหลายลิงก์ทีเดียว (1-4) */
+  const addVideos = async () => {
     if (!addPropertyId) return toast.info("กรุณาเลือกประกาศ");
 
-    if (!isYouTubeUrl(rawUrl) && !isTikTokUrl(rawUrl)) {
+    const pid = String(addPropertyId);
+    const slots = remainingSlots(pid);
+
+    if (slots <= 0) {
+      return toast.error(`ประกาศนี้มีวิดีโอครบ ${MAX_VIDEOS_PER_PROPERTY} แล้ว`);
+    }
+
+    // normalize + เอาแต่ช่องที่ไม่ว่าง (เฉพาะช่องที่ไม่ถูก disable)
+    const rawList = (videoUrls || [])
+      .slice(0, slots)
+      .map((x) => normalizeUrl(x))
+      .filter(Boolean);
+
+    if (rawList.length === 0) return toast.info("กรุณาวางลิงก์อย่างน้อย 1 ลิงก์");
+
+    // ห้ามลิงก์ซ้ำภายใน modal
+    const localDup = rawList.find((u, i) => rawList.indexOf(u) !== i);
+    if (localDup) {
+      return toast.error("มีลิงก์ซ้ำกันในช่องที่กรอก");
+    }
+
+    // validate provider
+    const invalidProvider = rawList.find((u) => !isYouTubeUrl(u) && !isTikTokUrl(u));
+    if (invalidProvider) {
       return toast.error("รองรับเฉพาะ YouTube / TikTok ตอนนี้");
     }
 
-    const pid = String(addPropertyId);
-
-    // 🔒 บังคับ: โพสนี้ต้องว่าง
-    if (hasVideoInProperty(pid)) {
-      return toast.error("โพสนี้มีวิดีโอแล้ว (เพิ่มได้แค่อันเดียว)");
-    }
-
-    // 🔒 บังคับ: URL ต้อง unique
-    if (urlExistsGlobally(rawUrl)) {
-      return toast.error("ลิงก์นี้ถูกผูกกับโพสอื่นอยู่แล้ว");
+    // unique global
+    const existed = rawList.find((u) => urlExistsGlobally(u));
+    if (existed) {
+      return toast.error("มีลิงก์อย่างน้อย 1 อันถูกผูกกับโพสอื่นอยู่แล้ว");
     }
 
     try {
       setAdding(true);
 
-      const type = detectProvider(rawUrl);
-      let preview = null;
+      const prepared = [];
+      for (const url of rawList) {
+        const type = detectProvider(url);
+        let preview = null;
 
-      if (type === "youtube") {
-        preview =
-          (await fetchYouTubeOembed(rawUrl)) || {
-            title: "YouTube Video",
-            authorName: "",
-            thumbnailUrl: youtubeThumb(rawUrl),
-            providerName: "YouTube",
-          };
-      } else {
-        preview =
-          (await fetchTikTokOembed(rawUrl)) || {
-            title: "TikTok Video",
-            authorName: "",
-            thumbnailUrl: "",
-            providerName: "TikTok",
-            embedUrl: "",
-          };
+        if (type === "youtube") {
+          preview =
+            (await fetchYouTubeOembed(url)) || {
+              title: "YouTube Video",
+              authorName: "",
+              thumbnailUrl: youtubeThumb(url),
+              providerName: "YouTube",
+            };
+        } else {
+          preview =
+            (await fetchTikTokOembed(url)) || {
+              title: "TikTok Video",
+              authorName: "",
+              thumbnailUrl: "",
+              providerName: "TikTok",
+              embedUrl: "",
+            };
+        }
+
+        prepared.push({
+          id: `vid_${uid()}`,
+          type,
+          propertyId: pid,
+          videoUrl: url,
+          createdAt: new Date(),
+          preview,
+        });
       }
 
       await wait(120);
 
-      setItems((prev) => [
-        {
-          id: `vid_${uid()}`,
-          type,
-          propertyId: pid,
-          videoUrl: rawUrl,
-          createdAt: new Date(),
-          preview,
-        },
-        ...prev,
-      ]);
+      setItems((prev) => [...prepared, ...prev]);
 
-      toast.success("เพิ่มวิดีโอเรียบร้อย");
+      toast.success(`เพิ่มวิดีโอแล้ว ${prepared.length} รายการ`);
       setPage(1);
       setShowAdd(false);
-      setNewUrl("");
+      setVideoUrls(["", "", "", ""]);
     } catch (e) {
       console.log(e);
       toast.error("เพิ่มวิดีโอไม่สำเร็จ");
@@ -622,23 +590,8 @@ export default function DashboardVideoGalleryContent() {
     }
   };
 
-  // ✅ options สำหรับ dropdown แก้ไขการผูก (available + current)
-  const bindingOptions = useMemo(() => {
-    const item = items.find((x) => x.id === bindingEditId);
-    const currentPid = item ? String(item.propertyId) : "";
-
-    const list = [];
-    const currentProperty = (propertyData || []).find((p) => String(p.id) === currentPid);
-    if (currentProperty) list.push(currentProperty);
-
-    (propertyData || []).forEach((p) => {
-      const pid = String(p.id);
-      if (pid === currentPid) return;
-      if (!usedPropertyIds.has(pid)) list.push(p);
-    });
-
-    return list;
-  }, [bindingEditId, items, usedPropertyIds]);
+  // ===== UI =====
+  const addSlots = remainingSlots(addPropertyId);
 
   return (
     <div className="px-3 pb-4">
@@ -674,7 +627,6 @@ export default function DashboardVideoGalleryContent() {
 
       {/* toolbar */}
       <div className="d-flex flex-wrap gap-2 mb-3 align-items-center">
-        {/* ✅ Filter by propertyId */}
         <select
           className="form-select form-select-sm"
           style={{ maxWidth: 360 }}
@@ -683,7 +635,6 @@ export default function DashboardVideoGalleryContent() {
             setPropertyFilter(e.target.value);
             setPage(1);
             clearSelection();
-            setBindingEditId(null);
           }}
           disabled={bulkLoading || adding}
           title="กรองตามประกาศ"
@@ -705,7 +656,6 @@ export default function DashboardVideoGalleryContent() {
             setSortOrder(e.target.value);
             setPage(1);
             clearSelection();
-            setBindingEditId(null);
           }}
           disabled={bulkLoading || adding}
         >
@@ -714,7 +664,12 @@ export default function DashboardVideoGalleryContent() {
         </select>
 
         {isFiltered && (
-          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={clearFilter} disabled={bulkLoading || adding}>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            onClick={clearFilter}
+            disabled={bulkLoading || adding}
+          >
             ล้างตัวกรอง
           </button>
         )}
@@ -745,7 +700,9 @@ export default function DashboardVideoGalleryContent() {
         <div className="text-center py-5">
           <div className="fz16 fw600 mb-2">ยังไม่มีวิดีโอ</div>
           <div className="text-muted fz14">กด “เพิ่มวิดีโอ” เพื่อเริ่มต้น</div>
-          <div className="text-muted fz13 mt-2">* จำกัด 1 วิดีโอ ต่อ 1 ประกาศ</div>
+          <div className="text-muted fz13 mt-2">
+            * จำกัด {MAX_VIDEOS_PER_PROPERTY} วิดีโอ ต่อ 1 ประกาศ
+          </div>
         </div>
       ) : (
         <div
@@ -878,69 +835,12 @@ export default function DashboardVideoGalleryContent() {
                   <div className="position-absolute d-flex gap-2" style={{ right: 8, top: 8 }}>
                     <button
                       type="button"
-                      className="btn btn-light btn-sm"
-                      style={{ borderRadius: 10 }}
-                      onClick={() => openBindingEditor(v)}
-                    >
-                      เปลี่ยนประกาศ
-                    </button>
-
-                    <button
-                      type="button"
                       className="btn btn-danger btn-sm"
                       style={{ borderRadius: 10 }}
                       onClick={() => deleteSingle(v.id)}
                     >
                       ลบ
                     </button>
-                  </div>
-                )}
-
-                {/* ✅ Inline popup เปลี่ยนประกาศที่ผูก */}
-                {!selectMode && bindingEditId === v.id && (
-                  <div
-                    className="position-absolute"
-                    style={{
-                      left: 8,
-                      right: 8,
-                      bottom: 8,
-                      background: "#fff",
-                      borderRadius: 12,
-                      padding: 10,
-                      boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
-                      border: "1px solid rgba(0,0,0,0.08)",
-                      zIndex: 5,
-                    }}
-                  >
-                    <div className="d-flex align-items-center justify-content-between mb-2">
-                      <div className="fw600 fz14">ผูกกับประกาศ</div>
-                      <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setBindingEditId(null)}>
-                        ปิด
-                      </button>
-                    </div>
-
-                    <div className="text-muted fz12 mb-2">* เลือกได้เฉพาะประกาศที่ยังไม่มีวิดีโอ</div>
-
-                    <select
-                      className="form-select form-select-sm mb-2"
-                      value={bindingNextPid}
-                      onChange={(e) => setBindingNextPid(e.target.value)}
-                    >
-                      {bindingOptions.map((p) => (
-                        <option key={p.id} value={String(p.id)}>
-                          {p.title} (#{p.id}){usedPropertyIds.has(String(p.id)) && String(p.id) === String(v.propertyId) ? " • (เดิม)" : ""}
-                        </option>
-                      ))}
-                    </select>
-
-                    <div className="d-flex justify-content-end gap-2">
-                      <button type="button" className="btn btn-sm btn-outline-dark" onClick={() => setBindingEditId(null)}>
-                        ยกเลิก
-                      </button>
-                      <button type="button" className="btn btn-sm btn-dark" onClick={() => applyBindingChange(v)}>
-                        บันทึก
-                      </button>
-                    </div>
                   </div>
                 )}
               </div>
@@ -987,7 +887,7 @@ export default function DashboardVideoGalleryContent() {
         </div>
       )}
 
-      {/* Add modal */}
+      {/* Add modal (4 ช่อง + disable ตาม slot) */}
       {showAdd && (
         <div
           className="position-fixed top-0 start-0 w-100 h-100"
@@ -997,8 +897,8 @@ export default function DashboardVideoGalleryContent() {
           <div
             className="bg-white bdrs12 default-box-shadow2 p-3"
             style={{
-              width: "min(560px, 92vw)",
-              margin: "12vh auto 0",
+              width: "min(640px, 92vw)",
+              margin: "10vh auto 0",
               position: "relative",
             }}
             onMouseDown={(e) => e.stopPropagation()}
@@ -1010,8 +910,8 @@ export default function DashboardVideoGalleryContent() {
               </button>
             </div>
 
-            <div className="text-muted fz13 mb-2">
-              รองรับลิงก์ YouTube / TikTok • เลือกได้เฉพาะประกาศที่ยังไม่มีวิดีโอ
+            <div className="text-muted fz13 mb-3">
+              รองรับลิงก์ YouTube / TikTok • จำกัด {MAX_VIDEOS_PER_PROPERTY} วิดีโอ ต่อ 1 ประกาศ
             </div>
 
             <label className="fz13 fw600 mb-1">เลือกประกาศ</label>
@@ -1021,27 +921,48 @@ export default function DashboardVideoGalleryContent() {
               onChange={(e) => setAddPropertyId(e.target.value)}
               disabled={adding}
             >
-              {availableProperties.map((p) => (
-                <option key={p.id} value={String(p.id)}>
-                  {p.title} (#{p.id})
-                </option>
-              ))}
+              {(propertyData || []).map((p) => {
+                const pid = String(p.id);
+                const cnt = propertyVideoCount.get(pid) || 0;
+                const full = cnt >= MAX_VIDEOS_PER_PROPERTY;
+                return (
+                  <option key={p.id} value={pid} disabled={full}>
+                    {p.title} (#{p.id}) • ({cnt}/{MAX_VIDEOS_PER_PROPERTY}){full ? " • เต็มแล้ว" : ""}
+                  </option>
+                );
+              })}
             </select>
 
-            <label className="fz13 fw600 mb-1">ลิงก์วิดีโอ</label>
-            <input
-              className="form-control"
-              placeholder="วางลิงก์ YouTube/TikTok"
-              value={newUrl}
-              onChange={(e) => setNewUrl(e.target.value)}
-              disabled={adding}
-            />
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <div className="fz13 fw600">ลิงก์วิดีโอ (ใส่ได้ 1–4 ลิงก์)</div>
+              <div className="text-muted fz12">เหลืออีก {addSlots} ช่องในประกาศนี้</div>
+            </div>
+
+            <div className="d-grid" style={{ gap: 10 }}>
+              {[0, 1, 2, 3].map((i) => {
+                const disabledBySlot = i >= addSlots; // ✅ นี่แหละที่ขอ
+                return (
+                  <input
+                    key={i}
+                    className="form-control"
+                    placeholder={
+                      disabledBySlot
+                        ? `ช่อง #${i + 1} (เต็มแล้ว)`
+                        : `ลิงก์วิดีโอ #${i + 1} (YouTube/TikTok)`
+                    }
+                    value={videoUrls[i]}
+                    onChange={(e) => updateVideoUrl(i, e.target.value)}
+                    disabled={adding || disabledBySlot}
+                  />
+                );
+              })}
+            </div>
 
             <div className="d-flex justify-content-end gap-2 mt-3">
               <button className="btn btn-outline-dark" onClick={closeAdd} disabled={adding}>
                 ยกเลิก
               </button>
-              <button className="ud-btn btn-thm" onClick={addVideo} disabled={adding}>
+              <button className="ud-btn btn-thm" onClick={addVideos} disabled={adding || addSlots === 0}>
                 {adding ? "กำลังเพิ่ม..." : "เพิ่มวิดีโอ"}
               </button>
             </div>

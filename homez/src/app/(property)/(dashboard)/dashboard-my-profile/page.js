@@ -6,7 +6,6 @@ import SidebarDashboard from "@/components/property/dashboard/SidebarDashboard";
 import ChangePasswordForm from "@/components/property/dashboard/dashboard-profile/ChangePasswordForm";
 import PersonalInfo from "@/components/property/dashboard/dashboard-profile/PersonalInfo";
 import ProfileBox from "@/components/property/dashboard/dashboard-profile/ProfileBox";
-import SocialField from "@/components/property/dashboard/dashboard-profile/SocialField";
 import KycBox from "@/components/property/dashboard/dashboard-profile/KycBox";
 
 export const metadata = {
@@ -58,10 +57,6 @@ const DashboardMyProfile = () => {
                     <KycBox />
                   </div>
 
-                  <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                    <h4 className="title fz17 mb30">Social Media</h4>
-                    <SocialField />
-                  </div>
 
                   <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
                     <h4 className="title fz17 mb30">Change password</h4>
