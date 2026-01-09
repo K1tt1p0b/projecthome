@@ -1,0 +1,46 @@
+"use client";
+
+import React from "react";
+import DashboardHeader from "@/components/common/DashboardHeader";
+import MobileMenu from "@/components/common/mobile-menu";
+import SidebarDashboard from "@/components/property/dashboard/SidebarDashboard";
+import Footer from "@/components/property/dashboard/Footer";
+
+import BoostPropertyContent from "@/components/property/dashboard/dashboard-boost-property";
+
+const BoostPropertyPage = () => {
+  return (
+    <>
+      <DashboardHeader />
+      <MobileMenu />
+
+      <div className="dashboard_content_wrapper">
+        <div className="dashboard dashboard_wrapper pr30 pr0-md">
+          <SidebarDashboard />
+
+          <div className="dashboard__main pl0-md">
+            <div className="dashboard__content bg-light pt30 pb30">
+              {/* Header Title */}
+              <div className="row align-items-center pb40">
+                <div className="col-lg-12">
+                  <div className="dashboard_title_area">
+                    <h2 className="fw700">ดันประกาศ</h2>
+                    <p className="text-muted">
+                      เลือกประกาศเพื่อดันแบบแมนนวล หรือสร้างแคมเปญดันแบบออโต้
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <BoostPropertyContent />
+            </div>
+
+            <Footer />
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default BoostPropertyPage;

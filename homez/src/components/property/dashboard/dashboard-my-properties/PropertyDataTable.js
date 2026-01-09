@@ -21,7 +21,10 @@ const getStatusStyle = (status) => {
   }
 };
 
-const BOOST_URL = (id) => `/dashboard-boost-property/${id}`;
+// ✅ รองรับส่ง mode ไปเปิดแท็บให้ตรงในหน้า boost
+const BOOST_URL = (id, mode) =>
+  `/dashboard-boost-property?propertyId=${id}${mode ? `&mode=${mode}` : ""}`;
+
 const VIDEO_URL = (id) => `/dashboard-video-gallery?propertyId=${id}`;
 
 // ===== LocalStorage Video Store =====
@@ -185,11 +188,15 @@ const PropertyDataTable = () => {
   // { [propertyId]: { hasVideo: boolean, count: number } }
   const [videoSummary, setVideoSummary] = useState({});
 
-  // ===== modal states =====
+  // ===== modal states (video) =====
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [videoModalProperty, setVideoModalProperty] = useState(null);
   const [videoInputs, setVideoInputs] = useState(Array(MAX_SLOTS).fill(""));
   const [videoSaving, setVideoSaving] = useState(false);
+
+  // ===== modal states (boost picker) ✅ NEW =====
+  const [boostModalOpen, setBoostModalOpen] = useState(false);
+  const [boostModalProperty, setBoostModalProperty] = useState(null);
 
   const hasData = useMemo(() => properties?.length > 0, [properties]);
 
@@ -282,12 +289,29 @@ const PropertyDataTable = () => {
     }
   };
 
-  const handleBoost = async (id) => {
+  // ✅ เปิด modal ให้เลือกว่าจะดันแบบไหน
+  const openBoostPicker = (property) => {
+    if (!property?.id) return;
+    if (deletingId === property.id) return;
+    setBoostModalProperty(property);
+    setBoostModalOpen(true);
+  };
+
+  const closeBoostPicker = () => {
+    if (boostingId) return;
+    setBoostModalOpen(false);
+    setBoostModalProperty(null);
+  };
+
+  const goBoost = async (mode) => {
+    const id = boostModalProperty?.id;
+    if (!id) return;
+
     try {
-      if (deletingId === id) return;
       setBoostingId(id);
       await new Promise((r) => setTimeout(r, 200));
-      router.push(BOOST_URL(id));
+      closeBoostPicker();
+      router.push(BOOST_URL(id, mode));
     } catch (e) {
       console.error(e);
       toast.error("ไปหน้าดันประกาศไม่สำเร็จ");
@@ -390,7 +414,7 @@ const PropertyDataTable = () => {
 
   return (
     <>
-      {/* ===== Modal Popup ===== */}
+      {/* ===== Modal Popup (Video) ===== */}
       {videoModalOpen && (
         <div
           role="dialog"
@@ -508,6 +532,108 @@ const PropertyDataTable = () => {
         </div>
       )}
 
+      {/* ===== Modal Popup (Boost Picker) ✅ NEW ===== */}
+      {boostModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="เลือกประเภทการดัน"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeBoostPicker();
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+        >
+          <div
+            style={{
+              width: "min(520px, 100%)",
+              background: "#fff",
+              borderRadius: 14,
+              boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
+              overflow: "hidden",
+            }}
+          >
+            <div className="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
+              <div>
+                <div className="h6 mb-0">เลือกประเภทการดันประกาศ</div>
+                <div style={{ fontSize: 13, opacity: 0.8 }}>
+                  ประกาศ: <b>{boostModalProperty?.title}</b>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-light"
+                onClick={closeBoostPicker}
+                disabled={!!boostingId}
+                aria-label="close"
+              >
+                <span className="fas fa-times" />
+              </button>
+            </div>
+
+            <div className="px-4 py-4">
+              <div className="mb-3" style={{ fontSize: 13, opacity: 0.85 }}>
+                ต้องการดันแบบไหน?
+              </div>
+
+              <div className="d-flex flex-column gap-2">
+                <button
+                  type="button"
+                  className="ud-btn btn-thme"
+                  style={{ height: 48, borderRadius: 12, width: "100%" }}
+                  onClick={() => goBoost("manual")}
+                  disabled={!!boostingId}
+                >
+                  {boostingId === boostModalProperty?.id ? (
+                    <>
+                      <span className="fas fa-spinner fa-spin me-2" />
+                      กำลังไปหน้าแมนนวล...
+                    </>
+                  ) : (
+                    <>
+                      <span className="fas fa-bolt me-2" />
+                      ดันแบบแมนนวล
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  className="ud-btn btn-white2"
+                  style={{ height: 48, borderRadius: 12, width: "100%" }}
+                  onClick={() => goBoost("auto")}
+                  disabled={!!boostingId}
+                >
+                  <span className="fas fa-robot me-2" />
+                  ดันแบบออโต้
+                </button>
+              </div>
+
+              <div className="d-flex justify-content-end mt-3">
+                <button
+                  type="button"
+                  className="ud-btn btn-white2"
+                  style={{ height: 44, padding: "0 18px", borderRadius: 12 }}
+                  onClick={closeBoostPicker}
+                  disabled={!!boostingId}
+                >
+                  ยกเลิก
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <table className="table-style3 table at-savesearch">
         <thead className="t-head">
           <tr>
@@ -544,13 +670,7 @@ const PropertyDataTable = () => {
                   <th scope="row">
                     <div className="listing-style1 dashboard-style d-xxl-flex align-items-center mb-0">
                       <div className="list-thumb">
-                        <Image
-                          width={110}
-                          height={94}
-                          className="w-100"
-                          src={property.imageSrc}
-                          alt="property"
-                        />
+                        <Image width={110} height={94} className="w-100" src={property.imageSrc} alt="property" />
                       </div>
 
                       <div className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4">
@@ -582,11 +702,7 @@ const PropertyDataTable = () => {
                                 <span style={{ fontSize: 12, opacity: 0.85 }}>{count}</span>
                               </button>
 
-                              <ReactTooltip
-                                id={`video-${property.id}`}
-                                place="top"
-                                content={`วิดีโอ (${count})`}
-                              />
+                              <ReactTooltip id={`video-${property.id}`} place="top" content={`วิดีโอ (${count})`} />
                             </>
                           )}
                         </div>
@@ -600,9 +716,7 @@ const PropertyDataTable = () => {
                     </div>
                   </th>
 
-                  <td className="vam">
-                    {property.priceText || property.price?.toLocaleString?.() || "-"}
-                  </td>
+                  <td className="vam">{property.priceText || property.price?.toLocaleString?.() || "-"}</td>
 
                   <td className="vam">
                     <span className={getStatusStyle(property.status)}>{property.status}</span>
@@ -654,7 +768,7 @@ const PropertyDataTable = () => {
                               type="button"
                               className="dropdown-item d-flex align-items-center gap-2"
                               disabled={busy}
-                              onClick={() => handleBoost(property.id)}
+                              onClick={() => openBoostPicker(property)} // ✅ เปลี่ยนจาก push เป็นเปิด modal
                             >
                               {boostingId === property.id ? (
                                 <span className="fas fa-spinner fa-spin" />
