@@ -1,6 +1,10 @@
 "use client";
 import React, { useState } from "react";
 import Image from "next/image";
+// ✅ 1. เพิ่ม Import สำหรับเปลี่ยนหน้าและแจ้งเตือน
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // -------------------------
 // Helpers: Video URL
@@ -42,6 +46,9 @@ const getYouTubeThumb = (url) => {
 const isValidVideoUrl = (url) => isYouTubeUrl(url) || isTikTokUrl(url);
 
 const AddCourseForm = () => {
+  // ✅ 2. เรียกใช้ Router
+  const router = useRouter();
+
   // --- State ---
   const [formData, setFormData] = useState({
     title: "",
@@ -142,14 +149,20 @@ const AddCourseForm = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    // ✅ เพิ่มเช็คชื่อคอร์สกันเหนียว
+    if (!formData.title) {
+        toast.error("กรุณากรอกชื่อคอร์สเรียน");
+        return;
+    }
+
     const { ok, errors, dup } = validateVideos();
     setVideoErrors(errors);
 
     if (!ok) {
       if (dup) {
-        alert("ลิงก์วิดีโอมีซ้ำกัน กรุณาแก้ไข");
+        toast.error("ลิงก์วิดีโอมีซ้ำกัน กรุณาแก้ไข"); // ใช้ toast แทน alert
       } else {
-        alert("กรุณาแก้ไขลิงก์วิดีโอให้ถูกต้อง");
+        toast.error("กรุณาแก้ไขลิงก์วิดีโอให้ถูกต้อง"); // ใช้ toast แทน alert
       }
       return;
     }
@@ -161,7 +174,10 @@ const AddCourseForm = () => {
       coverImage: imagePreview,
       videoUrls: finalVideoUrls,
     });
-    // ยิง API บันทึกข้อมูลตรงนี้
+    
+    // ✅ 3. แจ้งเตือนสำเร็จและเปลี่ยนหน้า
+    toast.success("ลงประกาศคอร์สเรียนเรียบร้อยแล้ว!");
+    router.push("/dashboard-my-course"); // เปลี่ยนหน้าไปที่รายการคอร์สของฉัน
   };
 
   return (

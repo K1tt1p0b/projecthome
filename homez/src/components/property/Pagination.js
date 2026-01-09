@@ -1,19 +1,32 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 
-const Pagination = () => {
-  const totalPages = 8; // Replace this with your actual total number of pages
-  const [currentPage, setCurrentPage] = useState(2); // Initialize the current page state to 2 (or any other default active page)
+// รับค่าจากหน้าหลักมาใช้งาน (Props)
+// totalItems = จำนวนรายการทั้งหมด (เช่น 50 รายการ)
+// pageSize = จำนวนที่แสดงต่อหน้า (เช่น 10 รายการ)
+// currentPage = หน้าปัจจุบัน
+// setCurrentPage = ฟังก์ชันเปลี่ยนหน้า
+const Pagination = ({ 
+  totalItems = 0, 
+  pageSize = 10, 
+  currentPage = 1, 
+  setCurrentPage 
+}) => {
+  
+  // 1. คำนวณจำนวนหน้าทั้งหมดจากข้อมูลจริง
+  const totalPages = Math.ceil(totalItems / pageSize);
 
   const handlePageClick = (page) => {
-    setCurrentPage(page);
-    // Here you can add additional logic to handle what happens when the user clicks on a page number.
-    // For example, you can fetch data corresponding to the selected page from the server or update the URL.
+    if (page < 1 || page > totalPages) return;
+    // ถ้ามีการส่งฟังก์ชันมา ให้เรียกใช้ (เพื่อเปลี่ยนหน้าใน Parent)
+    if (setCurrentPage) {
+        setCurrentPage(page);
+    }
   };
 
   const generatePageNumbers = () => {
     const pageNumbers = [];
-    const maxPagesToShow = 5; // You can set the maximum number of page numbers to show in the pagination
+    const maxPagesToShow = 5;
 
     const startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
     const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
@@ -25,14 +38,17 @@ const Pagination = () => {
     return pageNumbers;
   };
 
+  // 2. คำนวณเลขรายการที่จะแสดง (เช่น 1-10, 11-20)
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, totalItems);
+
   const renderPageNumbers = generatePageNumbers().map((page) => (
     <li
       key={page}
-      className={`page-item${page === currentPage ? " active" : ""}`}
+      className={`page-item ${page === currentPage ? "active" : ""}`}
     >
       <span
         className="page-link pointer"
-        href="#"
         onClick={() => handlePageClick(page)}
       >
         {page}
@@ -40,14 +56,19 @@ const Pagination = () => {
     </li>
   ));
 
+  if (totalItems === 0) return null; // ถ้าไม่มีข้อมูล ไม่ต้องโชว์ Pagination
+
   return (
     <div className="mbp_pagination text-center">
       <ul className="page_navigation">
         <li className="page-item">
           <span
             className="page-link pointer"
-            href="#"
             onClick={() => handlePageClick(currentPage - 1)}
+            style={{ 
+                cursor: currentPage === 1 ? 'not-allowed' : 'pointer', 
+                opacity: currentPage === 1 ? 0.5 : 1 
+            }}
           >
             <span className="fas fa-angle-left" />
           </span>
@@ -56,15 +77,20 @@ const Pagination = () => {
         <li className="page-item pointer">
           <span
             className="page-link"
-            href="#"
             onClick={() => handlePageClick(currentPage + 1)}
+            style={{ 
+                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', 
+                opacity: currentPage === totalPages ? 0.5 : 1 
+            }}
           >
             <span className="fas fa-angle-right" />
           </span>
         </li>
       </ul>
+
+      {/* ✅ 3. แสดงข้อความตามจริงที่คำนวณได้ */}
       <p className="mt10 pagination_page_count text-center">
-        1-8 of 300+ property available
+        {startItem} – {endItem} จากทั้งหมด {totalItems} รายการ
       </p>
     </div>
   );

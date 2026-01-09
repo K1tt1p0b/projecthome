@@ -2,7 +2,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { agents } from "@/data/agents";
+import agents from "@/data/agents";
 
 const AboutMe = () => {
 
