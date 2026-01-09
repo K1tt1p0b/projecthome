@@ -17,10 +17,9 @@ const SidebarDashboard = () => {
 
   const micrositeItems = useMemo(
     () => [
-      { href: "/microsite/about-me", icon: "flaticon-user", text: "About me" },
+      { href: "/dashboard-about-me", icon: "flaticon-user", text: "About me" },
       { href: "/dashboard-gallery", icon: "flaticon-images", text: "แกลเลอรี่" },
       { href: "/dashboard-video-gallery", icon: "flaticon-play", text: "วิดีโอ" },
-      { href: "/microsite/about-me", icon: "flaticon-user", text: "About me" },
       { href: "/microsite/settings", icon: "fas fa-cog", text: "ตั้งค่า" },
     ],
     []
@@ -106,9 +105,9 @@ const SidebarDashboard = () => {
           text: "โฆษณาทรัพย์สิน",
         },
         {
-          href: "/add-listing",
-          icon: "fas fa-plus-circle",
-          text: "ลงประกาศงานรับเหมา",
+          href: "/dashboard-my-construction",
+          icon: "fas fa-hard-hat",
+          text: "งานรับเหมาของฉัน",
         },
         {
           href: "/add-course",

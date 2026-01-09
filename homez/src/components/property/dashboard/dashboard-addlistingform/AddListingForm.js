@@ -3,6 +3,7 @@ import React, { useState, useMemo } from "react";
 import Image from "next/image";
 import Select from "react-select";
 import geographyData from "@/components/property/dashboard/dashboard-add-property/LocationField/geography.json";
+import { useRouter } from "next/navigation";
 
 // ✅ toastify
 import { toast } from "react-toastify";
@@ -51,6 +52,8 @@ const getYouTubeThumb = (url) => {
 const isValidVideoUrl = (url) => isYouTubeUrl(url) || isTikTokUrl(url);
 
 const AddListingForm = () => {
+
+  const router = useRouter(); 
   // --- State ---
   const [formData, setFormData] = useState({
     title: "",
@@ -194,6 +197,7 @@ const AddListingForm = () => {
 
     console.log("Submitting:", { ...formData, images, videoUrls: finalVideoUrls });
     toast.success("ลงประกาศเรียบร้อยแล้ว!");
+    router.push("/dashboard-my-construction");
   };
 
   return (
