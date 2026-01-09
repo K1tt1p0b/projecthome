@@ -110,9 +110,9 @@ const SidebarDashboard = () => {
           text: "งานรับเหมาของฉัน",
         },
         {
-          href: "/add-course",
-          icon: "fas fa-bullhorn",
-          text: "ลงประกาศคอร์สเรียน",
+          href: "/dashboard-my-course",
+          icon: "fas fa-book",
+          text: "คอร์สเรียนของฉัน",
         },
       ],
     },

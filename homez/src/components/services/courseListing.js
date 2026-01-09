@@ -5,7 +5,7 @@ import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import { Tooltip as ReactTooltip } from "react-tooltip";
 import { useRouter } from "next/navigation";
-import { constructionServices as mockData } from "@/components/services/ConstructionRequest";
+import { allCourses as mockData } from "@/components/services/CourseLanding";
 import { toast } from "react-toastify";
 
 const getStatusStyle = (status) => {
@@ -22,9 +22,9 @@ const getStatusStyle = (status) => {
   }
 };
 
-const BOOST_URL = (id) => `/dashboard-boost-property/${id}`;
-const VIDEO_URL = (id) => `/dashboard-video-gallery?propertyId=${id}`;
-const VIDEO_STORE_KEY = "landx_property_videos_v1";
+const BOOST_URL = (id) => `/dashboard-boost-course/${id}`;
+const VIDEO_URL = (id) => `/dashboard-video-gallery?courseId=${id}`;
+const VIDEO_STORE_KEY = "landx_course_videos_v1";
 const MAX_SLOTS = 4;
 
 const toUrlText = (v) => {
@@ -139,11 +139,11 @@ const SkeletonRow = () => (
   </tr>
 );
 
-const Construction = () => {
+const CourseDataTable = () => {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
-  const [properties, setProperties] = useState([]);
+  const [courses, setCourses] = useState([]);
 
   // row loading states
   const [editingId, setEditingId] = useState(null);
@@ -154,16 +154,16 @@ const Construction = () => {
 
   // ===== modal states =====
   const [videoModalOpen, setVideoModalOpen] = useState(false);
-  const [videoModalProperty, setVideoModalProperty] = useState(null);
+  const [videoModalCourse, setVideoModalCourse] = useState(null);
   const [videoInputs, setVideoInputs] = useState(Array(MAX_SLOTS).fill(""));
   const [videoSaving, setVideoSaving] = useState(false);
 
-  const hasData = useMemo(() => properties?.length > 0, [properties]);
+  const hasData = useMemo(() => courses?.length > 0, [courses]);
 
-  const refreshVideoSummaryFromLocal = (propertyIds) => {
+  const refreshVideoSummaryFromLocal = (ids) => {
     const store = readVideoStore();
     const next = {};
-    (propertyIds || []).forEach((id) => {
+    (ids || []).forEach((id) => {
       const list = store?.[String(id)] ?? [];
       const urls = normalizeStoreValueToUrls(list);
       const cnt = Math.min(MAX_SLOTS, urls.length);
@@ -172,12 +172,12 @@ const Construction = () => {
     setVideoSummary(next);
   };
 
-  const fetchProperties = async () => {
+  const fetchCourses = async () => {
     try {
       setLoading(true);
       await new Promise((r) => setTimeout(r, 350));
       const list = Array.isArray(mockData) ? mockData : [];
-      setProperties(list);
+      setCourses(list);
       refreshVideoSummaryFromLocal(list.map((p) => p.id));
     } catch (e) {
       console.error(e);
@@ -188,32 +188,32 @@ const Construction = () => {
   };
 
   useEffect(() => {
-    fetchProperties();
+    fetchCourses();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     const onStorage = (e) => {
       if (e.key !== VIDEO_STORE_KEY) return;
-      refreshVideoSummaryFromLocal(properties.map((p) => p.id));
+      refreshVideoSummaryFromLocal(courses.map((p) => p.id));
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [properties]);
+  }, [courses]);
 
   const rowBusy = (id) =>
     editingId === id ||
     deletingId === id ||
     boostingId === id ||
-    (videoSaving && videoModalProperty?.id === id);
+    (videoSaving && videoModalCourse?.id === id);
 
   const handleEdit = async (id) => {
     try {
       if (deletingId === id) return;
       setEditingId(id);
       await new Promise((r) => setTimeout(r, 250));
-      router.push(`/add-listing?id=${id}`);
+      router.push(`/add-course?id=${id}`);
     } catch (e) {
       console.error(e);
       toast.error("ไปหน้าแก้ไขไม่สำเร็จ");
@@ -224,14 +224,14 @@ const Construction = () => {
 
   const handleDelete = async (id) => {
     if (editingId === id) return;
-    const ok = window.confirm("ยืนยันการลบรายการนี้ใช่ไหม?");
+    const ok = window.confirm("ยืนยันการลบคอร์สเรียนนี้ใช่ไหม?");
     if (!ok) return;
 
     try {
       setDeletingId(id);
       await new Promise((r) => setTimeout(r, 400));
 
-      setProperties((prev) => prev.filter((p) => p.id !== id));
+      setCourses((prev) => prev.filter((p) => p.id !== id));
 
       setVideoSummary((prev) => {
         const next = { ...(prev || {}) };
@@ -264,8 +264,8 @@ const Construction = () => {
 
   const handleVideoPage = (id) => router.push(VIDEO_URL(id));
 
-  const openVideoModal = (property) => {
-    const id = property?.id;
+  const openVideoModal = (course) => {
+    const id = course?.id;
     if (!id) return;
 
     const store = readVideoStore();
@@ -275,7 +275,7 @@ const Construction = () => {
     const nextInputs = Array(MAX_SLOTS).fill("");
     urls.slice(0, MAX_SLOTS).forEach((u, i) => (nextInputs[i] = toTrimmedUrl(u)));
 
-    setVideoModalProperty(property);
+    setVideoModalCourse(course);
     setVideoInputs(nextInputs);
     setVideoModalOpen(true);
   };
@@ -283,7 +283,7 @@ const Construction = () => {
   const closeVideoModal = () => {
     if (videoSaving) return;
     setVideoModalOpen(false);
-    setVideoModalProperty(null);
+    setVideoModalCourse(null);
     setVideoInputs(Array(MAX_SLOTS).fill(""));
   };
 
@@ -296,8 +296,8 @@ const Construction = () => {
   };
 
   const saveVideoUrlsFrontOnly = async () => {
-    const property = videoModalProperty;
-    if (!property?.id) return;
+    const course = videoModalCourse;
+    if (!course?.id) return;
 
     for (let i = 0; i < videoInputs.length; i++) {
       const u = toTrimmedUrl(videoInputs[i]);
@@ -317,7 +317,7 @@ const Construction = () => {
       await new Promise((r) => setTimeout(r, 250));
 
       const store = readVideoStore();
-      const key = String(property.id);
+      const key = String(course.id);
 
       const all = Object.entries(store || {}).flatMap(([pid, arr]) => {
         const urls = normalizeStoreValueToUrls(arr);
@@ -327,7 +327,7 @@ const Construction = () => {
       for (const u of cleaned) {
         const used = all.find((x) => x.url === u && x.pid !== key);
         if (used) {
-          toast.error("ลิงก์นี้ถูกผูกกับโพสอื่นอยู่แล้ว");
+          toast.error("ลิงก์นี้ถูกผูกกับคอร์สอื่นอยู่แล้ว");
           return;
         }
       }
@@ -337,7 +337,7 @@ const Construction = () => {
 
       setVideoSummary((prev) => ({
         ...(prev || {}),
-        [property.id]: { count: cleaned.length, hasVideo: cleaned.length > 0 },
+        [course.id]: { count: cleaned.length, hasVideo: cleaned.length > 0 },
       }));
 
       toast.success(cleaned.length ? "บันทึกวิดีโอเรียบร้อย" : "ลบวิดีโอออกเรียบร้อย");
@@ -383,9 +383,9 @@ const Construction = () => {
           >
             <div className="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
               <div>
-                <div className="h6 mb-0">วิดีโอประกาศ (สูงสุด {MAX_SLOTS} อัน)</div>
+                <div className="h6 mb-0">วิดีโอคอร์ส (สูงสุด {MAX_SLOTS} อัน)</div>
                 <div style={{ fontSize: 13, opacity: 0.8 }}>
-                  บริการ: <b>{videoModalProperty?.title}</b>
+                  คอร์ส: <b>{videoModalCourse?.title}</b>
                 </div>
               </div>
 
@@ -475,7 +475,7 @@ const Construction = () => {
         <table className="table table-borderless table-hover mb-0">
           <thead className="table-light">
             <tr>
-              <th scope="col" className="py-3 ps-4" style={{ width: "50%" }}>รายการบริการ</th>
+              <th scope="col" className="py-3 ps-4" style={{ width: "50%" }}>คอร์สเรียน</th>
               <th scope="col" className="py-3 text-center" style={{ width: "20%" }}>สถานะ</th>
               <th scope="col" className="py-3 text-center" style={{ width: "15%" }}>ยอดเข้าชม</th>
               <th scope="col" className="py-3 text-end pe-4" style={{ width: "15%" }}>จัดการ</th>
@@ -493,25 +493,25 @@ const Construction = () => {
               <tr>
                 <td colSpan={4} className="text-center py-5 text-muted">
                   <div className="mb-2"><i className="fas fa-folder-open fz30"></i></div>
-                  ยังไม่มีข้อมูลบริการ
+                  ยังไม่มีข้อมูลคอร์สเรียน
                 </td>
               </tr>
             ) : (
-              properties.map((property) => {
-                const count = videoSummary?.[property.id]?.count ?? 0;
+              courses.map((course) => {
+                const count = videoSummary?.[course.id]?.count ?? 0;
                 const hasVideo = count > 0;
-                const busy = rowBusy(property.id);
+                const busy = rowBusy(course.id);
 
                 return (
-                  <tr key={property.id} style={{ borderBottom: "1px solid #f9f9f9" }}>
+                  <tr key={course.id} style={{ borderBottom: "1px solid #f9f9f9" }}>
                     <th scope="row" className="py-3 ps-4 align-middle">
                       <div className="d-flex align-items-center">
                         <div className="position-relative" style={{ width: 110, height: 80, flexShrink: 0 }}>
                           <Image
                             fill
                             className="rounded-3"
-                            src={property.image || property.imageSrc || "/images/listings/list-1.jpg"}
-                            alt="property"
+                            src={course.image || course.imageSrc || "/images/listings/list-1.jpg"}
+                            alt="course"
                             style={{ objectFit: 'cover' }}
                           />
                         </div>
@@ -519,11 +519,11 @@ const Construction = () => {
                         <div className="ms-3">
                           <div className="h6 mb-1 d-flex align-items-center gap-2">
                             <Link 
-                                href={`/service/${property.id}`} 
+                                href={`/course/${course.id}`} 
                                 className="text-dark text-decoration-none hover-primary"
                                 style={{ transition: "0.2s" }}
                             >
-                                {property.title}
+                                {course.title}
                             </Link>
 
                             {hasVideo && (
@@ -539,40 +539,37 @@ const Construction = () => {
                                     cursor: busy ? "not-allowed" : "pointer",
                                     color: "#eb6753"
                                   }}
-                                  data-tooltip-id={`video-${property.id}`}
-                                  onClick={() => handleVideoPage(property.id)}
+                                  data-tooltip-id={`video-${course.id}`}
+                                  onClick={() => handleVideoPage(course.id)}
                                 >
                                   <span className="fas fa-video fz10" />
                                 </button>
-                                <ReactTooltip id={`video-${property.id}`} place="top" content={`วิดีโอ (${count})`} />
+                                <ReactTooltip id={`video-${course.id}`} place="top" content={`วิดีโอ (${count})`} />
                               </>
                             )}
                           </div>
 
                           <p className="text-muted mb-0 fz13">
                             <i className="fas fa-map-marker-alt me-1"></i>
-                            {property?.location?.province
-                              ? `${property.location.province} ${property.location.district ?? ""}`
-                              : property.location || "-"}
+                            {course?.location?.province || course?.location || "Online"}
                           </p>
                         </div>
                       </div>
                     </th>
 
                     <td className="align-middle text-center">
-                      <span className={getStatusStyle(property.status || "active")}>
-                        {property.status || "Active"}
+                      <span className={getStatusStyle(course.status || "active")}>
+                        {course.status || "Active"}
                       </span>
                     </td>
 
                     <td className="align-middle text-center">
                         <div className="d-flex align-items-center justify-content-center gap-1 text-muted">
                             <i className="far fa-eye"></i>
-                            {property.views ?? 0}
+                            {course.views ?? 0}
                         </div>
                     </td>
 
-                    {/* ✅ แก้ไข onClick ให้ใช้ property.id แล้ว (ไม่ใช้ course.id) */}
                     <td className="align-middle text-end pe-4">
                       <div className="dropdown">
                         <button
@@ -597,7 +594,7 @@ const Construction = () => {
                               type="button"
                               className="dropdown-item py-2 d-flex align-items-center gap-2"
                               disabled={busy}
-                              onClick={() => handleEdit(property.id)}
+                              onClick={() => handleEdit(course.id)}
                             >
                               <i className="fas fa-pen text-primary w-20 text-center" /> แก้ไข
                             </button>
@@ -608,7 +605,7 @@ const Construction = () => {
                               type="button"
                               className="dropdown-item py-2 d-flex align-items-center gap-2"
                               disabled={busy}
-                              onClick={() => handleBoost(property.id)}
+                              onClick={() => handleBoost(course.id)}
                             >
                               <i className="fas fa-bolt text-warning w-20 text-center" /> ดันประกาศ
                             </button>
@@ -619,18 +616,19 @@ const Construction = () => {
                               type="button"
                               className="dropdown-item py-2 d-flex align-items-center gap-2"
                               disabled={busy}
-                              onClick={() => openVideoModal(property)}
+                              onClick={() => openVideoModal(course)}
                             >
                               <i className="fas fa-video text-info w-20 text-center" /> {hasVideo ? "แก้ไขวิดีโอ" : "เพิ่มวิดีโอ"}
                             </button>
                           </li>
 
+                          {/* ✅ เพิ่มปุ่ม จัดการวิดีโอ กลับมา */}
                           <li>
                             <button
                               type="button"
                               className="dropdown-item py-2 d-flex align-items-center gap-2"
                               disabled={busy}
-                              onClick={() => handleVideoPage(property.id)}
+                              onClick={() => handleVideoPage(course.id)}
                             >
                               <i className="fas fa-folder-open text-success w-20 text-center" /> จัดการวิดีโอ
                             </button>
@@ -643,7 +641,7 @@ const Construction = () => {
                               type="button"
                               className="dropdown-item py-2 d-flex align-items-center gap-2 text-danger"
                               disabled={busy}
-                              onClick={() => handleDelete(property.id)}
+                              onClick={() => handleDelete(course.id)}
                             >
                               <i className="fas fa-trash-alt w-20 text-center" /> ลบ
                             </button>
@@ -662,4 +660,4 @@ const Construction = () => {
   );
 };
 
-export default Construction;
+export default CourseDataTable;
