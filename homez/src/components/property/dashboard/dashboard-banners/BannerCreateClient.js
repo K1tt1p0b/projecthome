@@ -25,7 +25,7 @@ export default function BannerCreateClient() {
   const [form, setForm] = useState({
     title: "",
     position: "หน้าแรก",
-    status: "active",
+    status: "paused",
     linkUrl: "/",
     startAt: "",
     endAt: "",
@@ -107,37 +107,71 @@ export default function BannerCreateClient() {
     return "";
   };
 
-  const onSave = async () => {
-    if (saving) return;
+  // เปลี่ยนชื่อจาก onSave เป็น handlePaymentClick
+  const handlePaymentClick = async () => {
+    // ✅ 1. คำนวณจำนวนวันจริง (สูตรคำนวณวัน)
+    const startDate = new Date(form.startAt);
+    const endDate = new Date(form.endAt);
 
-    const err = validate();
-    if (err) return toast.error(err);
+    // แปลงผลต่างเวลา (milli) ให้เป็นวัน
+    const diffTime = Math.abs(endDate - startDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 คือนับวันแรกด้วย (เช่น 1-1 คือ 1 วัน)
+
+    // ✅ 2. คำนวณราคาตามจริง (สมมติวันละ 100 บาท)
+    // ถ้าคุณขายเหมา ก็ใช้ราคาคงที่ได้เลย แต่ถ้าขายตามวันต้องคูณครับ
+    const pricePerDay = 100;
+    const totalPrice = diffDays * pricePerDay;
 
     try {
       setSaving(true);
-      toast.loading("กำลังบันทึกแบนเนอร์...", { toastId: "saving-banner" });
+      toast.loading("กำลังเตรียมข้อมูลเพื่อชำระเงิน...", { toastId: "saving-banner" });
 
-      const imageData = await fileToBase64(imageFile);
+      // 2. แปลงรูปภาพเหมือนเดิม
+      let imageData = null;
+      if (imageFile) {
+        imageData = await fileToBase64(imageFile);
+      }
 
-      await addBanner({
+      // 3. บันทึกลง Database (สำคัญ! ต้องบันทึกก่อนถึงจะมี ID ไปอ้างอิง)
+      // แต่สถานะใน DB ควรเป็น 'pending' หรือ 'waiting_payment'
+      const result = await addBanner({
         ...form,
+        status: 'pending',
         image: {
-          name: imageFile.name,
-          type: imageFile.type,
-          size: imageFile.size,
+          name: imageFile?.name,
+          type: imageFile?.type,
+          size: imageFile?.size,
           dataUrl: imageData,
         },
       });
 
+      // 4. เตรียมข้อมูลสำหรับหน้าจ่ายเงิน
+      // สมมติว่า result ที่ได้กลับมามี id ของ banner (เช่น result.id)
+      // ถ้าไม่มี ให้สุ่มเลขไปก่อน (แต่ทางที่ดี Backend ควรส่ง ID กลับมา)
+      const refId = result?.id || 'BN-' + Math.floor(Math.random() * 100000);
+      const price = 500; // ตั้งราคาค่าโฆษณา
+
       toast.update("saving-banner", {
-        render: "บันทึกแบนเนอร์เรียบร้อยแล้ว",
+        render: "บันทึกข้อมูลแล้ว กำลังไปหน้าชำระเงิน...",
         type: "success",
         isLoading: false,
-        autoClose: 2000,
+        autoClose: 1000,
       });
 
-      setTimeout(() => router.push("/dashboard-banners"), 800);
-    } catch {
+      // 5. 🚀 เปลี่ยนตรงนี้! พาไปหน้าจ่ายเงิน แทนหน้า List
+      setTimeout(() => {
+        router.push(
+          `/dashboard-points/buy?` +
+          `package=ค่าโฆษณา Banner` +
+          `&price=${totalPrice}` +    // ส่งราคาที่คำนวณแล้ว
+          `&cycle=${diffDays} วัน` +  // ส่งจำนวนวันจริง (เช่น 5 วัน)
+          `&ref_id=${refId}` +
+          `&type=banner`
+        );
+      }, 1000);
+
+    } catch (error) {
+      console.error(error); // ดู Error ใน Console
       toast.update("saving-banner", {
         render: "เกิดข้อผิดพลาดในการบันทึก",
         type: "error",
@@ -327,18 +361,24 @@ export default function BannerCreateClient() {
           </button>
 
           <button
-            className="ud-btn btn-thm"
+            className="ud-btn btn-thm" // class สีแดงของธีม
             type="button"
-            onClick={onSave}
+
+            // 👇 1. แก้ตรงนี้: เรียกใช้ฟังก์ชันพาไปจ่ายเงิน (แทน onSave เดิม)
+            onClick={handlePaymentClick}
+
             disabled={saving}
           >
             {saving ? (
               <>
                 <span className="spinner-border spinner-border-sm" />
-                <span style={{ marginLeft: 8 }}>กำลังบันทึก</span>
+                <span style={{ marginLeft: 8 }}>กำลังพาไปหน้าจ่ายเงิน...</span>
               </>
             ) : (
-              "บันทึก"
+              // 👇 2. แก้ข้อความตรงนี้ ให้รู้ว่าต้องจ่ายเงิน
+              <>
+                ชำระเงิน <i className="fal fa-arrow-right-long ms-2"></i>
+              </>
             )}
           </button>
         </div>

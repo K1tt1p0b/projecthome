@@ -33,8 +33,8 @@ const DashboardBuyPoints = () => {
               <div className="row align-items-center pb40">
                 <div className="col-lg-12">
                   <div className="dashboard_title_area">
-                    <h2>ซื้อพอยต์</h2>
-                    <p className="text">เลือกแพ็กเกจพอยต์ที่ต้องการเติม</p>
+                    <h2>ชำระเงิน</h2>
+                    <p className="text">สแกน QR Code และแนบสลิปเพื่อยืนยันรายการ</p>
                   </div>
                 </div>
               </div>

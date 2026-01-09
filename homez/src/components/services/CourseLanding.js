@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 
 // 📦 ข้อมูลจำลอง (เอา rating กับ students ออกแล้ว)
-const allCourses = [
+export const allCourses = [
   { id: 1, title: "P01: พื้นฐานนายหน้าอสังหาฯ", image: "/images/listings/g1-1.jpg", tag: "Best Seller", instructor: "โค้ชพี่ทอม" },
   { id: 2, title: "M02: ยิงแอดอสังหาฯ ขั้นเทพ", image: "/images/listings/g1-2.jpg", tag: "New", instructor: "คุณเจน Digital" },
   { id: 3, title: "L03: กฎหมายที่ดินฉบับนายหน้า", image: "/images/listings/g1-3.jpg", tag: "Recommended", instructor: "ทนายวิชัย" },

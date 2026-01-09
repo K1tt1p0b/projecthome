@@ -6,16 +6,18 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import agents from "@/data/agents";
 
+export const constructionServices = [ 
+    { id: "land-fill", title: "รับถมที่ดิน", icon: "fas fa-truck-monster" },
+    { id: "fencing", title: "รับล้อมรั้ว", icon: "fas fa-vector-square" },
+    { id: "renovate", title: "ต่อเติม/รีโนเวท", icon: "fas fa-tools" },
+    { id: "piling", title: "ตอกเสาเข็ม", icon: "fas fa-layer-group" },
+];
+
 const ConstructionRequest = ({ initialCategory }) => {
+
+    const services = constructionServices;
     // ใช้ค่าจาก URL เป็นค่าเริ่มต้น
     const [selectedService, setSelectedService] = useState(initialCategory || null);
-
-    const services = [
-        { id: "land-fill", title: "รับถมที่ดิน", icon: "fas fa-truck-monster" },
-        { id: "fencing", title: "รับล้อมรั้ว", icon: "fas fa-vector-square" },
-        { id: "renovate", title: "ต่อเติม/รีโนเวท", icon: "fas fa-tools" },
-        { id: "piling", title: "ตอกเสาเข็ม", icon: "fas fa-layer-group" },
-    ];
 
     useEffect(() => {
         if (initialCategory) {

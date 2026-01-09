@@ -19,7 +19,7 @@ const SidebarDashboard = () => {
     () => [
       { href: "/dashboard-gallery", icon: "flaticon-images", text: "แกลเลอรี่" },
       { href: "/dashboard-video-gallery", icon: "flaticon-play", text: "วิดีโอ" },
-      { href: "/microsite/about-me", icon: "flaticon-user", text: "About me" },
+      { href: "/dashboard-about-me", icon: "flaticon-user", text: "About me" },
       { href: "/microsite/settings", icon: "fas fa-cog", text: "ตั้งค่า" },
     ],
     []
@@ -32,6 +32,27 @@ const SidebarDashboard = () => {
   useEffect(() => {
     if (isMicrositeActive) setOpenMicrosite(true);
   }, [isMicrositeActive]);
+
+  // --- 1. รายการเมนูในกลุ่ม Support ---
+  const supportItems = useMemo(
+    () => [
+      { href: "/agent-faq", icon: "fas fa-circle-question", text: "คำถามที่พบบ่อย (FAQ)" },
+      { href: "/dashboard-contact-admin", icon: "flaticon-call", text: "ติดต่อเจ้าหน้าที่" },
+    ],
+    []
+  );
+
+  // --- 2. เช็คว่าเปิดหน้า Support อยู่ไหม ---
+  const isSupportActive = useMemo(() => {
+    return supportItems.some((it) => isActive(it.href));
+  }, [supportItems, pathname]);
+
+  // --- 3. State เปิด/ปิด ---
+  const [openSupport, setOpenSupport] = useState(false);
+
+  useEffect(() => {
+    if (isSupportActive) setOpenSupport(true);
+  }, [isSupportActive]);
 
   const sidebarItems = [
     {
@@ -109,9 +130,11 @@ const SidebarDashboard = () => {
           text: "ประวัติการชำระเงิน",
         },
         {
-          href: "/agent-faq",
-          icon: "fas fa-question-circle",
-          text: "คำถามที่พบบ่อย",
+          type: "dropdown",
+          key: "support",       // Key ห้ามซ้ำกับอันอื่น
+          icon: "fas fa-headset", // ไอคอนรูปหูฟัง/เครื่องหมายคำถาม
+          text: "ช่วยเหลือ",      // ชื่อเมนู
+          children: supportItems, // เอาลูกๆ มาใส่ตรงนี้
         },
         {
           href: "/login",
@@ -174,9 +197,15 @@ const SidebarDashboard = () => {
     );
   };
 
-  const renderDropdownItem = (item, key) => {
+const renderDropdownItem = (item, key) => {
+    // 1. เช็คว่าเป็นเมนูไหน เพื่อเลือกใช้ State ให้ถูกตัว
+    // ถ้าเป็น support ให้ใช้ openSupport, ถ้าไม่ใช่ให้ใช้ openMicrosite
+    const isOpen = item.key === "support" ? openSupport : openMicrosite;
+    const setIsOpen = item.key === "support" ? setOpenSupport : setOpenMicrosite;
+
     const isHover = hovered === key;
-    const highlight = isMicrositeActive || isHover;
+    // เช็ค highlight: ถ้าเมนูย่อยเปิดอยู่ หรือ เมาส์ชี้อยู่
+    const highlight = (item.key === "support" ? isSupportActive : isMicrositeActive) || isHover;
 
     return (
       <div key={key}>
@@ -185,8 +214,12 @@ const SidebarDashboard = () => {
             type="button"
             onMouseEnter={() => setHovered(key)}
             onMouseLeave={() => setHovered(null)}
-            onClick={() => setOpenMicrosite((v) => !v)}
-            aria-expanded={openMicrosite}
+            // ✅ แก้ตรงนี้: ใส่ e.preventDefault() กันหน้าเด้ง และใช้ setIsOpen ตามคีย์
+            onClick={(e) => {
+              e.preventDefault(); 
+              setIsOpen((v) => !v);
+            }}
+            aria-expanded={isOpen}
             style={{
               ...rowStyle(highlight),
               border: "none",
@@ -202,7 +235,7 @@ const SidebarDashboard = () => {
             <i
               className="fas fa-chevron-down"
               style={{
-                transform: openMicrosite ? "rotate(180deg)" : "rotate(0deg)",
+                transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", // ✅ ใช้ isOpen ที่เช็คมาแล้ว
                 transition: "transform .15s ease",
                 color: highlight ? "#fff" : "",
               }}
@@ -212,7 +245,7 @@ const SidebarDashboard = () => {
 
         <div
           style={{
-            maxHeight: openMicrosite ? 500 : 0,
+            maxHeight: isOpen ? 500 : 0, // ✅ ใช้ isOpen ที่เช็คมาแล้ว
             overflow: "hidden",
             transition: "max-height .2s ease",
           }}

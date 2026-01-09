@@ -43,13 +43,8 @@ const AddListingPage = () => {
                                 </div>
                             </div>
 
-                            <div className="row mt-5">
-                                <div className="col-lg-12">
-                                    <Footer />
-                                </div>
-                            </div>
-
                         </div>
+                        <Footer/>
                     </div>
                 </div>
             </div>
