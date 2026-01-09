@@ -56,7 +56,7 @@ export const propertyData = [
       floors: 2,
 
       titleDeed: "โฉนด",
-      titleDeedImage: null,
+      titleDeedImage: "/images/listings/list-2.jpg",
 
       amenities: ["ที่จอดรถ", "แอร์", "กล้องวงจรปิด"],
 

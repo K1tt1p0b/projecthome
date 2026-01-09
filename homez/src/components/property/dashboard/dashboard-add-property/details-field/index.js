@@ -113,6 +113,11 @@ const DetailsFiled = ({
     initialValue?.titleDeedImage ?? null
   );
 
+  // ✅ เพิ่ม: ชื่อไฟล์รูปโฉนด (เพื่อให้เก็บลง localStorage ได้ / โชว์ใน summary ได้เสมอ)
+  const [titleDeedImageName, setTitleDeedImageName] = useState(
+    initialValue?.titleDeedImageName ?? ""
+  );
+
   /* =========================
      ที่ดินเปล่า: เพิ่ม "สภาพที่ดิน" + "ผังสี"
   ========================= */
@@ -144,7 +149,9 @@ const DetailsFiled = ({
   const [landFillStatus, setLandFillStatus] = useState(
     initialValue?.landFillStatus ?? ""
   );
-  const [zoningColor, setZoningColor] = useState(initialValue?.zoningColor ?? "");
+  const [zoningColor, setZoningColor] = useState(
+    initialValue?.zoningColor ?? ""
+  );
 
   /* =========================
      คอนโด (condo) / ห้องเช่า (room-rent)
@@ -167,7 +174,9 @@ const DetailsFiled = ({
     if (!initialValue) return;
 
     setNote(initialValue.note ?? "");
-    setAmenities(Array.isArray(initialValue.amenities) ? initialValue.amenities : []);
+    setAmenities(
+      Array.isArray(initialValue.amenities) ? initialValue.amenities : []
+    );
     setError("");
 
     // house-land
@@ -186,9 +195,19 @@ const DetailsFiled = ({
     // deed image: ถ้าเป็น list ก็หยิบตัวแรก
     if (initialValue.titleDeedImage !== undefined) {
       setTitleDeedImage(initialValue.titleDeedImage ?? null);
-    } else if (Array.isArray(initialValue.titleDeedImages) && initialValue.titleDeedImages[0]) {
+    } else if (
+      Array.isArray(initialValue.titleDeedImages) &&
+      initialValue.titleDeedImages[0]
+    ) {
       setTitleDeedImage(initialValue.titleDeedImages[0]);
     }
+
+    // ✅ sync ชื่อไฟล์รูปโฉนด (ใหม่)
+    setTitleDeedImageName(
+      initialValue.titleDeedImageName ??
+        initialValue.titleDeedImage?.name ??
+        ""
+    );
 
     // land extra
     setLandFillStatus(initialValue.landFillStatus ?? "");
@@ -226,6 +245,7 @@ const DetailsFiled = ({
       setRoadWidth("");
       setDeedNumber("");
       setTitleDeedImage(null);
+      setTitleDeedImageName(""); // ✅ reset ชื่อไฟล์ด้วย
 
       // land extra
       setLandFillStatus("");
@@ -275,6 +295,7 @@ const DetailsFiled = ({
     // deed
     deedNumber, // ✅ เลขโฉนด/เอกสารสิทธิ
     titleDeedImage,
+    titleDeedImageName, // ✅ เพิ่ม: ชื่อไฟล์รูปโฉนด (สำคัญ)
 
     // land only extra
     landFillStatus,
@@ -300,18 +321,21 @@ const DetailsFiled = ({
     return true;
   }, [propertyType, titleDeedImage]);
 
+  // ✅ ปรับ: ให้โชว์ชื่อไฟล์ที่เก็บไว้ได้เสมอ
   const deedPreviewText = useMemo(() => {
+    if (titleDeedImageName) return titleDeedImageName;
     if (!titleDeedImage) return "";
     if (typeof titleDeedImage === "string") return titleDeedImage;
     if (titleDeedImage?.name) return titleDeedImage.name;
     return "แนบไฟล์แล้ว";
-  }, [titleDeedImage]);
+  }, [titleDeedImage, titleDeedImageName]);
 
   const handleDeedFileChange = (e) => {
     const file = e.target.files?.[0];
 
     if (!file) {
       setTitleDeedImage(null);
+      setTitleDeedImageName("");
       return;
     }
 
@@ -330,6 +354,9 @@ const DetailsFiled = ({
 
     setError("");
     setTitleDeedImage(file);
+
+    // ✅ เก็บชื่อไฟล์ (เพื่อให้ข้าม localStorage ได้)
+    setTitleDeedImageName(file.name);
   };
 
   /* =========================
@@ -362,7 +389,6 @@ const DetailsFiled = ({
         setError("กรุณาอัปโหลดรูปเอกสารโฉนด");
         return;
       }
-      // ✅ roadWidth/frontage/depth เป็น optional ตามแชท (ไม่เช็ค)
     }
 
     // ที่ดินเปล่า
@@ -380,7 +406,6 @@ const DetailsFiled = ({
         return;
       }
 
-      // ✅ เพิ่ม 2 ช่องตามแชท
       if (!String(landFillStatus || "").trim()) {
         setError("กรุณาเลือก สภาพที่ดิน (ถมแล้ว/ยังไม่ถม)");
         return;
@@ -389,8 +414,6 @@ const DetailsFiled = ({
         setError("กรุณาเลือก ผังสี");
         return;
       }
-
-      // ✅ roadWidth/frontage/depth เป็น optional ตามแชท (ไม่เช็ค)
     }
 
     // คอนโด + ห้องเช่า (เหมือนกัน)
@@ -403,7 +426,6 @@ const DetailsFiled = ({
         setError("กรุณาระบุ ขนาดห้อง (ตร.ม.)");
         return;
       }
-      // ✅ building/ค่าน้ำ/ค่าไฟ/ค่าส่วนกลาง = optional
     }
 
     // ❌ ร้านค้า ยังไม่ทำ
@@ -803,7 +825,7 @@ const DetailsFiled = ({
               <input
                 type="text"
                 className="form-control"
-                placeholder="เช่น 40 บาท/ตร.ม. หรือ 1,200/เดือน"
+                placeholder="เช่น 1,200/เดือน"
                 value={commonFee}
                 onChange={(e) => setCommonFee(e.target.value)}
                 style={{ height: "55px" }}
@@ -850,7 +872,11 @@ const DetailsFiled = ({
           </button>
 
           <div className="d-flex gap-2">
-            <button type="button" className="ud-btn btn-light" onClick={handleSaveDraft}>
+            <button
+              type="button"
+              className="ud-btn btn-light"
+              onClick={handleSaveDraft}
+            >
               บันทึกร่าง
             </button>
             <button type="submit" className="ud-btn btn-thm">

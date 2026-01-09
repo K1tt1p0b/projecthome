@@ -24,17 +24,28 @@ const getStatusStyle = (status) => {
 const BOOST_URL = (id) => `/dashboard-boost-property/${id}`;
 const VIDEO_URL = (id) => `/dashboard-video-gallery?propertyId=${id}`;
 
-// ===== LocalStorage Video Store (Front-only DB) =====
+// ===== LocalStorage Video Store =====
 const VIDEO_STORE_KEY = "landx_property_videos_v1";
+const MAX_SLOTS = 4;
+
 /**
- * ✅ shape (1:1 enforced in UI):
+ * ✅ shape มาตรฐานทั้งระบบ:
  * {
  *   [propertyId: string]: Array<{ id: string, url: string, provider: "youtube"|"tiktok", createdAt: string }>
  * }
- *
- * 🔒 rule:
- * - 1 propertyId => max 1 video (array length should be 0 or 1)
+ * rule:
+ * - 1 propertyId => max 4 videos
  */
+
+// ✅ convert อะไรก็ได้ -> url string แล้ว trim (กัน object หลุด)
+const toUrlText = (v) => {
+  if (!v) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "object") return v.url || v.src || v.link || "";
+  return String(v);
+};
+const toTrimmedUrl = (v) => String(toUrlText(v) || "").trim();
+
 function safeParse(json) {
   try {
     return JSON.parse(json);
@@ -42,30 +53,76 @@ function safeParse(json) {
     return null;
   }
 }
+
 function readVideoStore() {
   if (typeof window === "undefined") return {};
   const raw = window.localStorage.getItem(VIDEO_STORE_KEY);
   const parsed = raw ? safeParse(raw) : null;
   return parsed && typeof parsed === "object" ? parsed : {};
 }
+
 function writeVideoStore(store) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(VIDEO_STORE_KEY, JSON.stringify(store ?? {}));
 }
+
 function detectProvider(url) {
-  const u = (url || "").trim();
+  const u = toTrimmedUrl(url);
   if (u.includes("tiktok.com/")) return "tiktok";
   return "youtube";
 }
+
+// ตอนนี้เอาเหมือน my-properties: เฉพาะ YouTube/TikTok
 function isValidVideoUrl(url) {
-  if (!url) return false;
-  const u = url.trim();
-  const isYoutube = u.includes("youtube.com/watch") || u.includes("youtu.be/") || u.includes("youtube.com/shorts/");
+  const u = toTrimmedUrl(url);
+  if (!u) return true; // ช่องว่างได้
+
+  const isYoutube =
+    u.includes("youtube.com/watch") ||
+    u.includes("youtu.be/") ||
+    u.includes("youtube.com/shorts/");
   const isTiktok = u.includes("tiktok.com/");
   return isYoutube || isTiktok;
 }
+
 function uid() {
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
+// รองรับ store เก่า (array of string) ด้วย เผื่อมีค้าง
+function normalizeStoreValueToUrls(v) {
+  if (!v) return [];
+
+  if (Array.isArray(v)) {
+    // array of objects
+    if (v.length && typeof v[0] === "object") {
+      return v
+        .map((x) => toTrimmedUrl(x?.url || x?.src || x?.link))
+        .filter(Boolean);
+    }
+    // array of strings
+    return v.map((x) => toTrimmedUrl(x)).filter(Boolean);
+  }
+
+  if (Array.isArray(v?.urls)) {
+    return v.urls.map((x) => toTrimmedUrl(x)).filter(Boolean);
+  }
+
+  return [];
+}
+
+function buildItemsFromUrls(urls) {
+  const now = new Date().toISOString();
+  return (urls || [])
+    .map((u) => toTrimmedUrl(u))
+    .filter(Boolean)
+    .slice(0, MAX_SLOTS)
+    .map((url) => ({
+      id: uid(),
+      url,
+      provider: detectProvider(url),
+      createdAt: now,
+    }));
 }
 
 // ===== skeleton row =====
@@ -84,7 +141,15 @@ const SkeletonRow = () => (
         />
         <div className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4 w-100">
           <div style={{ width: "60%", height: 14, background: "#eee", borderRadius: 6 }} />
-          <div style={{ width: "30%", height: 12, background: "#eee", borderRadius: 6, marginTop: 10 }} />
+          <div
+            style={{
+              width: "30%",
+              height: 12,
+              background: "#eee",
+              borderRadius: 6,
+              marginTop: 10,
+            }}
+          />
         </div>
       </div>
     </th>
@@ -117,25 +182,24 @@ const PropertyDataTable = () => {
   const [deletingId, setDeletingId] = useState(null);
   const [boostingId, setBoostingId] = useState(null);
 
-  // ===== videoSummary (from localStorage) =====
   // { [propertyId]: { hasVideo: boolean, count: number } }
   const [videoSummary, setVideoSummary] = useState({});
 
   // ===== modal states =====
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [videoModalProperty, setVideoModalProperty] = useState(null);
-  const [videoUrlInput, setVideoUrlInput] = useState("");
+  const [videoInputs, setVideoInputs] = useState(Array(MAX_SLOTS).fill(""));
   const [videoSaving, setVideoSaving] = useState(false);
 
   const hasData = useMemo(() => properties?.length > 0, [properties]);
 
-  // ✅ enforce 1:1 summary: count is 0 or 1
   const refreshVideoSummaryFromLocal = (propertyIds) => {
     const store = readVideoStore();
     const next = {};
     (propertyIds || []).forEach((id) => {
       const list = store?.[String(id)] ?? [];
-      const cnt = Array.isArray(list) ? Math.min(1, list.length) : 0;
+      const urls = normalizeStoreValueToUrls(list);
+      const cnt = Math.min(MAX_SLOTS, urls.length);
       next[id] = { count: cnt, hasVideo: cnt > 0 };
     });
     setVideoSummary(next);
@@ -147,7 +211,6 @@ const PropertyDataTable = () => {
       await new Promise((r) => setTimeout(r, 350));
       const list = Array.isArray(mockData) ? mockData : [];
       setProperties(list);
-
       refreshVideoSummaryFromLocal(list.map((p) => p.id));
     } catch (e) {
       console.error(e);
@@ -173,7 +236,11 @@ const PropertyDataTable = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [properties]);
 
-  const rowBusy = (id) => editingId === id || deletingId === id || boostingId === id || (videoSaving && videoModalProperty?.id === id);
+  const rowBusy = (id) =>
+    editingId === id ||
+    deletingId === id ||
+    boostingId === id ||
+    (videoSaving && videoModalProperty?.id === id);
 
   const handleEdit = async (id) => {
     try {
@@ -200,7 +267,6 @@ const PropertyDataTable = () => {
 
       setProperties((prev) => prev.filter((p) => p.id !== id));
 
-      // ลบ summary เฉยๆ (ไม่ลบ localStorage videos อัตโนมัติ)
       setVideoSummary((prev) => {
         const next = { ...(prev || {}) };
         delete next[id];
@@ -232,19 +298,19 @@ const PropertyDataTable = () => {
 
   const handleVideoPage = (id) => router.push(VIDEO_URL(id));
 
-  // ✅ บังคับ: ถ้ามีวิดีโอแล้ว ห้ามเปิด modal เพิ่ม (แจ้งเตือน)
   const openVideoModal = (property) => {
     const id = property?.id;
     if (!id) return;
 
-    const cnt = videoSummary?.[id]?.count ?? 0;
-    if (cnt > 0) {
-      toast.info("โพสนี้มีวิดีโอแล้ว (เพิ่มได้แค่อันเดียว) ไปที่ “จัดการวิดีโอ” เพื่อเปลี่ยน/ย้าย");
-      return;
-    }
+    const store = readVideoStore();
+    const existing = store?.[String(id)];
+    const urls = normalizeStoreValueToUrls(existing);
+
+    const nextInputs = Array(MAX_SLOTS).fill("");
+    urls.slice(0, MAX_SLOTS).forEach((u, i) => (nextInputs[i] = toTrimmedUrl(u)));
 
     setVideoModalProperty(property);
-    setVideoUrlInput("");
+    setVideoInputs(nextInputs);
     setVideoModalOpen(true);
   };
 
@@ -252,18 +318,34 @@ const PropertyDataTable = () => {
     if (videoSaving) return;
     setVideoModalOpen(false);
     setVideoModalProperty(null);
-    setVideoUrlInput("");
+    setVideoInputs(Array(MAX_SLOTS).fill(""));
   };
 
-  // ✅ save url to localStorage (enforce 1 video per post)
-  const saveVideoUrlFrontOnly = async () => {
-    const property = videoModalProperty;
-    const url = videoUrlInput.trim();
+  const setVideoAt = (idx, value) => {
+    setVideoInputs((prev) => {
+      const next = [...prev];
+      next[idx] = String(value ?? "");
+      return next;
+    });
+  };
 
+  const saveVideoUrlsFrontOnly = async () => {
+    const property = videoModalProperty;
     if (!property?.id) return;
 
-    if (!url) return toast.warning("กรุณาใส่ลิงก์วิดีโอ");
-    if (!isValidVideoUrl(url)) return toast.error("ลิงก์ไม่ถูกต้อง (รองรับ YouTube / TikTok)");
+    // validate ทีละช่อง
+    for (let i = 0; i < videoInputs.length; i++) {
+      const u = toTrimmedUrl(videoInputs[i]);
+      if (!isValidVideoUrl(u)) {
+        toast.error(`ลิงก์ช่องที่ ${i + 1} ไม่ถูกต้อง (รองรับ YouTube / TikTok)`);
+        return;
+      }
+    }
+
+    const cleaned = videoInputs
+      .map((u) => toTrimmedUrl(u))
+      .filter(Boolean)
+      .slice(0, MAX_SLOTS);
 
     try {
       setVideoSaving(true);
@@ -272,44 +354,35 @@ const PropertyDataTable = () => {
       const store = readVideoStore();
       const key = String(property.id);
 
-      // 🔒 บังคับ: 1 โพส มีได้แค่วิดีโอเดียว
-      const current = Array.isArray(store[key]) ? store[key] : [];
-      if (current.length > 0) {
-        toast.error("โพสนี้มีวิดีโอแล้ว (เพิ่มได้แค่อันเดียว)");
-        closeVideoModal();
-        return;
+      // ✅ กัน URL ซ้ำ “ข้ามโพสต์” (ถ้าจะยอมให้ซ้ำ บอกผม เดี๋ยวถอด)
+      const all = Object.entries(store || {}).flatMap(([pid, arr]) => {
+        const urls = normalizeStoreValueToUrls(arr);
+        return urls.map((u) => ({ pid, url: u }));
+      });
+
+      for (const u of cleaned) {
+        const used = all.find((x) => x.url === u && x.pid !== key);
+        if (used) {
+          toast.error("ลิงก์นี้ถูกผูกกับโพสอื่นอยู่แล้ว");
+          return;
+        }
       }
 
-      // (optional but good) 🔒 กัน url ซ้ำข้ามโพส
-      const all = Object.values(store || {}).flatMap((arr) => (Array.isArray(arr) ? arr : []));
-      const urlUsed = all.some((v) => (v?.url || "").trim() === url);
-      if (urlUsed) {
-        toast.error("ลิงก์นี้ถูกผูกกับโพสอื่นอยู่แล้ว");
-        return;
-      }
+      // ✅ เขียนกลับ store เป็น shape มาตรฐาน (array of objects)
+      store[key] = buildItemsFromUrls(cleaned);
+      writeVideoStore(store);
 
-      const item = {
-        id: uid(),
-        url,
-        provider: detectProvider(url),
-        createdAt: new Date().toISOString(),
-      };
-
-      // ✅ เก็บเป็น array ที่มี 1 ตัวเท่านั้น
-      const nextStore = { ...store, [key]: [item] };
-      writeVideoStore(nextStore);
-
-      // update summary immediately => count = 1
+      // update summary
       setVideoSummary((prev) => ({
         ...(prev || {}),
-        [property.id]: { count: 1, hasVideo: true },
+        [property.id]: { count: cleaned.length, hasVideo: cleaned.length > 0 },
       }));
 
-      toast.success("เพิ่มวิดีโอสำเร็จ");
+      toast.success(cleaned.length ? "บันทึกวิดีโอเรียบร้อย" : "ลบวิดีโอออกเรียบร้อย");
       closeVideoModal();
     } catch (e) {
       console.error(e);
-      toast.error("เพิ่มวิดีโอไม่สำเร็จ");
+      toast.error("บันทึกวิดีโอไม่สำเร็จ");
     } finally {
       setVideoSaving(false);
     }
@@ -339,7 +412,7 @@ const PropertyDataTable = () => {
         >
           <div
             style={{
-              width: "min(640px, 100%)",
+              width: "min(720px, 100%)",
               background: "#fff",
               borderRadius: 14,
               boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
@@ -348,52 +421,75 @@ const PropertyDataTable = () => {
           >
             <div className="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
               <div>
-                <div className="h6 mb-0">เพิ่มวิดีโอ</div>
+                <div className="h6 mb-0">วิดีโอประกาศ (สูงสุด {MAX_SLOTS} อัน)</div>
                 <div style={{ fontSize: 13, opacity: 0.8 }}>
                   ประกาศ: <b>{videoModalProperty?.title}</b>
                 </div>
               </div>
 
-              <button type="button" className="btn btn-light" onClick={closeVideoModal} disabled={videoSaving} aria-label="close">
+              <button
+                type="button"
+                className="btn btn-light"
+                onClick={closeVideoModal}
+                disabled={videoSaving}
+                aria-label="close"
+              >
                 <span className="fas fa-times" />
               </button>
             </div>
 
             <div className="px-4 py-4">
-              <label className="form-label" style={{ fontWeight: 600 }}>
-                ลิงก์วิดีโอ (YouTube / TikTok)
-              </label>
+              <div style={{ fontSize: 13, opacity: 0.8 }} className="mb-3">
+                รองรับ YouTube / TikTok (เว้นว่างได้)
+              </div>
 
-              <input
-                className="form-control"
-                value={videoUrlInput}
-                onChange={(e) => setVideoUrlInput(e.target.value)}
-                placeholder="วางลิงก์ เช่น https://youtu.be/... หรือ https://www.tiktok.com/@.../video/..."
-                disabled={videoSaving}
-              />
+              <div className="row">
+                {videoInputs.map((val, idx) => {
+                  const textVal = String(val ?? "");
+                  const trimmed = toTrimmedUrl(textVal);
 
-              <div className="mt-2" style={{ fontSize: 13, opacity: 0.8 }}>
-                * จำกัด 1 วิดีโอ ต่อ 1 ประกาศ (ถ้ามีแล้วให้ไปหน้า “จัดการวิดีโอ”)
+                  return (
+                    <div className="col-12" key={idx}>
+                      <label className="form-label" style={{ fontWeight: 600 }}>
+                        URL วิดีโอ {idx + 1}
+                      </label>
+
+                      <input
+                        className="form-control mb-2"
+                        value={textVal}
+                        onChange={(e) => setVideoAt(idx, e.target.value)}
+                        placeholder="https://youtu.be/... หรือ https://www.tiktok.com/@.../video/..."
+                        disabled={videoSaving}
+                      />
+
+                      {!!trimmed && !isValidVideoUrl(trimmed) && (
+                        <div style={{ color: "#ef4444", fontSize: 12 }} className="mb-2">
+                          ลิงก์ไม่ถูกต้อง (รองรับ YouTube / TikTok)
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="d-flex gap-2 justify-content-end mt-4">
-                <button 
+                <button
                   type="button"
-                  className="ud-btn btn-white2" 
-                  onClick={closeVideoModal} 
+                  className="ud-btn btn-white2"
+                  onClick={closeVideoModal}
                   disabled={videoSaving}
                   style={{ height: 44, padding: "0 18px", borderRadius: 12 }}
-                  >
+                >
                   ยกเลิก
                 </button>
 
-                <button 
-                  type="button" 
-                  className="ud-btn btn-thme" 
-                  onClick={saveVideoUrlFrontOnly} 
+                <button
+                  type="button"
+                  className="ud-btn btn-thme"
+                  onClick={saveVideoUrlsFrontOnly}
                   disabled={videoSaving}
                   style={{ height: 44, padding: "0 18px", borderRadius: 12 }}
-                  >
+                >
                   {videoSaving ? (
                     <>
                       <span className="fas fa-spinner fa-spin me-2" />
@@ -401,8 +497,8 @@ const PropertyDataTable = () => {
                     </>
                   ) : (
                     <>
-                      <span className="fas fa-plus me-2" />
-                      เพิ่มวิดีโอ
+                      <span className="fas fa-save me-2" />
+                      บันทึก
                     </>
                   )}
                 </button>
@@ -438,7 +534,7 @@ const PropertyDataTable = () => {
             </tr>
           ) : (
             properties.map((property) => {
-              const count = videoSummary?.[property.id]?.count ?? 0; // 0/1
+              const count = videoSummary?.[property.id]?.count ?? 0; // 0..4
               const hasVideo = count > 0;
 
               const busy = rowBusy(property.id);
@@ -448,7 +544,13 @@ const PropertyDataTable = () => {
                   <th scope="row">
                     <div className="listing-style1 dashboard-style d-xxl-flex align-items-center mb-0">
                       <div className="list-thumb">
-                        <Image width={110} height={94} className="w-100" src={property.imageSrc} alt="property" />
+                        <Image
+                          width={110}
+                          height={94}
+                          className="w-100"
+                          src={property.imageSrc}
+                          alt="property"
+                        />
                       </div>
 
                       <div className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4">
@@ -468,27 +570,39 @@ const PropertyDataTable = () => {
                                   padding: 0,
                                   opacity: busy ? 0.5 : 1,
                                   cursor: busy ? "not-allowed" : "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
                                 }}
                                 data-tooltip-id={`video-${property.id}`}
                                 onClick={() => handleVideoPage(property.id)}
                                 aria-label="video"
                               >
                                 <span className="fas fa-video" />
+                                <span style={{ fontSize: 12, opacity: 0.85 }}>{count}</span>
                               </button>
 
-                              <ReactTooltip id={`video-${property.id}`} place="top" content={`วิดีโอ (${count})`} />
+                              <ReactTooltip
+                                id={`video-${property.id}`}
+                                place="top"
+                                content={`วิดีโอ (${count})`}
+                              />
                             </>
                           )}
                         </div>
 
                         <p className="list-text mb-0">
-                          {property?.location?.province ? `${property.location.province} ${property.location.district ?? ""}` : property.location || "-"}
+                          {property?.location?.province
+                            ? `${property.location.province} ${property.location.district ?? ""}`
+                            : property.location || "-"}
                         </p>
                       </div>
                     </div>
                   </th>
 
-                  <td className="vam">{property.priceText || property.price?.toLocaleString?.() || "-"}</td>
+                  <td className="vam">
+                    {property.priceText || property.price?.toLocaleString?.() || "-"}
+                  </td>
 
                   <td className="vam">
                     <span className={getStatusStyle(property.status)}>{property.status}</span>
@@ -526,7 +640,11 @@ const PropertyDataTable = () => {
                               disabled={busy}
                               onClick={() => handleEdit(property.id)}
                             >
-                              {editingId === property.id ? <span className="fas fa-spinner fa-spin" /> : <span className="fas fa-pen" />}
+                              {editingId === property.id ? (
+                                <span className="fas fa-spinner fa-spin" />
+                              ) : (
+                                <span className="fas fa-pen" />
+                              )}
                               แก้ไข
                             </button>
                           </li>
@@ -538,7 +656,11 @@ const PropertyDataTable = () => {
                               disabled={busy}
                               onClick={() => handleBoost(property.id)}
                             >
-                              {boostingId === property.id ? <span className="fas fa-spinner fa-spin" /> : <span className="fas fa-bolt" />}
+                              {boostingId === property.id ? (
+                                <span className="fas fa-spinner fa-spin" />
+                              ) : (
+                                <span className="fas fa-bolt" />
+                              )}
                               ดันประกาศ
                             </button>
                           </li>
@@ -551,7 +673,7 @@ const PropertyDataTable = () => {
                               onClick={() => openVideoModal(property)}
                             >
                               <span className="fas fa-video" />
-                              เพิ่มวิดีโอ
+                              {hasVideo ? "แก้ไขวิดีโอ" : "เพิ่มวิดีโอ"}
                             </button>
                           </li>
 
@@ -574,7 +696,11 @@ const PropertyDataTable = () => {
                               disabled={busy}
                               onClick={() => handleDelete(property.id)}
                             >
-                              {deletingId === property.id ? <span className="fas fa-spinner fa-spin" /> : <span className="flaticon-bin" />}
+                              {deletingId === property.id ? (
+                                <span className="fas fa-spinner fa-spin" />
+                              ) : (
+                                <span className="flaticon-bin" />
+                              )}
                               ลบ
                             </button>
                           </li>

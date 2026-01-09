@@ -1,12 +1,72 @@
 "use client";
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import LeafletMap from "@/components/common/LeafletMap";
+import announcerStatusOptions from "../property-description/announcerStatusOptions.json";
+import listingTypeOptions from "../property-description/listingTypeOptions.json";
+import propertyConditionOptions from "../property-description/propertyConditionOptions.json";
+import propertyTypeOptions from "../property-description/propertyTypeOptions.json";
+
+const DETAILS_STORE_KEY_V2 = "landx_add_property_details_v2";
+const DETAILS_STORE_KEY_V1 = "landx_add_property_details";
+const DETAILS_STORE_KEY_LEGACY = "landx_property_details_v1";
+
+const safeParse = (v) => {
+  try {
+    return JSON.parse(v);
+  } catch {
+    return null;
+  }
+};
+
+const isBlank = (v) => v === undefined || v === null || String(v).trim() === "";
+
+// ✅ ดึงค่าได้หลายคีย์ (รองรับไทย/อังกฤษ/legacy)
+const getAny = (obj, keys) => {
+  if (!obj) return undefined;
+  for (const k of keys) {
+    const val = obj?.[k];
+    if (!isBlank(val)) return val;
+  }
+  return undefined;
+};
+
+// ✅ ดึง label จาก react-select option หรือค่าดิบ
+const labelOf = (v) => {
+  if (isBlank(v)) return undefined;
+  if (typeof v === "object") {
+    if (v?.label != null) return String(v.label);
+    if (v?.value != null) return String(v.value);
+    return undefined;
+  }
+  return String(v);
+};
+
+/* =========================================================
+  ✅ FIX: videos อาจเป็น string[] หรือ object[] ({url, provider...})
+  ให้ normalize เป็น string url[] เสมอ ก่อน render
+========================================================= */
+const getVideoUrl = (v) => {
+  if (!v) return "";
+  if (typeof v === "string") return v.trim();
+  if (typeof v === "object") return String(v.url || v.src || v.link || "").trim();
+  return String(v).trim();
+};
+
+const normalizeVideoList = (videos) => {
+  const arr = Array.isArray(videos) ? videos : videos ? [videos] : [];
+  return arr.map(getVideoUrl).filter((s) => !isBlank(s));
+};
+/* ========================================================= */
 
 const PropertySummary = ({
   basicInfo,
   location,
   images,
   details,
+
+  videos,
+  onEditVideo,
+
   onEditBasic,
   onEditLocation,
   onEditImages,
@@ -31,104 +91,318 @@ const PropertySummary = ({
   const safeBasic = basicInfo || {};
   const safeLocation = location || {};
   const safeImages = Array.isArray(images) ? images : [];
-  const safeDetails = details || {};
+
+  // ✅ FIX: videos -> string url[]
+  const safeVideos = useMemo(() => normalizeVideoList(videos), [videos]);
 
   const isEmptyObject = (obj) => !obj || Object.keys(obj).length === 0;
-  const isBlank = (v) => v === undefined || v === null || String(v).trim() === "";
 
-  const formatPrice = (p) => {
-    if (p === undefined || p === null || p === "") return "-";
-    if (typeof p === "number") return p.toLocaleString() + " บาท";
-    const n = Number(String(p).replace(/,/g, ""));
-    return Number.isFinite(n) && n > 0 ? n.toLocaleString() + " บาท" : String(p);
+  // ✅ helper: แปลง value เป็น label จาก options
+  const findLabel = (options, value) => {
+    if (!value) return null;
+    const found = options?.find((o) => String(o.value) === String(value));
+    return found?.label || value;
   };
+
+  // ✅ แปลงข้อมูล basicInfo จาก property-description เป็น display format
+  const resolvedBasicInfo = useMemo(() => {
+    const b = safeBasic || {};
+
+    // ✅ listingType: รองรับทั้ง array และ single value
+    const listingTypeValue = b.listingType || b.listingType_value;
+    let listingTypeLabel =
+      b.listingType_label ||
+      (Array.isArray(b.listingTypes) && b.listingTypes.length > 0
+        ? b.listingTypes
+            .map((lt) => {
+              const val =
+                typeof lt === "object" ? lt.value ?? lt.label ?? null : lt;
+              return findLabel(listingTypeOptions, val) || String(val || "");
+            })
+            .filter(Boolean)
+            .join(", ")
+        : null) ||
+      (listingTypeValue ? findLabel(listingTypeOptions, listingTypeValue) : null) ||
+      "-";
+    listingTypeLabel = String(listingTypeLabel || "-");
+
+    // ✅ propertyType
+    const propertyTypeValue =
+      typeof b.propertyType === "object"
+        ? b.propertyType?.value ?? b.propertyType_value
+        : b.propertyType || b.propertyType_value;
+    let propertyTypeLabel =
+      b.propertyType_label ||
+      (propertyTypeValue ? findLabel(propertyTypeOptions, propertyTypeValue) : null) ||
+      "-";
+    propertyTypeLabel = String(propertyTypeLabel || "-");
+
+    // ✅ condition
+    const conditionValue =
+      typeof b.condition === "object"
+        ? b.condition?.value ?? b.condition_value
+        : b.condition || b.condition_value;
+    let conditionLabel =
+      b.condition_label ||
+      (conditionValue ? findLabel(propertyConditionOptions, conditionValue) : null) ||
+      "-";
+    conditionLabel = String(conditionLabel || "-");
+
+    // ✅ announcerStatus
+    const announcerStatusValue =
+      typeof b.announcerStatus === "object"
+        ? b.announcerStatus?.value ??
+          b.announcer_status ??
+          b.announcerStatus_value
+        : b.announcerStatus || b.announcer_status || b.announcerStatus_value;
+    let announcerStatusLabel =
+      b.announcerStatus_label ||
+      (announcerStatusValue
+        ? findLabel(announcerStatusOptions, announcerStatusValue)
+        : null) ||
+      b.announcerStatusText ||
+      "-";
+    announcerStatusLabel = String(announcerStatusLabel || "-");
+
+    return {
+      title: String(b.title || "-"),
+      description: String(b.description || "-"),
+      price: b.price ?? b.price_text ?? undefined,
+      price_text: b.price_text, // ✅ สำหรับเช็ค "xxxx"
+      approxPrice: b.approxPrice_label
+        ? String(b.approxPrice_label)
+        : b.approxPrice
+        ? String(b.approxPrice)
+        : null,
+      listingType: listingTypeLabel,
+      propertyType: propertyTypeLabel,
+      condition: conditionLabel,
+      announcerStatus: announcerStatusLabel,
+    };
+  }, [safeBasic]);
+
+  const formatPrice = (p, priceText) => {
+    if (priceText === "xxxx" || String(priceText || "").trim() === "xxxx") {
+      return "ไม่ระบุราคา";
+    }
+    if (p === undefined || p === null || p === "") return "-";
+    if (typeof p === "number") {
+      if (p <= 0) return "ไม่ระบุราคา";
+      return p.toLocaleString() + " บาท";
+    }
+    const n = Number(String(p).replace(/,/g, ""));
+    return Number.isFinite(n) && n > 0 ? n.toLocaleString() + " บาท" : "ไม่ระบุราคา";
+  };
+
+  // ✅ Details: props เป็นหลัก / กัน hydration
+  const [resolvedDetails, setResolvedDetails] = useState(() => details || {});
+
+  useEffect(() => {
+    const fromProps = details || {};
+
+    const hasNonBlankInProps = Object.keys(fromProps).some(
+      (k) => !isBlank(fromProps?.[k])
+    );
+    if (hasNonBlankInProps) {
+      setResolvedDetails(fromProps);
+      return;
+    }
+
+    if (typeof window === "undefined") {
+      setResolvedDetails(fromProps);
+      return;
+    }
+
+    const loadLS = (key) => {
+      try {
+        const v = safeParse(localStorage.getItem(key));
+        return v && typeof v === "object" ? v : null;
+      } catch {
+        return null;
+      }
+    };
+
+    const ls =
+      loadLS(DETAILS_STORE_KEY_V2) ||
+      loadLS(DETAILS_STORE_KEY_V1) ||
+      loadLS(DETAILS_STORE_KEY_LEGACY) ||
+      {};
+
+    const keys = Object.keys(ls || {}).filter((k) => !isBlank(ls?.[k]));
+    const looksValid =
+      keys.length >= 2 ||
+      keys.includes("amenities") ||
+      keys.includes("unitFloor") ||
+      keys.includes("roomArea") ||
+      keys.includes("deedNumber") ||
+      keys.includes("titleDeed") ||
+      keys.includes("landSqw") ||
+      keys.includes("usableArea");
+
+    setResolvedDetails(looksValid ? ls : fromProps);
+  }, [details]);
+
+  const safeDetails = resolvedDetails || {};
 
   const handleSaveDraft = () => {
     if (!onSaveDraft) return;
-    const payload = {
+    onSaveDraft?.({
       basicInfo: safeBasic,
       location: safeLocation,
       images: safeImages,
       details: safeDetails,
-    };
-    onSaveDraft?.(payload);
+      videos: safeVideos, // ✅ url string[]
+    });
   };
 
   const handleSubmit = () => {
     if (!onSubmit) return;
-    const payload = {
+    onSubmit?.({
       basicInfo: safeBasic,
       location: safeLocation,
       images: safeImages,
       details: safeDetails,
-    };
-    onSubmit?.(payload);
+      videos: safeVideos, // ✅ url string[]
+    });
   };
 
-  // ----- detailsView (รองรับทั้ง summary ไทย และ raw detailsForm) -----
+  const LAND_FILL_LABEL = {
+    filled: "ถมแล้ว",
+    "not-filled": "ยังไม่ถม",
+    unknown: "ไม่แน่ใจ/ไม่ระบุ",
+  };
+
+  const ZONING_COLOR_LABEL = {
+    red: "ผังสีแดง",
+    brown: "ผังสีน้ำตาล",
+    yellow: "ผังสีเหลือง",
+    orange: "ผังสีส้ม",
+    purple: "ผังสีม่วง",
+    green: "ผังสีเขียว",
+    blue: "ผังสีน้ำเงิน",
+    other: "อื่นๆ/ไม่แน่ใจ",
+  };
+
+  // ✅ สร้างรายละเอียดสำหรับ Summary
   const detailsView = useMemo(() => {
     const d = safeDetails || {};
-    const hasThaiKeys = Object.keys(d).some((k) => /[ก-๙]/.test(k));
-    if (hasThaiKeys) return d;
-
     const out = {};
+
     const pick = (label, value) => {
       if (isBlank(value)) return;
-      out[label] = value;
+
+      if (typeof value === "object") {
+        if (value?.label != null) out[label] = String(value.label);
+        else if (value?.value != null) out[label] = String(value.value);
+        else return;
+      } else {
+        out[label] = String(value);
+      }
     };
 
-    pick("ห้องนอน", d.bedrooms?.label ?? d.bedrooms);
-    pick("ห้องน้ำ", d.bathrooms?.label ?? d.bathrooms);
-    pick("จำนวนชั้น", d.floors);
-    pick("ที่จอดรถ", d.parking?.label ?? d.parking);
-    pick("พื้นที่ใช้สอย (ตร.ม.)", d.usableArea);
-    pick("ขนาดที่ดิน (ตร.ว.)", d.landSqw);
-    pick("เอกสารสิทธิ", d.titleDeed);
-    pick("ถนนหน้าบ้าน/ที่ดินกว้าง (ม.)", d.roadWidth);
-    pick("หน้ากว้างที่ดิน (ม.)", d.frontage);
-    pick("ความลึกที่ดิน (ม.)", d.depth);
+    // ---------- บ้านและที่ดิน ----------
+    pick("ห้องนอน", labelOf(getAny(d, ["bedrooms", "ห้องนอน"])));
+    pick("ห้องน้ำ", labelOf(getAny(d, ["bathrooms", "ห้องน้ำ"])));
+    pick(
+      "พื้นที่ใช้สอย (ตร.ม.)",
+      getAny(d, ["usableArea", "พื้นที่ใช้สอย (ตร.ม.)", "พื้นที่ใช้สอย"])
+    );
+    pick(
+      "ขนาดที่ดิน (ตร.ว.)",
+      getAny(d, ["landSqw", "ขนาดที่ดิน (ตร.ว.)", "ขนาดที่ดิน"])
+    );
+    pick(
+      "เอกสารสิทธิ (เลขโฉนด)",
+      getAny(d, ["deedNumber", "titleDeed", "เอกสารสิทธิ (เลขโฉนด)", "เอกสารสิทธิ"])
+    );
+    pick("จำนวนชั้น", getAny(d, ["floors", "จำนวนชั้น"]));
+    pick("ที่จอดรถ", labelOf(getAny(d, ["parking", "ที่จอดรถ"])));
 
-    // รูปโฉนด
-    if (d.titleDeedImage) {
-      const name =
-        typeof d.titleDeedImage === "string"
-          ? d.titleDeedImage
-          : d.titleDeedImage?.name || "มีไฟล์แนบ";
-      pick("รูปโฉนด", name);
+    pick(
+      "ถนนหน้าบ้าน/ที่ดินกว้าง (ม.)",
+      getAny(d, [
+        "roadWidth",
+        "ถนนหน้าบ้านกว้าง (ม.) (ถ้ามี)",
+        "ถนนหน้าที่ดินกว้าง (ม.) (ถ้ามี)",
+        "ถนนหน้าบ้าน/ที่ดินกว้าง (ม.)",
+        "ถนนหน้าที่ดินกว้าง (ม.)",
+      ])
+    );
+
+    pick("หน้ากว้างที่ดิน (ม.)", getAny(d, ["frontage", "หน้ากว้างที่ดิน (ม.)"]));
+    pick("ความลึกที่ดิน (ม.)", getAny(d, ["depth", "ความลึกที่ดิน (ม.)"]));
+
+    // ---------- รูปโฉนด ----------
+    const deedFile = getAny(d, [
+      "titleDeedImage",
+      "titleDeedImages",
+      "รูปเอกสารโฉนด",
+      "รูปโฉนด",
+    ]);
+
+    const deedName = getAny(d, [
+      "titleDeedImageName",
+      "ชื่อไฟล์โฉนด",
+      "ไฟล์เดิม/ที่เลือก",
+    ]);
+
+    let deedText = undefined;
+
+    if (typeof deedFile === "string" && deedFile.trim()) {
+      deedText = deedFile;
+    } else if (deedFile?.name) {
+      deedText = deedFile.name;
+    } else if (typeof deedFile === "object" && deedFile?.url) {
+      deedText = deedFile.url;
+    } else if (Array.isArray(deedFile)) {
+      const first = deedFile[0];
+      if (typeof first === "string" && first.trim()) deedText = first;
+      else if (first?.name) deedText = first.name;
+      else if (first?.url) deedText = first.url;
     }
 
-    // ✅ ชื่อโครงการย้ายไป location.neighborhood แล้ว
-    pick("อาคาร/ตึก", d.building);
-    pick("ชั้น", d.unitFloor);
-    pick("ขนาดห้อง (ตร.ม.)", d.roomArea);
-    pick("ประเภทห้อง", d.roomType);
-    pick("สิทธิ์ที่จอดรถ", d.condoParking);
+    if (isBlank(deedText) && !isBlank(deedName)) deedText = deedName;
 
-    pick("ขนาดห้อง (ตร.ม.)", d.roomAreaRent);
-    pick("ชั้นที่อยู่", d.rentFloor);
-    if (d.bathroomPrivate !== undefined) pick("ห้องน้ำในตัว", d.bathroomPrivate ? "มี" : "ไม่มี");
-    if (d.internetIncluded !== undefined) pick("รวมอินเทอร์เน็ต", d.internetIncluded ? "รวม" : "ไม่รวม");
-    pick("ค่าไฟ (บาท/หน่วย)", d.electricRate);
-    pick("ค่าน้ำ", d.waterRate);
+    pick("รูปโฉนด", deedText);
 
-    pick("รายละเอียดเพิ่มเติม", d.note);
+    // ---------- ที่ดินเปล่า ----------
+    const landFillRaw = getAny(d, ["landFillStatus", "สภาพที่ดิน"]);
+    const zoningRaw = getAny(d, ["zoningColor", "ผังสี"]);
 
-    if (Array.isArray(d.amenities)) out.amenities = d.amenities;
+    if (!isBlank(landFillRaw))
+      pick("สภาพที่ดิน", LAND_FILL_LABEL[landFillRaw] ?? landFillRaw);
+    if (!isBlank(zoningRaw))
+      pick("ผังสี", ZONING_COLOR_LABEL[zoningRaw] ?? zoningRaw);
+
+    // ---------- คอนโด / ห้องเช่า ----------
+    pick("อาคาร/ตึก", getAny(d, ["building", "อาคาร/ตึก", "อาคาร"]));
+    pick("ชั้น", getAny(d, ["unitFloor", "ชั้น"]));
+    pick("ขนาดห้อง (ตร.ม.)", getAny(d, ["roomArea", "ขนาดห้อง (ตร.ม.)", "ขนาดห้อง"]));
+
+    pick("ค่าน้ำ", getAny(d, ["waterFee", "waterRate", "ค่าน้ำ"]));
+    pick("ค่าไฟ", getAny(d, ["electricFee", "electricRate", "ค่าไฟ"]));
+    pick("ค่าส่วนกลาง", getAny(d, ["commonFee", "ค่าส่วนกลาง"]));
+
+    pick("รายละเอียดเพิ่มเติม", getAny(d, ["note", "รายละเอียดเพิ่มเติม"]));
+
+    const am = getAny(d, ["amenities", "สิ่งอำนวยความสะดวก"]) || [];
+    if (Array.isArray(am)) out.amenities = am;
 
     return out;
   }, [safeDetails]);
 
   const amenities = Array.isArray(detailsView.amenities) ? detailsView.amenities : [];
 
-  // เรียง key รายละเอียด
   const DETAILS_ORDER = [
     "ห้องนอน",
     "ห้องน้ำ",
     "พื้นที่ใช้สอย (ตร.ม.)",
     "ขนาดที่ดิน (ตร.ว.)",
-    "เอกสารสิทธิ",
+    "เอกสารสิทธิ (เลขโฉนด)",
     "รูปโฉนด",
     "จำนวนชั้น",
+    "สภาพที่ดิน",
+    "ผังสี",
     "ที่จอดรถ",
     "ถนนหน้าบ้าน/ที่ดินกว้าง (ม.)",
     "หน้ากว้างที่ดิน (ม.)",
@@ -136,13 +410,9 @@ const PropertySummary = ({
     "อาคาร/ตึก",
     "ชั้น",
     "ขนาดห้อง (ตร.ม.)",
-    "ประเภทห้อง",
-    "สิทธิ์ที่จอดรถ",
-    "ชั้นที่อยู่",
-    "ห้องน้ำในตัว",
-    "รวมอินเทอร์เน็ต",
-    "ค่าไฟ (บาท/หน่วย)",
     "ค่าน้ำ",
+    "ค่าไฟ",
+    "ค่าส่วนกลาง",
     "รายละเอียดเพิ่มเติม",
   ];
 
@@ -150,9 +420,19 @@ const PropertySummary = ({
     const d = detailsView || {};
     const used = new Set();
 
+    const normalizeValue = (v) => {
+      if (v == null) return v;
+      if (typeof v === "object") {
+        if (v.label != null) return String(v.label);
+        if (v.value != null) return String(v.value);
+        return String(v);
+      }
+      return String(v);
+    };
+
     const ordered = DETAILS_ORDER
       .filter((k) => k in d)
-      .map((k) => [k, d[k]])
+      .map((k) => [k, normalizeValue(d[k])])
       .filter(([, v]) => !isBlank(v))
       .filter(([k]) => k !== "amenities");
 
@@ -161,30 +441,38 @@ const PropertySummary = ({
     const rest = Object.entries(d)
       .filter(([k]) => k !== "amenities")
       .filter(([k]) => !used.has(k))
+      .map(([k, v]) => [k, normalizeValue(v)])
       .filter(([, v]) => !isBlank(v));
 
     return [...ordered, ...rest];
   }, [detailsView]);
 
-  // สถานะผู้ประกาศ (รองรับหลายชื่อ key กันพัง)
-  const announcerText =
-    safeBasic.announcerStatus ||
-    safeBasic.announcer_status ||
-    safeBasic.announcerStatus_label ||
-    safeBasic.announcerStatusText ||
-    "-";
-
-  // ✅ ช่องเดียว: หมู่บ้าน / โครงการ (ถ้ามี)
   const neighborhoodText =
-    safeLocation.neighborhood ||
-    safeLocation.village ||
-    safeLocation.projectName ||
-    "";
+    safeLocation.neighborhood || safeLocation.village || safeLocation.projectName || "";
 
-  // ✅ map lat/lng safe
   const mapLat = Number(safeLocation.latitude ?? safeLocation.lat);
   const mapLng = Number(safeLocation.longitude ?? safeLocation.lng);
   const hasMap = Number.isFinite(mapLat) && Number.isFinite(mapLng);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!hasMap) return;
+    const styleId = "hide-map-controls-property-summary";
+    if (document.getElementById(styleId)) return;
+
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.textContent = `
+      .property-summary-map .lx-map-actions { display: none !important; }
+      .property-summary-map .lx-map-search { display: none !important; }
+      .property-summary-map .lx-map-overlay-inner { display: none !important; }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      const existingStyle = document.getElementById(styleId);
+      if (existingStyle) document.head.removeChild(existingStyle);
+    };
+  }, [hasMap]);
 
   return (
     <div className="row">
@@ -205,28 +493,31 @@ const PropertySummary = ({
           ) : (
             <>
               <p>
-                <strong>หัวข้อประกาศ:</strong> {safeBasic.title || "-"}
-              </p>
-
-              <p>
-                <strong>สถานะผู้ประกาศ:</strong> {announcerText}
-              </p>
-
-              <p>
-                <strong>ประเภทประกาศ:</strong> {safeBasic.listingType || "-"}
+                <strong>หัวข้อประกาศ:</strong> {resolvedBasicInfo.title}
               </p>
               <p>
-                <strong>ประเภททรัพย์:</strong> {safeBasic.propertyType || "-"}
+                <strong>สถานะผู้ประกาศ:</strong> {resolvedBasicInfo.announcerStatus}
               </p>
               <p>
-                <strong>สภาพทรัพย์:</strong> {safeBasic.condition || "-"}
+                <strong>ประเภทการขาย:</strong> {resolvedBasicInfo.listingType}
               </p>
               <p>
-                <strong>ราคา:</strong> {formatPrice(safeBasic.price ?? safeBasic.price_text)}
+                <strong>ประเภททรัพย์:</strong> {resolvedBasicInfo.propertyType}
               </p>
+              <p>
+                <strong>สภาพทรัพย์:</strong> {resolvedBasicInfo.condition}
+              </p>
+              <p>
+                <strong>ราคา:</strong>{" "}
+                {formatPrice(resolvedBasicInfo.price, resolvedBasicInfo.price_text)}
+              </p>
+              {resolvedBasicInfo.approxPrice && (
+                <p>
+                  <strong>ราคาประมาณ:</strong> {String(resolvedBasicInfo.approxPrice)}
+                </p>
+              )}
               <p className="mt10">
-                <strong>รายละเอียดประกาศ:</strong> {safeBasic.description || "-"}
-                <br />
+                <strong>รายละเอียดประกาศ:</strong> {resolvedBasicInfo.description}
               </p>
             </>
           )}
@@ -254,7 +545,6 @@ const PropertySummary = ({
                   <strong>หมู่บ้าน / โครงการ:</strong> {neighborhoodText}
                 </p>
               )}
-
               {!isBlank(safeLocation.address) && (
                 <p>
                   <strong>ที่อยู่:</strong> {safeLocation.address}
@@ -282,8 +572,7 @@ const PropertySummary = ({
               )}
 
               {hasMap && (
-                <div className="mt15">
-                  {/* ✅ เปลี่ยนมาใช้ LeafletMap (แสดงอย่างเดียว ไม่ต้องมี search/gps) */}
+                <div className="mt15 property-summary-map">
                   <LeafletMap
                     lat={mapLat}
                     lng={mapLng}
@@ -296,7 +585,6 @@ const PropertySummary = ({
                     restrictToThailand={true}
                     initialPosition={{ lat: mapLat, lng: mapLng }}
                   />
-
                   <div className="d-flex gap-3 mt10">
                     <small>
                       <strong>Lat:</strong> {mapLat}
@@ -318,7 +606,7 @@ const PropertySummary = ({
           <h4 className="ff-heading fw600 mb0">รายละเอียดทรัพย์เพิ่มเติม</h4>
           {onEditDetails && (
             <button type="button" style={editButtonStyle} onClick={onEditDetails}>
-              {isEmptyObject(detailsView) ? "เพิ่มข้อมูล" : "แก้ไข"}
+              {detailsEntries.length === 0 && amenities.length === 0 ? "เพิ่มข้อมูล" : "แก้ไข"}
             </button>
           )}
         </div>
@@ -344,7 +632,9 @@ const PropertySummary = ({
 
               {amenities.length > 0 && (
                 <div className="mt20">
-                  <div style={{ fontWeight: 700, marginBottom: 8 }}>สิ่งอำนวยความสะดวก:</div>
+                  <div style={{ fontWeight: 700, marginBottom: 8 }}>
+                    สิ่งอำนวยความสะดวก:
+                  </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     {amenities.map((a, idx) => (
                       <span
@@ -357,7 +647,9 @@ const PropertySummary = ({
                           fontSize: 12,
                         }}
                       >
-                        {a}
+                        {typeof a === "object"
+                          ? a?.label ?? a?.value ?? String(a)
+                          : String(a)}
                       </span>
                     ))}
                   </div>
@@ -397,6 +689,47 @@ const PropertySummary = ({
                       background: "#fff",
                     }}
                   />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 5) วิดีโอทรัพย์สิน */}
+      <div className="col-12 mb25">
+        <div className="d-flex justify-content-between align-items-center mb10">
+          <h4 className="ff-heading fw600 mb0">วิดีโอทรัพย์สิน</h4>
+          {onEditVideo && (
+            <button type="button" style={editButtonStyle} onClick={onEditVideo}>
+              {safeVideos.length === 0 ? "เพิ่มวิดีโอ" : "แก้ไข"}
+            </button>
+          )}
+        </div>
+
+        <div style={cardStyle}>
+          {safeVideos.length === 0 ? (
+            <p className="text-muted mb0">ยังไม่มีวิดีโอ</p>
+          ) : (
+            <div className="row g-3">
+              {safeVideos.map((u, idx) => (
+                <div className="col-12 col-md-6" key={idx}>
+                  <div
+                    style={{
+                      background: "#fff",
+                      border: "1px solid #e5e5e5",
+                      borderRadius: 10,
+                      padding: 12,
+                    }}
+                  >
+                    <div style={{ fontSize: 13, marginBottom: 6 }}>
+                      <strong>วิดีโอ {idx + 1}:</strong>{" "}
+                      <a href={u} target="_blank" rel="noreferrer">
+                        เปิดลิงก์
+                      </a>
+                    </div>
+                    <div style={{ fontSize: 12, color: "#6b7280" }}>{u}</div>
+                  </div>
                 </div>
               ))}
             </div>
