@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import React, { useState } from "react";
-import Link from "next/link"; 
+import Link from "next/link";
 
 const Pricing = () => {
   const pricingPackages = [
@@ -11,8 +11,9 @@ const Pricing = () => {
       pricePerMonth: "ตลอดชีพ",
       priceIcon: "/images/icon/pricing-icon-2.svg",
       features: [
-        "ลงประกาศฟรี 5 รายการ",
+        "ลงประกาศฟรี 12 รายการ",
         "ดันประกาศฟรี 1 ครั้ง/วัน",
+        "ดันประกาศฟรีอัตโนมัติ 1 ครั้ง/วัน",
         "หน้าเว็บส่วนตัว (Map Page)",
       ],
     },
@@ -26,7 +27,7 @@ const Pricing = () => {
       uniqueClass: "unique-class",
       features: [
         "✅ ได้รับป้าย Verified Agent",
-        "ลงประกาศฟรี 10 โพส",
+        "ลงประกาศฟรี 24 โพส",
         "ดันทุก 5 ชม. (Auto 1 โพส)",
         "เพิ่มบริการเสริมได้ 5 ประเภท",
         "หน้าเว็บ + โดเมนส่วนตัว",
@@ -43,7 +44,7 @@ const Pricing = () => {
       priceIcon: "/images/icon/pricing-icon-3.svg",
       features: [
         "🏆 ได้รับป้าย Premium Agency",
-        "ลงประกาศฟรี 30 โพส",
+        "ลงประกาศฟรี 50 โพส",
         "ดันทุก 3 ชม. (Auto 5 โพส)",
         "เพิ่มบริการเสริมได้ครบทุกข้อ",
         "หน้าเว็บ + โดเมนส่วนตัว",
@@ -85,29 +86,29 @@ const Pricing = () => {
 
       <div className="row" data-aos="fade-up" data-aos-delay="300">
         {pricingPackages.map((item, index) => {
-          
-          // ✅ 1. คำนวณราคาที่จะแสดงและส่งไป (Refactor Logic เดิมของคุณมาไว้ตรงนี้)
-          let displayPrice = item.price; // ค่าเริ่มต้น (รายเดือน)
-          
+
+          let displayPrice = item.price;
+          let cycleValue = "monthly";
+
           if (isYearlyBilling) {
-             // Logic คำนวณราคารายปี (อิงตามโค้ดเดิมของคุณ)
-             if (index === 0) displayPrice = "ฟรี";
-             else if (index === 1) displayPrice = "฿5,660"; // Hardcode ตามเดิม
-             else if (index === 2) displayPrice = "฿15,260"; // Hardcode ตามเดิม
-             // หมายเหตุ: ถ้าอยากใช้ค่าจริงจาก Data ให้แก้เป็น displayPrice = item.priceYearly
+            if (index !== 0) {
+              displayPrice = item.priceYearly;
+              cycleValue = "yearly";
+            }
           }
 
           return (
             <div className="col-md-6 col-xl-4" key={index}>
-              <div className={`pricing_packages ${index === 1 ? "active" : ""}`}>
+              {/* ✅ 1. เพิ่ม h-100 d-flex flex-column ที่นี่ (เพื่อให้กรอบสูงเต็มและจัดแนวตั้ง) */}
+              <div className={`pricing_packages h-100 d-flex flex-column ${index === 1 ? "active" : ""}`}>
+
                 <div className="heading mb60">
                   <h4 className={`package_title ${item.uniqueClass || ""}`}>
                     {item.packageTitle}
                   </h4>
-                  
-                  {/* ✅ ใช้ตัวแปร displayPrice ที่คำนวณแล้ว */}
+
                   <h1 className="text2">{displayPrice}</h1>
-                  
+
                   <p className="text">
                     {isYearlyBilling && index !== 0 ? "/ ปี" : item.pricePerMonth}
                   </p>
@@ -119,10 +120,13 @@ const Pricing = () => {
                     alt="icon"
                   />
                 </div>
-                <div className="details">
+
+                {/* ✅ 2. เพิ่ม flex-grow-1 d-flex flex-column ที่นี่ (เพื่อให้ส่วนเนื้อหายืดเต็มพื้นที่ที่เหลือ) */}
+                <div className="details flex-grow-1 d-flex flex-column">
                   <p className="text mb35">
-                    {item.features[0]} {/* Display the first feature */}
+                    {item.features[0]}
                   </p>
+
                   <div className="list-style1 mb40">
                     <ul>
                       {item.features.slice(1).map((feature, featureIndex) => (
@@ -133,19 +137,18 @@ const Pricing = () => {
                       ))}
                     </ul>
                   </div>
-                  
-                  <div className="d-grid">
-                    {/* ✅ 2. ใส่ Link ที่ส่งข้อมูล dynamic ไปหน้าจ่ายเงิน */}
-                    <Link 
-                        href={{
-                            pathname: '/dashboard-points/buy', // ชื่อไฟล์หน้าจ่ายเงิน
-                            query: { 
-                                package: item.packageTitle,
-                                price: displayPrice, // ส่งราคาที่โชว์อยู่ไป
-                                cycle: isYearlyBilling ? 'yearly' : 'monthly'
-                            }
-                        }}
-                        className="ud-btn btn-thm-border text-thm"
+
+                  {/* ✅ 3. เพิ่ม mt-auto ที่นี่ (เพื่อดันปุ่มลงไปติดขอบล่างสุด) */}
+                  <div className="d-grid mt-auto">
+                    <Link
+                      href={{
+                        pathname: '/dashboard-points/buy',
+                        query: {
+                          package: item.packageTitle,
+                          price: displayPrice,
+                        }
+                      }}
+                      className="ud-btn btn-thm-border text-thm"
                     >
                       สมัครสมาชิก
                       <i className="fal fa-arrow-right-long" />

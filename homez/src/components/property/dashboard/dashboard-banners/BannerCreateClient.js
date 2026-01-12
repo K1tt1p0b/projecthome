@@ -1,11 +1,16 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 import { addBanner } from "./storage";
 import s from "./banner-create.module.css";
+
+// IMPORT ข้อมูล Mock Data
+import { propertyData } from "@/data/propertyData";
+import { constructionServices } from "@/components/services/ConstructionRequest"; 
+import { allCourses } from "@/components/services/CourseLanding"; 
 
 const fileToBase64 = (file) =>
   new Promise((resolve, reject) => {
@@ -17,6 +22,7 @@ const fileToBase64 = (file) =>
 
 export default function BannerCreateClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const fileRef = useRef(null);
 
   const [saving, setSaving] = useState(false);
@@ -32,7 +38,43 @@ export default function BannerCreateClient() {
   });
 
   const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null); // ✅ กัน src=""
+  const [imagePreview, setImagePreview] = useState(null);
+
+  // Logic ดึงข้อมูลอัตโนมัติ (รวมถึงรูปภาพ)
+  useEffect(() => {
+    const id = searchParams.get("id");
+    const type = searchParams.get("type");
+
+    if (id && type) {
+      let foundItem = null;
+      let generateLink = "/";
+
+      if (type === "property") {
+        foundItem = propertyData.find((item) => item.id == id);
+        generateLink = `/property/${id}`; 
+      } else if (type === "construction") {
+        foundItem = constructionServices.find((item) => item.id == id);
+        generateLink = `/service/${id}`;
+      } else if (type === "course") {
+        foundItem = allCourses.find((item) => item.id == id);
+        generateLink = `/course/${id}`;
+      }
+
+      if (foundItem) {
+        setForm((prev) => ({
+          ...prev,
+          title: foundItem.title,
+          linkUrl: generateLink,
+        }));
+
+        // ✅ เพิ่มส่วนนี้: ดึงรูปภาพมาแสดงทันที
+        const existingImage = foundItem.imageSrc || foundItem.image || (foundItem.gallery && foundItem.gallery[0]);
+        if (existingImage) {
+            setImagePreview(existingImage);
+        }
+      }
+    }
+  }, [searchParams]);
 
   const onChange = (e) =>
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
@@ -57,8 +99,6 @@ export default function BannerCreateClient() {
     }
 
     setImageFile(file);
-
-    // preview เร็ว
     const url = URL.createObjectURL(file);
     setImagePreview(url);
   };
@@ -66,10 +106,9 @@ export default function BannerCreateClient() {
   const onPickImage = (e) => {
     const file = e.target.files?.[0];
     handleFile(file);
-    e.target.value = ""; // เลือกไฟล์เดิมซ้ำได้
+    e.target.value = "";
   };
 
-  // drag & drop
   const onDrop = (e) => {
     e.preventDefault();
     if (saving) return;
@@ -89,36 +128,47 @@ export default function BannerCreateClient() {
     setDragging(false);
   };
 
-  // cleanup blob url
   useMemo(() => {
     return () => {
+      // revoke เฉพาะถ้าเป็น blob url ที่สร้างใหม่ (รูปจากระบบไม่ต้อง revoke)
       if (imagePreview && imagePreview.startsWith("blob:")) {
         URL.revokeObjectURL(imagePreview);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imagePreview]);
 
   const validate = () => {
     if (!form.title.trim()) return "กรุณากรอกชื่อแบนเนอร์";
     if (!form.position.trim()) return "กรุณาเลือกตำแหน่ง";
     if (!form.linkUrl.trim()) return "กรุณากรอกลิงก์ปลายทาง";
-    if (!imageFile) return "กรุณาเลือกรูปแบนเนอร์";
+    // ✅ แก้เงื่อนไข: ถ้ามี imagePreview (รูปจากระบบ) ถือว่าผ่าน แม้จะไม่มี imageFile (ไฟล์ใหม่)
+    if (!imageFile && !imagePreview) return "กรุณาเลือกรูปแบนเนอร์";
     return "";
   };
 
-  // เปลี่ยนชื่อจาก onSave เป็น handlePaymentClick
   const handlePaymentClick = async () => {
-    // ✅ 1. คำนวณจำนวนวันจริง (สูตรคำนวณวัน)
+    const errMsg = validate();
+    if (errMsg) {
+        toast.error(errMsg);
+        return;
+    }
+
     const startDate = new Date(form.startAt);
     const endDate = new Date(form.endAt);
 
-    // แปลงผลต่างเวลา (milli) ให้เป็นวัน
-    const diffTime = Math.abs(endDate - startDate);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 คือนับวันแรกด้วย (เช่น 1-1 คือ 1 วัน)
+    if (!form.startAt || !form.endAt) {
+        toast.error("กรุณาระบุวันเริ่มต้นและสิ้นสุด");
+        return;
+    }
 
-    // ✅ 2. คำนวณราคาตามจริง (สมมติวันละ 100 บาท)
-    // ถ้าคุณขายเหมา ก็ใช้ราคาคงที่ได้เลย แต่ถ้าขายตามวันต้องคูณครับ
+    if (endDate < startDate) {
+        toast.error("วันสิ้นสุดต้องหลังจากวันเริ่มต้น");
+        return;
+    }
+
+    const diffTime = Math.abs(endDate - startDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+
     const pricePerDay = 100;
     const totalPrice = diffDays * pricePerDay;
 
@@ -126,30 +176,26 @@ export default function BannerCreateClient() {
       setSaving(true);
       toast.loading("กำลังเตรียมข้อมูลเพื่อชำระเงิน...", { toastId: "saving-banner" });
 
-      // 2. แปลงรูปภาพเหมือนเดิม
-      let imageData = null;
+      // ✅ Logic จัดการรูปภาพ
+      let finalImageData = imagePreview; // ค่าเริ่มต้นคือรูปเดิม (URL)
+      
+      // ถ้ามีการอัปโหลดไฟล์ใหม่ ให้แปลงเป็น Base64
       if (imageFile) {
-        imageData = await fileToBase64(imageFile);
+        finalImageData = await fileToBase64(imageFile);
       }
 
-      // 3. บันทึกลง Database (สำคัญ! ต้องบันทึกก่อนถึงจะมี ID ไปอ้างอิง)
-      // แต่สถานะใน DB ควรเป็น 'pending' หรือ 'waiting_payment'
       const result = await addBanner({
         ...form,
         status: 'pending',
         image: {
-          name: imageFile?.name,
-          type: imageFile?.type,
-          size: imageFile?.size,
-          dataUrl: imageData,
+          name: imageFile?.name || "existing-image.jpg", // ชื่อไฟล์สมมติถ้ารูปเดิม
+          type: imageFile?.type || "image/jpeg",
+          size: imageFile?.size || 0,
+          dataUrl: finalImageData, // ส่งรูป (URL หรือ Base64) ไป
         },
       });
 
-      // 4. เตรียมข้อมูลสำหรับหน้าจ่ายเงิน
-      // สมมติว่า result ที่ได้กลับมามี id ของ banner (เช่น result.id)
-      // ถ้าไม่มี ให้สุ่มเลขไปก่อน (แต่ทางที่ดี Backend ควรส่ง ID กลับมา)
       const refId = result?.id || 'BN-' + Math.floor(Math.random() * 100000);
-      const price = 500; // ตั้งราคาค่าโฆษณา
 
       toast.update("saving-banner", {
         render: "บันทึกข้อมูลแล้ว กำลังไปหน้าชำระเงิน...",
@@ -158,20 +204,19 @@ export default function BannerCreateClient() {
         autoClose: 1000,
       });
 
-      // 5. 🚀 เปลี่ยนตรงนี้! พาไปหน้าจ่ายเงิน แทนหน้า List
       setTimeout(() => {
         router.push(
           `/dashboard-points/buy?` +
           `package=ค่าโฆษณา Banner` +
-          `&price=${totalPrice}` +    // ส่งราคาที่คำนวณแล้ว
-          `&cycle=${diffDays} วัน` +  // ส่งจำนวนวันจริง (เช่น 5 วัน)
+          `&price=${totalPrice}` + 
+          `&cycle=${diffDays} วัน` +
           `&ref_id=${refId}` +
           `&type=banner`
         );
       }, 1000);
 
     } catch (error) {
-      console.error(error); // ดู Error ใน Console
+      console.error(error);
       toast.update("saving-banner", {
         render: "เกิดข้อผิดพลาดในการบันทึก",
         type: "error",
@@ -185,7 +230,6 @@ export default function BannerCreateClient() {
 
   return (
     <>
-      {/* Top */}
       <div className={s.top}>
         <div className={s.brand}>
           <span className={s.icon}>
@@ -208,7 +252,6 @@ export default function BannerCreateClient() {
       </div>
 
       <div className="ps-widget bgc-white bdrs12 default-box-shadow2 pt30 pb30 mb30 overflow-hidden position-relative">
-        {/* Hidden input */}
         <input
           ref={fileRef}
           type="file"
@@ -218,7 +261,6 @@ export default function BannerCreateClient() {
           tabIndex={-1}
         />
 
-        {/* Preview */}
         <div className={s.previewWrap}>
           <button
             type="button"
@@ -228,17 +270,16 @@ export default function BannerCreateClient() {
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
             disabled={saving}
-            aria-label="เลือกรูปแบนเนอร์"
           >
             <div className={s.preview}>
               {imagePreview !== null ? (
-                <Image
+                // ✅ ใช้ Image component (ต้อง allow domain ใน next.config.js หรือใช้ img ธรรมดาถ้าเป็น external url)
+                // เพื่อความง่าย ผมใช้ <img> ธรรมดาที่นี่เพราะ URL รูปอาจมาจากหลายที่
+                <img
                   src={imagePreview}
                   alt="Preview"
-                  width={1400}
-                  height={700}
                   className={s.previewImg}
-                  priority
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               ) : (
                 <div className={s.previewEmpty}>
@@ -264,11 +305,12 @@ export default function BannerCreateClient() {
                 {" "}
                 • เลือกแล้ว: <b>{imageFile.name}</b>
               </>
+            ) : imagePreview ? (
+               <> • ใช้รูปภาพจากรายการสินทรัพย์ (สามารถเปลี่ยนได้)</>
             ) : null}
           </div>
         </div>
 
-        {/* Form */}
         <div className={s.formPad}>
           <div className="row g-3">
             <div className="col-12 col-lg-7">
@@ -279,6 +321,7 @@ export default function BannerCreateClient() {
                 value={form.title}
                 onChange={onChange}
                 disabled={saving}
+                placeholder="เช่น โปรโมชั่นคอนโดหรู..."
               />
             </div>
 
@@ -313,13 +356,13 @@ export default function BannerCreateClient() {
             </div>
 
             <div className="col-12">
-              <label className={s.label}>ลิงก์ปลายทาง</label>
+              <label className={s.label}>ลิงก์ปลายทาง (อัตโนมัติ)</label>
               <input
                 className="form-control"
                 name="linkUrl"
                 value={form.linkUrl}
-                onChange={onChange}
-                disabled={saving}
+                readOnly
+                style={{ backgroundColor: '#e9ecef', cursor: 'not-allowed' }}
               />
             </div>
 
@@ -349,7 +392,6 @@ export default function BannerCreateClient() {
           </div>
         </div>
 
-        {/* Actions */}
         <div className={s.actions}>
           <button
             className="ud-btn btn-white2"
@@ -361,12 +403,9 @@ export default function BannerCreateClient() {
           </button>
 
           <button
-            className="ud-btn btn-thm" // class สีแดงของธีม
+            className="ud-btn btn-thm"
             type="button"
-
-            // 👇 1. แก้ตรงนี้: เรียกใช้ฟังก์ชันพาไปจ่ายเงิน (แทน onSave เดิม)
             onClick={handlePaymentClick}
-
             disabled={saving}
           >
             {saving ? (
@@ -375,7 +414,6 @@ export default function BannerCreateClient() {
                 <span style={{ marginLeft: 8 }}>กำลังพาไปหน้าจ่ายเงิน...</span>
               </>
             ) : (
-              // 👇 2. แก้ข้อความตรงนี้ ให้รู้ว่าต้องจ่ายเงิน
               <>
                 ชำระเงิน <i className="fal fa-arrow-right-long ms-2"></i>
               </>

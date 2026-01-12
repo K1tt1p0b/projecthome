@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import s from "./banner.module.css"; // เราจะใช้น้อยที่สุด
+import s from "./banner.module.css";
 
 // 1. IMPORT ข้อมูล
 import { propertyData } from "@/data/propertyData";
@@ -18,7 +18,12 @@ export default function BannerDashboardContent() {
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Tab 1: หมวดหมู่
   const [tab, setTab] = useState("property"); 
+  
+  // Tab 2: สถานะ
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
     setLoading(true);
@@ -37,9 +42,20 @@ export default function BannerDashboardContent() {
         break;
     }
 
-    setItems(targetData);
+    // (จำลอง status)
+    const mockDataWithStatus = targetData.map((item, index) => ({
+        ...item,
+        status: item.status || (index % 3 === 0 ? 'hidden' : index % 4 === 0 ? 'expired' : 'active') 
+    }));
+
+    setItems(mockDataWithStatus);
     setLoading(false);
   }, [tab]);
+
+  const filteredItems = items.filter((item) => {
+      if (statusFilter === "all") return true;
+      return item.status === statusFilter;
+  });
 
   const getDisplayItem = (item) => {
     return {
@@ -48,9 +64,11 @@ export default function BannerDashboardContent() {
       image: item.imageSrc || item.image || (item.gallery && item.gallery[0]) || FALLBACK_IMG,
       price: item.priceText || (item.price ? `฿${item.price.toLocaleString()}` : ""),
       location: item.location?.province || item.location?.address || item.location || "",
+      status: item.status,
       
-      createLink: tab === 'construction' ? `/add-listing?id=${item.id}&type=construction` 
-                : tab === 'course' ? `/add-course?id=${item.id}&type=course` 
+      // ลิงก์สำหรับสร้าง/ต่ออายุ (ไปหน้าเดียวกันเพื่อซื้อแพ็กเกจใหม่)
+      createLink: tab === 'construction' ? `/dashboard-banners/new?id=${item.id}&type=construction` 
+                : tab === 'course' ? `/dashboard-banners/new?id=${item.id}&type=course` 
                 : `/dashboard-banners/new?id=${item.id}&type=property` 
     }
   };
@@ -60,6 +78,22 @@ export default function BannerDashboardContent() {
       { id: "construction", label: "งานรับเหมา", icon: null },
       { id: "course", label: "คอร์สเรียน", icon: null },
   ];
+
+  const statusTabs = [
+      { id: "all", label: "ทั้งหมด" },
+      { id: "active", label: "ใช้งานอยู่" },
+      { id: "hidden", label: "ซ่อน" },
+      { id: "expired", label: "หมดอายุ" },
+  ];
+
+  const getStatusBadge = (status) => {
+      switch(status) {
+          case 'active': return <span className="badge bg-success position-absolute top-0 end-0 m-3 shadow-sm">ใช้งานอยู่</span>;
+          case 'hidden': return <span className="badge bg-secondary position-absolute top-0 end-0 m-3 shadow-sm">ซ่อน</span>;
+          case 'expired': return <span className="badge bg-danger position-absolute top-0 end-0 m-3 shadow-sm">หมดอายุ</span>;
+          default: return null;
+      }
+  }
 
   return (
     <div className={s.wrap}>
@@ -75,9 +109,11 @@ export default function BannerDashboardContent() {
         </div>
       </div>
 
-      {/* แถวเลือกหมวดหมู่ */}
-      <div className="row mb-4 mt-4 bg-white p-3 rounded-3 shadow-sm mx-0">
-        <div className="col-12 d-flex justify-content-start"> 
+      {/* Filter Row */}
+      <div className="row mb-3 mt-4 bg-white p-3 rounded-3 shadow-sm mx-0">
+        <div className="col-12 d-flex justify-content-between align-items-center flex-wrap gap-3"> 
+            
+            {/* ซ้าย: หมวดหมู่ */}
             <div className="nav nav-pills bg-light p-1 rounded-pill">
               {categoryTabs.map((t) => (
                 <button
@@ -92,6 +128,22 @@ export default function BannerDashboardContent() {
                 </button>
               ))}
             </div>
+
+            {/* ขวา: สถานะ */}
+            <ul className="nav nav-tabs border-bottom-0">
+                {statusTabs.map((st) => (
+                    <li className="nav-item" key={st.id}>
+                        <button 
+                            className={`nav-link border-0 bg-transparent fw600 ${statusFilter === st.id ? 'active text-dark border-bottom border-2 border-dark' : 'text-muted'}`}
+                            onClick={() => setStatusFilter(st.id)}
+                            style={{ borderRadius: 0 }}
+                        >
+                            {st.label}
+                        </button>
+                    </li>
+                ))}
+            </ul>
+
         </div>
       </div>
 
@@ -104,30 +156,29 @@ export default function BannerDashboardContent() {
             </div>
           ))}
         </div>
-      ) : items.length === 0 ? (
+      ) : filteredItems.length === 0 ? (
         <div className={s.empty}>
           <div className={s.emptyIc}>
             <i className="flaticon-folder" />
           </div>
-          <div className={s.emptyTitle}>ไม่พบข้อมูลรายการของคุณ</div>
+          <div className={s.emptyTitle}>ไม่พบข้อมูลในสถานะนี้</div>
         </div>
       ) : (
-        // ✅ ใช้ Grid ของ Bootstrap หรือ CSS Grid แบบกำหนดเองที่ไม่ใช่ s.grid เพื่อความชัวร์
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '25px' }}>
-          {items.map((rawItem) => {
+          {filteredItems.map((rawItem) => {
             const item = getDisplayItem(rawItem);
+            const isExpired = item.status === 'expired';
 
             return (
-              // ✅ CARD CONTAINER: ใช้ class มาตรฐาน ไม่ใช้ s.card เพื่อเลี่ยง Hover Effect ของธีม
               <div 
                 key={item.id} 
-                className="bg-white rounded-3 overflow-hidden border"
+                className="bg-white rounded-3 overflow-hidden border position-relative"
                 style={{ 
                     display: 'flex', 
                     flexDirection: 'column',
                     height: '100%',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)', // เงาบางๆ
-                    transition: 'none' // ⛔ ห้ามมี Animation ตอน Hover ที่การ์ด
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                    transition: 'none'
                 }}
               >
                 {/* 1. ส่วนรูปภาพ */}
@@ -139,25 +190,23 @@ export default function BannerDashboardContent() {
                     height={400}
                     className="w-100 h-100"
                     unoptimized={true}
-                    style={{ objectFit: 'cover' }}
+                    style={{ objectFit: 'cover', filter: isExpired ? 'grayscale(80%)' : 'none' }} // ถ้าหมดอายุ ปรับภาพเป็นขาวดำนิดๆ
                   />
+                  {getStatusBadge(item.status)}
                 </div>
 
                 {/* 2. ส่วนเนื้อหา */}
                 <div className="p-3 d-flex flex-column flex-grow-1">
-                  
-                  {/* หัวข้อ: ล็อกสีดำไว้ ไม่ให้เปลี่ยนเป็นส้ม */}
                   <div className="mb-2">
                     <h6 
                         className="fw-bold text-truncate" 
                         title={item.title} 
-                        style={{ fontSize: '16px', color: '#111', margin: 0 }} // 🔒 ล็อกสี #111
+                        style={{ fontSize: '16px', color: '#111', margin: 0 }}
                     >
                         {item.title}
                     </h6>
                   </div>
 
-                  {/* ราคาและสถานที่ */}
                   <div className="mb-3">
                     {item.price ? (
                       <div className="text-success fw-bold" style={{ fontSize: '15px' }}>
@@ -174,22 +223,32 @@ export default function BannerDashboardContent() {
                     )}
                   </div>
 
-                  {/* 3. ปุ่มกดลงโฆษณา (สีส้มเฉพาะตรงนี้) */}
+                  {/* ✅ 3. ปุ่มกด (Logic ใหม่) */}
                   <div className="mt-auto pt-3 border-top">
                         <Link 
                             href={item.createLink}
-                            // ใช้ class ของ Bootstrap ปกติ
-                            className="btn btn-sm w-100 rounded-pill fw-bold text-white" 
+                            className={`btn btn-sm w-100 rounded-pill fw-bold text-white d-block text-center text-decoration-none`} 
                             style={{ 
-                                backgroundColor: '#eb6753', // สีส้มพื้นฐาน
+                                backgroundColor: isExpired ? '#ffc107' : '#eb6753', 
+                                color: isExpired ? '#000' : '#fff',
                                 border: 'none',
-                                transition: '0.3s'
+                                transition: '0.3s',
+                                padding: '8px 0',
                             }}
-                            // เพิ่มลูกเล่นให้ปุ่มเข้มขึ้นนิดหน่อยตอน Hover (เฉพาะปุ่ม)
-                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#d14b36'}
-                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#eb6753'}
+                            onMouseOver={(e) => {
+                                if (isExpired) e.currentTarget.style.backgroundColor = '#e0a800';
+                                else e.currentTarget.style.backgroundColor = '#d14b36';
+                            }}
+                            onMouseOut={(e) => {
+                                if (isExpired) e.currentTarget.style.backgroundColor = '#ffc107';
+                                else e.currentTarget.style.backgroundColor = '#eb6753';
+                            }}
                         >
-                            ลงโฆษณา
+                            {isExpired ? (
+                                <span><i className="fas fa-redo me-1"></i> ต่ออายุแบนเนอร์</span>
+                            ) : (
+                                'ลงโฆษณา'
+                            )}
                         </Link>
                   </div>
                 </div>
