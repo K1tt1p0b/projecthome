@@ -21,7 +21,7 @@ const SidebarDashboard = () => {
       { href: "/dashboard-about-me", icon: "flaticon-user", text: "About me" },
       { href: "/dashboard-gallery", icon: "flaticon-images", text: "แกลเลอรี่" },
       { href: "/dashboard-video-gallery", icon: "flaticon-play", text: "วิดีโอ" },
-      { href: "/microsite/settings", icon: "fas fa-cog", text: "ตั้งค่า" },
+      { href: "/dashboard-setting-template", icon: "fas fa-cog", text: "ตั้งค่า" },
     ],
     []
   );

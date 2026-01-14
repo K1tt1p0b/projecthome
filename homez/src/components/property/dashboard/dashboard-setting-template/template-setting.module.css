@@ -1,0 +1,313 @@
+.wrap {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px;
+  overflow: hidden; /* ✅ กันเด้งเงา/สีออกขอบ */
+
+  /* ✅ โทนส้ม/ขาว ตามธีมเว็บ */
+  --orange: #f97316;
+  --orange-soft: #fff7ed;
+  --orange-border: #fed7aa;
+  --orange-text: #9a3412;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+}
+
+.sub {
+  margin: 6px 0 0 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.summary {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.pill {
+  background: #f7f7f7;
+  border: 1px solid #eee;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #111827;
+}
+
+.block {
+  margin-top: 18px;
+}
+
+.blockTitle {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+
+.miniHint {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+/* -------- Templates -------- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  border: 2px solid #eee;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.card:hover {
+  border-color: #cfcfcf;
+  transform: translateY(-2px);
+}
+
+.active {
+  border-color: var(--orange);
+  box-shadow: 0 10px 22px rgba(249, 115, 22, 0.18);
+}
+
+.preview {
+  position: relative;
+  width: 100%;
+  height: 150px;
+  background: #f5f5f5;
+}
+
+.image {
+  object-fit: cover;
+}
+
+.badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: var(--orange);
+  color: #fff;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.cardBody {
+  padding: 14px;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 15px;
+}
+
+.cardDesc {
+  margin: 8px 0 0 0;
+  color: #6b7280;
+  font-size: 12.5px;
+  min-height: 34px;
+}
+
+.cardActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* -------- Buttons (custom: ไม่มี triangle effect) -------- */
+.btnGhost {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111827;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  transition: 0.15s ease;
+  box-shadow: none;
+  outline: none;
+}
+
+.btnGhost:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.btnGhost:focus,
+.btnGhost:focus-visible,
+.btnGhost:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* ✅ ปุ่ม "เลือกเทมเพลต" */
+.btnPick {
+  border: 1px solid var(--orange);
+  background: var(--orange);
+  color: #fff;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  transition: 0.15s ease;
+  box-shadow: none;
+  outline: none;
+}
+
+/* ✅ hover เป็นส้มอ่อนสวย ๆ ตามที่ขอ */
+.btnPick:hover {
+  background: var(--orange-soft);
+  border-color: var(--orange-border);
+  color: var(--orange-text);
+}
+
+.btnPick:focus,
+.btnPick:focus-visible,
+.btnPick:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* -------- Sections -------- */
+.sectionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.sectionCard {
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  background: #fff;
+  cursor: pointer;
+  transition: 0.18s ease;
+}
+
+.sectionCard:hover {
+  border-color: #cfcfcf;
+}
+
+.sectionOn {
+  border-color: var(--orange);
+  box-shadow: 0 8px 18px rgba(249, 115, 22, 0.15);
+}
+
+.sectionLeft {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #f7f7f7;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 14px;
+}
+
+.sectionDesc {
+  margin: 6px 0 0 0;
+  color: #6b7280;
+  font-size: 12.5px;
+}
+
+.sectionRight {
+  display: flex;
+  align-items: center;
+}
+
+.statePill {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+}
+
+.stateOn {
+  background: var(--orange-soft);
+  border-color: var(--orange-border);
+  color: var(--orange-text);
+}
+
+.stateOff {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* -------- Footer -------- */
+.footerActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.btnSave {
+  border: 1px solid var(--orange);
+  background: var(--orange);
+  color: #fff;
+  font-size: 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  transition: 0.15s ease;
+  outline: none;
+  box-shadow: none;
+}
+
+.btnSave:hover {
+  filter: brightness(0.96);
+}
+
+/* ✅ กันเด้ง outline/shadow */
+.btnSave:focus,
+.btnSave:focus-visible,
+.btnSave:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* -------- Responsive -------- */
+@media (max-width: 1200px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .head {
+    flex-direction: column;
+  }
+  .sectionGrid {
+    grid-template-columns: 1fr;
+  }
+}
