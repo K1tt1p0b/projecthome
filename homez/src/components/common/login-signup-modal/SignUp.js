@@ -8,6 +8,9 @@ const SignUp = ({ onGoLogin }) => {
   const router = useRouter();
 
   const [form, setForm] = useState({
+    firstname: "",
+    lastname: "",
+    phoneNumber: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -34,6 +37,20 @@ const SignUp = ({ onGoLogin }) => {
 
   const validate = () => {
     const newErrors = {};
+
+    if (!form.firstname) {
+      newErrors.firstname = "กรุณากรอกชื่อ";
+    }
+
+    if (!form.lastname) {
+      newErrors.lastname = "กรุณากรอกนามสกุล";
+    }
+
+    if (!form.phoneNumber) {
+      newErrors.phoneNumber = "กรุณากรอกเบอร์โทรศัพท์";
+    } else if (form.phoneNumber.length < 10) {
+      newErrors.phoneNumber = "เบอร์โทรศัพท์ต้องมีอย่างน้อย 10 ตัวอักษร";
+    }
 
     if (!form.email) {
       newErrors.email = "กรุณากรอกอีเมล";
@@ -85,6 +102,9 @@ const SignUp = ({ onGoLogin }) => {
       });
 
       setForm({
+        firstname: "",
+        lastname: "",
+        phoneNumber: "",
         email: "",
         password: "",
         confirmPassword: "",
@@ -122,14 +142,67 @@ const SignUp = ({ onGoLogin }) => {
         </div>
       )}
 
+      {/* First Name */}
+      <div className="mb25">
+        <label className="form-label fw600 dark-color">ชื่อ</label>
+        <input
+          name="firstname"
+          type="text"
+          className="form-control"
+          placeholder="กรุณากรอกชื่อ"
+          value={form.firstname}
+          onChange={handleChange}
+          required
+        />
+        {errors.firstname && (
+          <small className="text-danger d-block mt5">{errors.firstname}</small>
+        )}
+      </div>
+
+      {/* Last Name */}
+      <div className="mb20">
+        <label className="form-label fw600 dark-color">นามสกุล</label>
+        <input
+          name="lastname"
+          type="text"
+          className="form-control"
+          placeholder="กรุณากรอกนามสกุล"
+          value={form.lastname}
+          onChange={handleChange}
+          required
+        />
+        {errors.lastname && (
+          <small className="text-danger d-block mt5">{errors.lastname}</small>
+        )}
+      </div>
+
+      {/* Phone Number */}
+      <div className="mb20">
+        <label className="form-label fw600 dark-color">เบอร์โทรศัพท์</label>
+        <input
+          name="phoneNumber"
+          type="text"
+          className="form-control"
+          placeholder="กรุณากรอกเบอร์โทรศัพท์"
+          value={form.phoneNumber}
+          onChange={handleChange}
+          required
+        />
+        {errors.phoneNumber && (
+          <small className="text-danger d-block mt5">
+            {errors.phoneNumber}
+          </small>
+        )}
+      </div>
+
       {/* Email */}
       <div className="mb25">
-        <label className="form-label fw600 dark-color">Email</label>
+        <label className="form-label fw600 dark-color">อีเมล</label>
         <input
           name="email"
           type="email"
           className="form-control"
-          placeholder="Enter Email"
+          placeholder="กรุณากรอกอีเมล"
           value={form.email}
           onChange={handleChange}
           required
@@ -141,12 +214,12 @@ const SignUp = ({ onGoLogin }) => {
 
       {/* Password */}
       <div className="mb20">
-        <label className="form-label fw600 dark-color">Password</label>
+        <label className="form-label fw600 dark-color">รหัสผ่าน</label>
         <input
           name="password"
           type="password"
           className="form-control"
-          placeholder="Enter Password"
+          placeholder="กรุณากรอกรหัสผ่าน"
           value={form.password}
           onChange={handleChange}
           required
@@ -159,13 +232,13 @@ const SignUp = ({ onGoLogin }) => {
       {/* Confirm Password */}
       <div className="mb20">
         <label className="form-label fw600 dark-color">
-          Confirm Password
+          ยืนยันรหัสผ่าน
         </label>
         <input
           name="confirmPassword"
           type="password"
           className="form-control"
-          placeholder="Confirm Password"
+          placeholder="ยืนยันรหัสผ่าน"
           value={form.confirmPassword}
           onChange={handleChange}
           required
@@ -180,24 +253,24 @@ const SignUp = ({ onGoLogin }) => {
       {/* Submit Button */}
       <div className="d-grid mb20">
         <button className="ud-btn btn-thm" type="submit" disabled={loading}>
-          {loading ? "Creating..." : "Create account"}{" "}
+          {loading ? "กำลังสร้าง..." : "สร้างบัญชี"}{" "}
           <i className="fal fa-arrow-right-long" />
         </button>
       </div>
 
       <p className="dark-color text-center mb0 mt10">
-        Already Have an Account?{" "}
+        คุณมีบัญชีอยู่แล้ว?{" "}
         {typeof onGoLogin === "function" ? (
           <button
             type="button"
             className="btn btn-link dark-color fw600 p-0"
             onClick={handleGoLoginClick}
           >
-            Login
+            เข้าสู่ระบบ
           </button>
         ) : (
           <Link className="dark-color fw600" href="/login">
-            Login
+            เข้าสู่ระบบ
           </Link>
         )}
       </p>

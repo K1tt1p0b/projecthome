@@ -3,6 +3,7 @@ import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 
+
 const SidebarDashboard = () => {
   const pathname = usePathname();
   const [hovered, setHovered] = useState(null);
@@ -107,15 +108,21 @@ const SidebarDashboard = () => {
         {
           href: "/dashboard-my-construction",
           icon: "fas fa-hard-hat",
-          text: "งานรับเหมาของฉัน",
+          text: "งานบริการของฉัน",
         },
         {
           href: "/dashboard-my-course",
           icon: "fas fa-book",
           text: "คอร์สเรียนของฉัน",
         },
+        {
+          href: "/dashboard-boost-property",
+          icon: "fas fa-rocket",
+          text: "โปรโมตทรัพย์สิน",
+        }
       ],
     },
+
     {
       title: "การตั้งค่าบัญชี",
       items: [
