@@ -1,0 +1,27 @@
+/* ✅ scope เฉพาะหน้า new เท่านั้น (กันไปทับหน้า list ตอน router.push) */
+.banner-edit-page .dashboard-bg-fix {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.banner-edit-page .dashboard-inner {
+  padding: 0 clamp(14px, 2.8vw, 32px) 40px;  
+}
+
+.banner-edit-page .dashboard-content-max {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+@media (max-width: 991px) {
+  .banner-edit-page .dashboard-inner {
+    padding: 0 12px 30px;
+  }
+
+  .banner-edit-page .dashboard-content-max {
+    width: 100%;
+    max-width: 900px; /* ✅ อย่าให้กระโดดไป 1100 ตอนมือถือ */
+    margin: 0 auto;
+  }
+}

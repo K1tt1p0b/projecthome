@@ -77,7 +77,7 @@ export default function BannerDashboardContent() {
       status: item.status,
       views: item.views || 0,
       createLink: `/dashboard-banners/new?id=${item.id}&type=${currentType}`,
-      editLink: `/dashboard-banners/new?mode=edit&id=${item.id}&type=${currentType}`
+      editLink: `/dashboard-banners/edit?id=${item.id}&type=${currentType}`,
     }
   };
 
