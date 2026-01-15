@@ -119,13 +119,9 @@ const AboutMe = () => {
         {/* ... (ส่วน Form Inputs เหมือนเดิม) ... */}
         <div className="col-xl-9 col-lg-8">
           <div className="row g-3">
-            <div className="col-md-6">
+            <div className="col-md-12">
               <label className="form-label fw600 fz14">ชื่อ-นามสกุล</label>
               <input type="text" className="form-control" name="name" value={formData.name} onChange={handleChange} />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label fw600 fz14">ตำแหน่ง / อาชีพ</label>
-              <input type="text" className="form-control" name="position" value={formData.position} onChange={handleChange} />
             </div>
             <div className="col-md-12">
               <label className="form-label fw600 fz14">พื้นที่ให้บริการ</label>
@@ -149,14 +145,6 @@ const AboutMe = () => {
             <div className="col-md-6">
               <label className="form-label fw600 fz14">Line ID</label>
               <input type="text" className="form-control" name="lineId" value={formData.lineId} onChange={handleChange} />
-            </div>
-            <div className="col-md-3">
-              <label className="form-label fw600 fz14">ประสบการณ์ (ปี)</label>
-              <input type="text" className="form-control text-center" name="experience" value={formData.experience} onChange={handleChange} />
-            </div>
-            <div className="col-md-3">
-              <label className="form-label fw600 fz14">ปิดการขาย</label>
-              <input type="text" className="form-control text-center" name="closedSales" value={formData.closedSales} onChange={handleChange} />
             </div>
           </div>
 

@@ -84,11 +84,9 @@ const SignUp = ({ onGoLogin }) => {
         text: "สร้างบัญชีสำเร็จ (mock)",
       });
 
-      setForm({
-        email: "",
-        password: "",
-        confirmPassword: "",
-      });
+      setTimeout(() => {
+        router.push("/dashboard-verification");
+      }, 1500);
     } catch (err) {
       setMessage({
         type: "error",
@@ -114,9 +112,8 @@ const SignUp = ({ onGoLogin }) => {
       {/* Global message */}
       {message && (
         <div
-          className={`alert ${
-            message.type === "success" ? "alert-success" : "alert-danger"
-          } mb20`}
+          className={`alert ${message.type === "success" ? "alert-success" : "alert-danger"
+            } mb20`}
         >
           {message.text}
         </div>

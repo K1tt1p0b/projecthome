@@ -4,17 +4,43 @@ import React, { useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import KycModal from "./KycModal";
 
+// --- MOCK DATA ---
 const MOCK_KYC = {
-  status: "unverified",
-  updatedAt: null,
-  rejectReason: "",
+  status: "verified",
+  updatedAt: "2023-10-25T10:00:00.000Z",
+  rejectReason: "รูปบัตรไม่ชัด",
 };
 
-const statusMap = {
-  unverified: { label: "ยังไม่ยืนยันตัวตน", className: "pending-style style1" },
-  pending: { label: "รอตรวจสอบ", className: "pending-style style3" },
-  verified: { label: "ยืนยันแล้ว", className: "pending-style style2" },
-  rejected: { label: "ไม่ผ่านการยืนยัน", className: "pending-style style1" },
+// --- CONFIG ---
+const STATUS_CONFIG = {
+  unverified: {
+    label: "ยังไม่ยืนยันตัวตน",
+    desc: "ยืนยันตัวตนเพื่อปลดล็อคฟีเจอร์และความน่าเชื่อถือ",
+    icon: "fas fa-shield-alt",
+    colorClass: "text-dark",
+    bgClass: "bg-light",
+  },
+  pending: {
+    label: "กำลังตรวจสอบ",
+    desc: "เจ้าหน้าที่กำลังตรวจสอบเอกสาร (1-2 วันทำการ)",
+    icon: "fas fa-clock",
+    colorClass: "text-warning",
+    bgClass: "bg-warning-subtle",
+  },
+  verified: {
+    label: "ยืนยันตัวตนแล้ว",
+    desc: "บัญชีของคุณผ่านการตรวจสอบเรียบร้อยแล้ว",
+    icon: "fas fa-check-circle",
+    colorClass: "text-success",
+    bgClass: "bg-success-subtle",
+  },
+  rejected: {
+    label: "ไม่ผ่านการอนุมัติ",
+    desc: "เอกสารไม่ถูกต้อง กรุณาตรวจสอบและส่งใหม่",
+    icon: "fas fa-exclamation-circle",
+    colorClass: "text-danger",
+    bgClass: "bg-danger-subtle",
+  },
 };
 
 export default function KycBox() {
@@ -22,72 +48,70 @@ export default function KycBox() {
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // hover state สำหรับปุ่มหลัก (ไม่ใช่ reset)
+  // State สำหรับ Hover ต่างๆ
   const [hoverBtn, setHoverBtn] = useState(null);
+  const [hoverCard, setHoverCard] = useState(false); // ✅ 1. State สำหรับกล่องใหญ่
+  const [hoverLink, setHoverLink] = useState(false); // ✅ 2. State สำหรับลิงก์ดูรายละเอียด
 
-  const meta = useMemo(
-    () => statusMap[kyc.status] || statusMap.unverified,
+  // ดึง Config ตามสถานะ
+  const currentStatus = useMemo(
+    () => STATUS_CONFIG[kyc.status] || STATUS_CONFIG.unverified,
     [kyc.status]
   );
 
-  // โชว์ Reset หลังจาก "มีการส่งข้อมูลแล้ว"
+  // Logic ปุ่ม Reset
   const showReset = useMemo(() => {
-    return !!kyc.updatedAt || ["pending", "verified", "rejected"].includes(kyc.status);
+    if (kyc.status === "verified") return false;
+    return !!kyc.updatedAt || ["pending", "rejected"].includes(kyc.status);
   }, [kyc.updatedAt, kyc.status]);
 
-  // สีธีมส้ม (ถ้าคุณมีค่าส้มของธีมจริง เปลี่ยนตรงนี้ได้)
   const THEME_ORANGE = "#ff5a3c";
 
+  // Style ปุ่มหลัก
   const primaryBtnStyle = (key) => {
     const isHover = hoverBtn === key;
     return {
       background: isHover ? THEME_ORANGE : "#111111",
       border: `1px solid ${isHover ? THEME_ORANGE : "#111111"}`,
       color: "#ffffff",
-      transition: "all 0.18s ease",
-      boxShadow: isHover ? "0 10px 24px rgba(255, 90, 60, 0.22)" : "none",
+      transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+      boxShadow: isHover ? "0 8px 20px rgba(255, 90, 60, 0.25)" : "none",
+      padding: "10px 24px",
+      borderRadius: "30px",
+      fontWeight: 600,
+      fontSize: "14px"
     };
   };
 
   const openModal = () => {
-    if (submitting) return toast.info("กำลังส่งข้อมูล กรุณารอสักครู่...");
+    if (submitting) return toast.info("กำลังส่งข้อมูล...");
     setOpen(true);
   };
-
-  const closeModal = () => {
-    if (submitting) return toast.info("กำลังส่งข้อมูล กรุณารอสักครู่...");
-    setOpen(false);
-  };
+  const closeModal = () => setOpen(false);
 
   const handleSubmitKyc = async (payload) => {
     if (submitting) return;
-
     try {
       setSubmitting(true);
-
-      // TODO: ต่อ API จริงตรงนี้
       await new Promise((r) => setTimeout(r, 700));
-
       setKyc((prev) => ({
         ...prev,
         status: "pending",
         updatedAt: new Date().toISOString(),
         rejectReason: "",
       }));
-
       toast.success("ส่งข้อมูลเรียบร้อย! รอตรวจสอบ");
       setOpen(false);
     } catch (err) {
-      toast.error(err?.message || "บันทึกข้อมูลไม่สำเร็จ");
+      toast.error("เกิดข้อผิดพลาด");
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleReset = () => {
-    if (submitting) return toast.info("กำลังส่งข้อมูล กรุณารอสักครู่...");
     setKyc(MOCK_KYC);
-    toast.info("รีเซ็ตสถานะ KYC แล้ว");
+    toast.info("Reset สถานะแล้ว");
   };
 
   const canStart = kyc.status === "unverified" || kyc.status === "rejected";
@@ -96,135 +120,152 @@ export default function KycBox() {
 
   return (
     <>
-      <div className="row align-items-center">
-        <div className="col-lg-8">
-          <div className="d-flex align-items-center gap-3 flex-wrap">
-            <span className={meta.className} style={{ fontWeight: 700 }}>
-              {meta.label}
-            </span>
+      {/* ✅ 1. เพิ่ม onMouseEnter/Leave และ Style ให้กล่องใหญ่ */}
+      <div
+        className="ps-widget bg-white bdrs12 p30 position-relative border-0"
+        style={{
+          boxShadow: hoverCard ? '0 15px 30px rgba(0,0,0,0.08)' : '0 5px 20px rgba(0,0,0,0.03)',
+          transform: hoverCard ? 'translateY(-3px)' : 'translateY(0)',
+          transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+          overflow: 'hidden',
+          cursor: 'default'
+        }}
+        onMouseEnter={() => setHoverCard(true)}
+        onMouseLeave={() => setHoverCard(false)}
+      >
 
-            {kyc.updatedAt ? (
-              <span className="fz14 text">
-                อัปเดตล่าสุด:{" "}
-                {new Date(kyc.updatedAt).toLocaleString("th-TH", {
-                  year: "numeric",
-                  month: "short",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            ) : (
-              <span className="fz14 text">ยังไม่มีการส่งข้อมูลยืนยันตัวตน</span>
-            )}
+        <div className="row align-items-center">
 
-            {submitting && (
-              <span className="fz13 text">
-                <i className="far fa-spinner fa-spin me-2" />
-                กำลังดำเนินการ...
-              </span>
-            )}
-          </div>
+          {/* --- ฝั่งซ้าย: ไอคอน & เนื้อหา --- */}
+          <div className="col-lg-8">
+            <div className="d-flex align-items-start gap-4">
 
-          {kyc.status === "unverified" && (
-            <p className="text mb0 mt10 fz14">
-              เพื่อความปลอดภัยและปลดล็อคสิทธิ์การใช้งานบางส่วน กรุณายืนยันตัวตนด้วย
-              <span className="fw600"> บัตรประชาชน</span>
-            </p>
-          )}
-
-          {kyc.status === "pending" && (
-            <p className="text mb0 mt10 fz14">
-              เรากำลังตรวจสอบเอกสารของคุณ โดยปกติใช้เวลา 1–2 วันทำการ
-            </p>
-          )}
-
-          {kyc.status === "verified" && (
-            <p className="text mb0 mt10 fz14">บัญชีของคุณผ่านการยืนยันตัวตนแล้ว</p>
-          )}
-
-          {kyc.status === "rejected" && (
-            <div className="mt10">
-              <p className="text mb0 fz14">
-                เอกสารไม่ผ่านการตรวจสอบ{" "}
-                {kyc.rejectReason ? `- เหตุผล: ${kyc.rejectReason}` : ""}
-              </p>
-              <p className="text mb0 fz14">กรุณาแก้ไขข้อมูลและส่งใหม่อีกครั้ง</p>
-            </div>
-          )}
-        </div>
-
-        <div className="col-lg-4">
-          <div className="d-flex justify-content-lg-end gap-2 mt15 mt-lg-0 flex-wrap">
-            {/* ปุ่มหลัก: ดำ -> hover ส้ม */}
-            {canStart && (
-              <button
-                type="button"
-                className="ud-btn"
-                onClick={openModal}
-                disabled={submitting}
-                style={primaryBtnStyle("start")}
-                onMouseEnter={() => setHoverBtn("start")}
-                onMouseLeave={() => setHoverBtn(null)}
+              <div
+                className={`d-flex align-items-center justify-content-center flex-shrink-0 rounded-circle ${currentStatus.bgClass} ${currentStatus.colorClass}`}
+                style={{ width: '70px', height: '70px', fontSize: '28px' }}
               >
-                {submitting ? (
-                  <>
-                    <i className="far fa-spinner fa-spin me-2" />
-                    กำลังทำงาน...
-                  </>
-                ) : (
-                  <>
-                    เริ่มยืนยันตัวตน
-                    <i className="fal fa-arrow-right-long ms-2" />
-                  </>
+                <i className={currentStatus.icon}></i>
+              </div>
+
+              <div className="flex-grow-1">
+                <div className="d-flex align-items-center gap-3 mb-1">
+                  <h4 className="title mb-0 fw-bold fz18">{currentStatus.label}</h4>
+
+                  {kyc.updatedAt && (
+                    <span className="badge rounded-pill bg-light text-muted fw-normal border fz12">
+                      <i className="far fa-calendar-alt me-1"></i>
+                      {new Date(kyc.updatedAt).toLocaleDateString("th-TH")}
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-muted fz14 mb-2" style={{ lineHeight: '1.6' }}>
+                  {currentStatus.desc}
+                </p>
+
+                {/* --- 🔴 Alert Box กรณี Rejected --- */}
+                {kyc.status === "rejected" && (
+                  <div className="bg-danger-subtle border-start border-danger border-4 p-3 rounded-end mt-3 animate-up-1">
+
+                    {/* ส่วนหัวข้อ: จัดไอคอนให้อยู่ 'กึ่งกลาง' กับตัวหนังสือ (align-items-center) */}
+                    <div className="d-flex align-items-center gap-2 mb-1">
+                      <i className="fas fa-info-circle text-danger" style={{ fontSize: '18px' }}></i>
+                      <h6 className="text-danger fw-bold fz15 mb-0" style={{ lineHeight: '1' }}>
+                        สาเหตุที่ไม่อนุมัติ:
+                      </h6>
+                    </div>
+
+                    {/* ส่วนเนื้อหา: เว้นระยะซ้าย (ms-4) ให้ตรงกับแนวตัวหนังสือด้านบน */}
+                    <div className="ms-4">
+                      <p className="mb-0 text-dark fz14" style={{ lineHeight: '1.5' }}>
+                        {kyc.rejectReason}
+                      </p>
+                    </div>
+
+                  </div>
                 )}
-              </button>
-            )}
 
-            {canEdit && (
-              <button
-                type="button"
-                className="ud-btn"
-                onClick={openModal}
-                disabled={submitting}
-                style={primaryBtnStyle("edit")}
-                onMouseEnter={() => setHoverBtn("edit")}
-                onMouseLeave={() => setHoverBtn(null)}
-              >
-                ดู/แก้ไขข้อมูลที่ส่ง
-                <i className="fal fa-pen ms-2" />
-              </button>
-            )}
-
-            {canView && (
-              <button
-                type="button"
-                className="ud-btn"
-                onClick={openModal}
-                disabled={submitting}
-                style={primaryBtnStyle("view")}
-                onMouseEnter={() => setHoverBtn("view")}
-                onMouseLeave={() => setHoverBtn(null)}
-              >
-                ดูรายละเอียด KYC
-                <i className="fal fa-eye ms-2" />
-              </button>
-            )}
-
-            {/* Reset: ซ่อนไว้ก่อน / โชว์หลังมีการส่งข้อมูลแล้ว */}
-            {showReset && (
-              <button
-                type="button"
-                className="ud-btn btn-white2"
-                onClick={handleReset}
-                disabled={submitting}
-                title="สำหรับทดสอบ"
-              >
-                Reset
-                <i className="fal fa-rotate-left ms-2" />
-              </button>
-            )}
+                {submitting && (
+                  <div className="text-primary fz13 mt-2">
+                    <i className="fas fa-circle-notch fa-spin me-2"></i> กำลังส่งข้อมูล...
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
+
+          {/* --- ฝั่งขวา: ปุ่ม Action --- */}
+          <div className="col-lg-4 mt-4 mt-lg-0">
+            <div className="d-flex flex-column align-items-lg-end gap-2">
+
+              {canStart && (
+                <button
+                  onClick={openModal}
+                  disabled={submitting}
+                  style={primaryBtnStyle("start")}
+                  onMouseEnter={() => setHoverBtn("start")}
+                  onMouseLeave={() => setHoverBtn(null)}
+                >
+                  {kyc.status === 'rejected' ? 'แก้ไขและส่งใหม่' : 'เริ่มยืนยันตัวตน'}
+                  <i className="fal fa-arrow-right ms-2" />
+                </button>
+              )}
+
+              {canEdit && (
+                <button
+                  onClick={openModal}
+                  disabled={submitting}
+                  style={primaryBtnStyle("edit")}
+                  onMouseEnter={() => setHoverBtn("edit")}
+                  onMouseLeave={() => setHoverBtn(null)}
+                >
+                  ตรวจสอบข้อมูล
+                  <i className="fal fa-search ms-2" />
+                </button>
+              )}
+
+              {canView && (
+                <div className="text-lg-end">
+                  {/* ✅ 2. เพิ่ม Hover Effect ให้ปุ่ม Link */}
+                  <button
+                    onClick={openModal}
+                    disabled={submitting}
+                    className="btn btn-link fw-bold text-decoration-none p-0"
+                    style={{
+                      color: hoverLink ? '#157347' : '#198754', // เปลี่ยนสีเข้มขึ้นเมื่อ Hover
+                      textDecoration: hoverLink ? 'underline !important' : 'none', // ขีดเส้นใต้เมื่อ Hover
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={() => setHoverLink(true)}
+                    onMouseLeave={() => setHoverLink(false)}
+                  >
+                    ดูรายละเอียดบัตร
+                    {/* อนิเมชันลูกศรขยับ */}
+                    <i
+                      className="fal fa-chevron-right ms-1"
+                      style={{
+                        transform: hoverLink ? 'translateX(3px)' : 'translateX(0)',
+                        transition: 'transform 0.2s ease'
+                      }}
+                    ></i>
+                  </button>
+                </div>
+              )}
+
+              {showReset && (
+                <button
+                  onClick={handleReset}
+                  disabled={submitting}
+                  className="btn btn-sm btn-link text-muted text-decoration-none mt-1 fz12"
+                  title="สำหรับ Dev Test"
+                >
+                  <i className="fal fa-history me-1"></i> Reset Status
+                </button>
+              )}
+
+            </div>
+          </div>
+
         </div>
       </div>
 

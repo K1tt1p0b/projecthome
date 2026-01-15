@@ -6,7 +6,8 @@ import SidebarDashboard from "@/components/property/dashboard/SidebarDashboard";
 import ChangePasswordForm from "@/components/property/dashboard/dashboard-profile/ChangePasswordForm";
 import PersonalInfo from "@/components/property/dashboard/dashboard-profile/PersonalInfo";
 import ProfileBox from "@/components/property/dashboard/dashboard-profile/ProfileBox";
-import KycBox from "@/components/property/dashboard/dashboard-profile/KycBox";
+import KycBox from "@/components/property/dashboard/dashboard-profile/KycBox"
+import VerifyEmailBox from "@/components/property/dashboard/dashboard-profile/VerifyEmailBox";
 
 export const metadata = {
   title: "Dashboard My Profile || Homez - Real Estate NextJS Template",
@@ -49,6 +50,11 @@ const DashboardMyProfile = () => {
                     <div className="col-lg-12">
                       <PersonalInfo />
                     </div>
+                  </div>
+
+                  {/* KYC */}
+                  <div className="col-lg-12">
+                    <VerifyEmailBox />
                   </div>
 
                   {/* KYC */}

@@ -253,18 +253,6 @@ export default function KycModal({ open, onClose, onSubmit, kyc }) {
                   <div className="fw700 fz16 mb15">ข้อมูลผู้ใช้งาน</div>
 
                   <div className="mb15">
-                    <label className="form-label fw600">ชื่อ-นามสกุล (ตามบัตร)</label>
-                    <input
-                      className="form-control"
-                      value={form.fullName}
-                      onChange={(e) => setField("fullName", e.target.value)}
-                      disabled={isReadOnly || submitting}
-                      placeholder="เช่น กิตติพงษ์ ใจดี"
-                    />
-                    {errors.fullName && <div className="text-danger fz13 mt5">{errors.fullName}</div>}
-                  </div>
-
-                  <div className="mb15">
                     <label className="form-label fw600">เลขบัตรประชาชน</label>
                     <input
                       className="form-control"

@@ -27,8 +27,10 @@ export default function BannerDashboardContent() {
     setLoading(true);
     let targetData = [];
 
+    // ฟังก์ชันช่วยเติม type
     const addType = (data, typeName) => data.map(item => ({ ...item, type: typeName }));
 
+    // 1. รวบรวมข้อมูลตาม Tab
     switch (tab) {
       case "all":
         targetData = [
@@ -49,15 +51,27 @@ export default function BannerDashboardContent() {
         break;
     }
 
-    const statuses = ['active', 'pending', 'draft', 'expired', 'hidden', 'rejected'];
+    // 2. แปลงสถานะ (Status Mapping)
+    // แปลงจาก "ภาษาไทย" ใน Data -> เป็น "ID ภาษาอังกฤษ" เพื่อใช้ในระบบ
+    const mapStatus = (thaiStatus) => {
+      if (!thaiStatus) return 'active'; // ถ้าไม่มีค่า ให้เป็น active ไว้ก่อน
+      if (thaiStatus === 'เผยแพร่แล้ว') return 'active';
+      if (thaiStatus === 'กำลังดำเนินการ') return 'pending';
+      if (thaiStatus === 'หมดอายุ') return 'expired';
+      if (thaiStatus === 'ซ่อน') return 'hidden';
+      if (thaiStatus === 'ไม่อนุมัติ') return 'rejected';
+      return 'active'; // ค่า default
+    };
 
-    const mockDataWithStatus = targetData.map((item, index) => ({
+    const formattedData = targetData.map((item) => ({
       ...item,
-      status: item.status || statuses[index % statuses.length],
-      views: Math.floor(Math.random() * 500) + 50
+      // ✅ ใช้ฟังก์ชันแปลงค่า แทนการสุ่มมั่วๆ
+      status: mapStatus(item.status),
+      // สุ่มยอดวิวเล่นๆ (ถ้าไม่มีค่าจริง)
+      views: item.views || Math.floor(Math.random() * 500) + 50
     }));
 
-    setItems(mockDataWithStatus);
+    setItems(formattedData);
     setLoading(false);
   }, [tab]);
 
@@ -90,11 +104,10 @@ export default function BannerDashboardContent() {
 
   const statusOptions = [
     { id: "all", label: "ทั้งหมด" },
-    { id: "pending", label: "รอตรวจสอบ" },
     { id: "active", label: "เผยแพร่แล้ว" },
-    { id: "draft", label: "แบบร่าง" },
     { id: "hidden", label: "ซ่อนรายการ" },
     { id: "expired", label: "หมดอายุ" },
+    { id: "pending", label: "รอตรวจสอบ" },
     { id: "rejected", label: "ไม่อนุมัติ" },
   ];
 
@@ -118,7 +131,7 @@ export default function BannerDashboardContent() {
 
   return (
     <div className={s.wrap} style={{ overflow: 'visible' }}>
-      
+
       {/* 1. Header */}
       <div className={s.top}>
         <div className="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between w-100 gap-3">
@@ -126,7 +139,7 @@ export default function BannerDashboardContent() {
             <div className={s.h1}>จัดการรายการและโฆษณา</div>
             <div className={s.sub}>ตรวจสอบสถานะและจัดการรายการทรัพย์ของคุณ</div>
           </div>
-          <div 
+          <div
             className="nav nav-pills p-1 rounded-pill d-inline-flex ms-lg-auto flex-shrink-0"
             style={{ backgroundColor: '#fff', border: '1px solid #eee' }} // ใส่กรอบบางๆ ให้หมวดหมู่แทน
           >
@@ -148,71 +161,70 @@ export default function BannerDashboardContent() {
 
       {/* ✅ 2. Filter Bar แบบใหม่: ลบกล่องพื้นหลังทิ้งไปเลย (No Background Wrapper) */}
       <div className="d-flex align-items-center justify-content-between gap-3 mb-4 mt-4" style={{ overflow: 'hidden' }}>
-          
-          {/* ซ้าย: สถานะ (ปุ่มลอยตัว) */}
-          <div 
-            className="d-flex align-items-center gap-2 no-scrollbar" 
-            style={{ 
-              overflowX: 'auto', 
-              whiteSpace: 'nowrap', 
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-              paddingBottom: '2px',
-              flexGrow: 1
-            }}
-          >
-            <style jsx>{` .no-scrollbar::-webkit-scrollbar { display: none; } `}</style>
-            
-            <span className="text-muted fz14 fw600 me-2 d-none d-md-block">สถานะ:</span>
 
-            {statusOptions.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => setStatusFilter(opt.id)}
-                className={`btn btn-sm rounded-pill px-3 fw600 border ${
-                  statusFilter === opt.id 
-                    ? 'bg-dark text-white border-dark' // ตัวเลือก: สีดำ
-                    : 'bg-white text-muted border-light' // ตัวอื่น: สีขาวขอบจาง
+        {/* ซ้าย: สถานะ (ปุ่มลอยตัว) */}
+        <div
+          className="d-flex align-items-center gap-2 no-scrollbar"
+          style={{
+            overflowX: 'auto',
+            whiteSpace: 'nowrap',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            paddingBottom: '2px',
+            flexGrow: 1
+          }}
+        >
+          <style jsx>{` .no-scrollbar::-webkit-scrollbar { display: none; } `}</style>
+
+          <span className="text-muted fz14 fw600 me-2 d-none d-md-block">สถานะ:</span>
+
+          {statusOptions.map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => setStatusFilter(opt.id)}
+              className={`btn btn-sm rounded-pill px-3 fw600 border ${statusFilter === opt.id
+                  ? 'bg-dark text-white border-dark' // ตัวเลือก: สีดำ
+                  : 'bg-white text-muted border-light' // ตัวอื่น: สีขาวขอบจาง
                 }`}
-                style={{ flexShrink: 0, fontSize: '13px' }}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+              style={{ flexShrink: 0, fontSize: '13px' }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
 
-          {/* ขวา: ปุ่มเปลี่ยนมุมมอง (พื้นหลังขาว) */}
-          <div className="d-flex align-items-center gap-3 flex-shrink-0 ps-2">
-            <div className="btn-group shadow-sm border rounded bg-white" role="group">
-              <button
-                type="button"
-                className="btn btn-sm d-flex align-items-center justify-content-center"
-                onClick={() => setViewMode('list')}
-                style={{
-                  width: 36, height: 36,
-                  backgroundColor: viewMode === 'list' ? '#eb6753' : '#fff',
-                  color: viewMode === 'list' ? '#fff' : '#333',
-                  border: 'none', borderRadius: 0
-                }}
-              >
-                <i className="fas fa-list-ul"></i>
-              </button>
-              <button
-                type="button"
-                className="btn btn-sm d-flex align-items-center justify-content-center"
-                onClick={() => setViewMode('grid')}
-                style={{
-                  width: 36, height: 36,
-                  backgroundColor: viewMode === 'grid' ? '#eb6753' : '#fff',
-                  color: viewMode === 'grid' ? '#fff' : '#333',
-                  borderLeft: '1px solid #eee', borderRadius: 0
-                }}
-              >
-                <i className="fas fa-th-large"></i>
-              </button>
-            </div>
+        {/* ขวา: ปุ่มเปลี่ยนมุมมอง (พื้นหลังขาว) */}
+        <div className="d-flex align-items-center gap-3 flex-shrink-0 ps-2">
+          <div className="btn-group shadow-sm border rounded bg-white" role="group">
+            <button
+              type="button"
+              className="btn btn-sm d-flex align-items-center justify-content-center"
+              onClick={() => setViewMode('list')}
+              style={{
+                width: 36, height: 36,
+                backgroundColor: viewMode === 'list' ? '#eb6753' : '#fff',
+                color: viewMode === 'list' ? '#fff' : '#333',
+                border: 'none', borderRadius: 0
+              }}
+            >
+              <i className="fas fa-list-ul"></i>
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm d-flex align-items-center justify-content-center"
+              onClick={() => setViewMode('grid')}
+              style={{
+                width: 36, height: 36,
+                backgroundColor: viewMode === 'grid' ? '#eb6753' : '#fff',
+                color: viewMode === 'grid' ? '#fff' : '#333',
+                borderLeft: '1px solid #eee', borderRadius: 0
+              }}
+            >
+              <i className="fas fa-th-large"></i>
+            </button>
           </div>
+        </div>
       </div>
 
       {viewMode === 'list' && !loading && filteredItems.length > 0 && (
