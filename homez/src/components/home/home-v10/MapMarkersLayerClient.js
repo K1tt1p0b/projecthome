@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import { Marker, Popup, useMap, useMapEvents } from "react-leaflet";
+import React, { useMemo, useState, useEffect } from "react";
+import { Marker, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
-import ListingPopupCard from "@/components/listing/map-style/ListingPopupCard";
 
 const roundTo = (n, digits = 1) => {
   const p = Math.pow(10, digits);
@@ -21,11 +20,9 @@ const countIcon = (count) => {
   });
 };
 
-// ✅ จูนระดับ group ตาม zoom ได้ตรงนี้
 const ZOOM_TO_LEVEL = {
-  PROVINCE_MAX: 7, // <=7 = จังหวัด
-  DISTRICT_MAX: 10, // 8-10 = อำเภอ
-  // >=11 = กลุ่มพิกัด (เดิม)
+  PROVINCE_MAX: 7,
+  DISTRICT_MAX: 10,
 };
 
 function getLevel(zoom) {
@@ -39,29 +36,24 @@ function groupPoints(points, level) {
 
   for (const pt of points) {
     let key = "";
-    let label = "";
+    let title = "";
     let lat = pt.lat;
     let lng = pt.lng;
 
     if (level === "province") {
       const province = pt.province || "ไม่ระบุจังหวัด";
       key = `p:${province}`;
-      label = province;
-      lat = 0;
-      lng = 0;
+      title = province;
     } else if (level === "district") {
       const province = pt.province || "ไม่ระบุจังหวัด";
       const district = pt.district || "ไม่ระบุอำเภอ";
       key = `d:${province}:${district}`;
-      label = `${district} · ${province}`;
-      lat = 0;
-      lng = 0;
+      title = `${district} · ${province}`;
     } else {
-      // coords (เหมือนเดิม)
       const rLat = roundTo(pt.lat, 1);
       const rLng = roundTo(pt.lng, 1);
       key = `c:${rLat},${rLng}`;
-      label = "";
+      title = "";
       lat = rLat;
       lng = rLng;
     }
@@ -69,13 +61,14 @@ function groupPoints(points, level) {
     if (!m.has(key)) {
       m.set(key, {
         key,
-        label,
-        lat,
-        lng,
+        title,
         items: [pt.raw],
         _sumLat: pt.lat,
         _sumLng: pt.lng,
         _n: 1,
+        _latFixed: lat,
+        _lngFixed: lng,
+        _useFixed: level === "coords",
       });
     } else {
       const g = m.get(key);
@@ -88,12 +81,12 @@ function groupPoints(points, level) {
 
   return Array.from(m.values()).map((g) => {
     const n = g._n || 1;
-    const lat = g.lat === 0 ? g._sumLat / n : g.lat;
-    const lng = g.lng === 0 ? g._sumLng / n : g.lng;
+    const lat = g._useFixed ? g._latFixed : g._sumLat / n;
+    const lng = g._useFixed ? g._lngFixed : g._sumLng / n;
 
     return {
       key: g.key,
-      label: g.label,
+      title: g.title,
       lat,
       lng,
       items: g.items,
@@ -102,7 +95,7 @@ function groupPoints(points, level) {
   });
 }
 
-export default function MapMarkersLayerClient({ points }) {
+export default function MapMarkersLayerClient({ points, onSelect, onClear }) {
   const map = useMap();
   const [zoom, setZoom] = useState(map?.getZoom?.() ?? 6);
 
@@ -112,6 +105,7 @@ export default function MapMarkersLayerClient({ points }) {
 
   useMapEvents({
     zoomend: (e) => setZoom(e.target.getZoom()),
+    click: () => onClear?.(),
   });
 
   const level = getLevel(zoom);
@@ -123,45 +117,38 @@ export default function MapMarkersLayerClient({ points }) {
 
   if (!groups.length) return null;
 
+  const buildSelectionPayload = (g) => {
+    const p = map.latLngToContainerPoint([g.lat, g.lng]);
+    const size = map.getSize();
+
+    // ถ้า marker อยู่ “บนๆ” ให้ panel ออกด้านบนแล้วชี้ลง
+    const prefer = p.y < size.y * 0.38 ? "top" : "bottom";
+
+    const title =
+      g.title?.trim() || `พื้นที่นี้มีทรัพย์ ${g.count} รายการ`;
+
+    return {
+      title,
+      items: g.items,
+      prefer,
+      anchorX: p.x,
+      anchorY: p.y,
+      mapW: size.x,
+      mapH: size.y,
+    };
+  };
+
   return (
     <>
       {groups.map((g) => (
-        <Marker key={g.key} position={[g.lat, g.lng]} icon={countIcon(g.count)}>
-          {/* ✅ แก้ popup ถูกตัด: keepInView + padding เผื่อ header + offset */}
-          <Popup
-            maxWidth={320}
-            minWidth={260}
-            autoPan={true}
-            keepInView={true}
-            autoPanPaddingTopLeft={[16, 120]}
-            autoPanPaddingBottomRight={[16, 16]}
-            offset={[0, -8]}
-          >
-            <div className="lx-map-popup">
-              <div className="lx-map-popup-title">
-                {g.label ? (
-                  <>
-                    <div style={{ fontWeight: 900, marginBottom: 4 }}>
-                      {g.label}
-                    </div>
-                    <div style={{ opacity: 0.9 }}>
-                      มีทรัพย์ {g.count} รายการ
-                    </div>
-                  </>
-                ) : (
-                  <>พื้นที่นี้มีทรัพย์ {g.count} รายการ</>
-                )}
-              </div>
-
-              {/* ✅ แสดง 1–3 ใบ / ถ้ามีเยอะก็ scroll (ไม่มีดูทั้งหมด) */}
-              <div className="lx-map-popup-list">
-                {g.items.slice(0, 3).map((raw) => (
-                  <ListingPopupCard key={raw.id} item={raw} />
-                ))}
-              </div>
-            </div>
-          </Popup>
-        </Marker>
+        <Marker
+          key={g.key}
+          position={[g.lat, g.lng]}
+          icon={countIcon(g.count)}
+          eventHandlers={{
+            click: () => onSelect?.(buildSelectionPayload(g)),
+          }}
+        />
       ))}
     </>
   );

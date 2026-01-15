@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { propertyData } from "@/data/propertyData";
 
@@ -13,7 +13,15 @@ const MapMarkersLayerClient = dynamic(() => import("./MapMarkersLayerClient"), {
   ssr: false,
 });
 
+const HomeMapSelectionPanel = dynamic(
+  () => import("./HomeMapSelectionPanel"),
+  { ssr: false }
+);
+
 export default function HomeV10MapClientOnly() {
+  const [selection, setSelection] = useState(null);
+  // selection: { title, items, prefer: "top"|"bottom", anchorX, anchorY, mapW, mapH }
+
   const { center, points } = useMemo(() => {
     const pts = (propertyData || [])
       .map((p) => {
@@ -49,10 +57,20 @@ export default function HomeV10MapClientOnly() {
       scrollWheelZoom={true}
       requireCtrlToZoom={true}
       enableFullscreen={true}
-      restrictToThailand={true} // ✅ lock ไทย
+      restrictToThailand={true}
       wheelHintText="กด Ctrl + Scroll เพื่อซูมแผนที่"
     >
-      <MapMarkersLayerClient points={points} />
+      <MapMarkersLayerClient
+        points={points}
+        onSelect={(payload) => setSelection(payload)}
+        onClear={() => setSelection(null)}
+      />
+
+      {/* ✅ Panel + ลูกศรชี้ไป marker */}
+      <HomeMapSelectionPanel
+        selection={selection}
+        onClose={() => setSelection(null)}
+      />
     </LeafletMapClient>
   );
 }

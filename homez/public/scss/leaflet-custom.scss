@@ -429,3 +429,113 @@
     height: 140px !important;
   }
 }
+
+/* =========================================================
+   Map Selection Sheet + Pointer (ชี้เหมือน popup เดิม)
+   ========================================================= */
+
+.lx-map-sheet {
+  position: absolute;
+  transform: translateX(-50%);
+  z-index: 1500;
+  width: min(420px, calc(100% - 24px));
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  pointer-events: auto;
+
+  /* ✅ ค่า default ลูกศร */
+  --lx-arrow-x: 50%;
+}
+
+/* ตำแหน่ง panel */
+.lx-map-sheet.is-bottom {
+  bottom: 14px;
+}
+
+.lx-map-sheet.is-top {
+  top: 70px; /* เผื่อ header */
+}
+
+/* ✅ ลูกศร: ทำเป็น 2 ชั้น (ขอบ + fill) ให้ดูเหมือน popup จริง */
+.lx-map-sheet::after,
+.lx-map-sheet::before {
+  content: "";
+  position: absolute;
+  left: var(--lx-arrow-x);
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* bottom: ลูกศรชี้ลงไปหา marker */
+.lx-map-sheet.is-bottom::before {
+  top: -10px;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-bottom: 12px solid rgba(0, 0, 0, 0.12); /* border */
+}
+.lx-map-sheet.is-bottom::after {
+  top: -9px;
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+  border-bottom: 11px solid rgba(255, 255, 255, 0.97); /* fill */
+}
+
+/* top: ลูกศรชี้ขึ้นไปหา marker */
+.lx-map-sheet.is-top::before {
+  bottom: -10px;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 12px solid rgba(0, 0, 0, 0.12);
+}
+.lx-map-sheet.is-top::after {
+  bottom: -9px;
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+  border-top: 11px solid rgba(255, 255, 255, 0.97);
+}
+
+/* header/body */
+.lx-map-sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.lx-map-sheet-title {
+  font-weight: 900;
+  font-size: 13px;
+  line-height: 1.2;
+  flex: 1;
+}
+
+.lx-map-sheet-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+  cursor: pointer;
+}
+
+.lx-map-sheet-close:hover {
+  background: #f6f7fb;
+}
+
+.lx-map-sheet-body {
+  padding: 10px 12px;
+  max-height: 360px;
+  overflow: auto; /* ✅ ถ้ามีเยอะให้ scroll */
+}
+
+.lx-map-sheet-more {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.75;
+}
