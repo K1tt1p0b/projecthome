@@ -1,0 +1,431 @@
+/* =========================================================
+   Leaflet Custom UI (Global)
+   - Count badge markers
+   - Ctrl + wheel zoom guard hint (Ctrl+Scroll)
+   - Fullscreen (CSS-based)
+   - Locate / Fullscreen buttons styling
+   - Overlay/search/results/infobox (basic)
+   ========================================================= */
+
+/* ---------- Base: map wrapper ---------- */
+.lx-map-wrap {
+  position: relative;
+  width: 100%;
+  border-radius: 0;
+  overflow: hidden; /* กัน control/overlay ล้น */
+  background: #fff;
+}
+
+/* Leaflet container should fill wrapper */
+.lx-map-wrap .leaflet-container {
+  width: 100%;
+  height: 100%;
+  outline: none;
+
+  /* ✅ ช่วยเรื่อง gesture บนบาง device */
+  touch-action: pan-x pan-y;
+
+  /* ✅ กัน scroll chain เวลา trackpad fling */
+  overscroll-behavior: contain;
+}
+
+/* ---------- 1) Count Badge Marker (วงกลมเลขจำนวนทรัพย์) ---------- */
+.lx-count-icon {
+  background: transparent;
+  border: none;
+}
+
+.lx-count-badge {
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+
+  background: #2b6de9;
+  color: #fff;
+
+  font-weight: 800;
+  font-size: 14px;
+
+  border: 3px solid #ffffff;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.18);
+  user-select: none;
+
+  transition: transform 160ms ease, filter 160ms ease;
+}
+
+.lx-count-badge:hover {
+  filter: brightness(1.05);
+  transform: scale(1.03);
+}
+
+/* ---------- 2) Ctrl + Wheel hint ---------- */
+/* ในโค้ด JS จะ add class "lx-wheel-hint" ให้ที่ .leaflet-container
+   และ setAttribute("data-wheel-hint", "...") ไว้ */
+.leaflet-container.lx-wheel-hint::after {
+  content: attr(data-wheel-hint);
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(20, 20, 20, 0.78);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  pointer-events: none;
+  z-index: 99999;
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+}
+
+/* ---------- 3) Fullscreen wrapper (ขยายเต็มหน้าจอ) ---------- */
+.lx-map-wrap.is-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  height: 100vh !important;
+  width: 100vw !important;
+  background: #fff;
+  border-radius: 0;
+}
+
+.lx-map-wrap.is-fullscreen .leaflet-control-container {
+  z-index: 10000;
+}
+
+/* ---------- 4) Leaflet Control UI (Zoom / Locate / Fullscreen) ---------- */
+.leaflet-bar {
+  border: none;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.leaflet-bar a {
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+  text-align: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  color: #111;
+  text-decoration: none;
+  user-select: none;
+}
+
+.leaflet-bar a:hover {
+  background: #f6f7fb;
+}
+
+.leaflet-bar a:active {
+  background: #eef1f8;
+}
+
+.leaflet-bar a:last-child {
+  border-bottom: none;
+}
+
+/* --- Locate button --- */
+.lx-locate-control .lx-locate-btn {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+}
+
+.lx-locate-control .lx-locate-btn::before {
+  content: "◎";
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0.9;
+}
+
+.lx-locate-control .lx-locate-btn.is-loading {
+  pointer-events: none;
+  opacity: 0.75;
+}
+
+/* --- Fullscreen button --- */
+.lx-fullscreen-control .lx-fullscreen-btn {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+}
+
+.lx-fullscreen-control .lx-fullscreen-btn::before {
+  content: "⤢";
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0.9;
+}
+
+.lx-fullscreen-control,
+.lx-locate-control {
+  margin-bottom: 8px;
+}
+
+/* ---------- 5) Overlay ---------- */
+.lx-map-overlay {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 1200;
+  pointer-events: none;
+}
+
+.lx-map-overlay-inner {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.lx-map-search {
+  display: flex;
+  gap: 8px;
+  width: min(720px, 100%);
+  pointer-events: auto;
+}
+
+.lx-map-search .form-control {
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 0 12px;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.1);
+}
+
+.lx-map-search .ud-btn {
+  height: 42px;
+  border-radius: 12px;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.1);
+  pointer-events: auto;
+}
+
+.lx-map-actions {
+  pointer-events: auto;
+}
+
+.lx-map-actions .ud-btn {
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.1);
+}
+
+/* results dropdown */
+.lx-map-results {
+  margin-top: 10px;
+  width: min(720px, 100%);
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.18);
+  pointer-events: auto;
+}
+
+.lx-map-result-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.lx-map-result-item:hover {
+  background: #f6f7fb;
+}
+
+.lx-map-results-footer {
+  padding: 10px 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.lx-map-results-footer .ud-btn {
+  border-radius: 12px;
+}
+
+/* ---------- 6) Info box ---------- */
+.lx-map-infobox {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 1200;
+  width: min(420px, calc(100% - 28px));
+}
+
+.lx-map-info-card {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.16);
+}
+
+.lx-map-info-title {
+  font-weight: 800;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.lx-map-info-text {
+  font-size: 13px;
+  line-height: 1.4;
+  opacity: 0.92;
+}
+
+/* ---------- 7) Responsive tweaks ---------- */
+@media (max-width: 768px) {
+  .lx-map-overlay {
+    left: 10px;
+    right: 10px;
+    top: 10px;
+  }
+
+  .lx-map-overlay-inner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .lx-map-search {
+    width: 100%;
+  }
+
+  .lx-map-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .lx-map-infobox {
+    left: 10px;
+    bottom: 10px;
+    width: calc(100% - 20px);
+  }
+
+  .leaflet-container.lx-wheel-hint::after {
+    max-width: calc(100% - 20px);
+    white-space: normal;
+    text-align: center;
+  }
+}
+
+/* =========================================================
+   8) Map Popup (Listing cards) — Home v10
+   - ลดขนาด popup และทำให้แสดงการ์ดแบบย่อ
+   - แสดงได้สูงสุด 3 ใบ (logic อยู่ใน JS)
+   - ถ้ามีเยอะก็ scroll ใน popup (ไม่ต้องมี ดูทั้งหมด)
+   ========================================================= */
+
+.leaflet-popup-content {
+  margin: 10px 12px;
+}
+
+.lx-map-popup {
+  width: 260px;
+}
+
+.lx-map-popup-title {
+  font-weight: 800;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+/* scroll container (เผื่อการ์ดสูง) */
+.lx-map-popup-list {
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+/* ลดเงา/ขนาดของตัว popup container ของ Leaflet ให้เนียน */
+.leaflet-popup-content-wrapper {
+  border-radius: 14px;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.18);
+}
+
+/* ===== ย่อการ์ดเฉพาะใน map (ไม่กระทบหน้าอื่น) ===== */
+.listing-style1.map-card {
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+/* รูปเล็กลง */
+.listing-style1.map-card .list-thumb.small img {
+  height: 150px !important;
+  object-fit: cover;
+}
+
+/* ป้ายราคาเล็กลง */
+.listing-style1.map-card .list-price.small {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 10px;
+}
+
+/* ลด padding content ให้แน่นขึ้น */
+.listing-style1.map-card .list-content {
+  padding: 8px !important;
+}
+
+/* title/ข้อความให้กระชับ */
+.listing-style1.map-card .list-title {
+  line-height: 1.25;
+  margin-bottom: 4px !important;
+}
+
+.listing-style1.map-card .list-text {
+  line-height: 1.2;
+  margin-bottom: 8px !important;
+  opacity: 0.9;
+}
+
+/* meta ให้ไม่แตกบรรทัดมั่ว */
+.listing-style1.map-card .list-meta {
+  gap: 10px !important;
+}
+
+.listing-style1.map-card .map-meta-item {
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.95;
+}
+
+/* มือถือ */
+@media (max-width: 768px) {
+  .lx-map-popup {
+    width: 240px;
+  }
+
+  .lx-map-popup-list {
+    max-height: 300px;
+  }
+
+  .listing-style1.map-card .list-thumb.small img {
+    height: 140px !important;
+  }
+}
