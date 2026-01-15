@@ -5,7 +5,7 @@ import Image from "next/image";
 import { toast } from "react-toastify";
 import s from "./template-setting.module.css";
 
-// ✅ Microsite Templates (Mock) — ไม่มี accent แล้ว
+// ✅ Microsite Templates (Mock)
 const TEMPLATES = [
   {
     id: "sellpage-a",
@@ -33,31 +33,71 @@ const TEMPLATES = [
   },
 ];
 
-// ✅ Sections (Mock) — แยก Video / Gallery
+// ✅ Sections (Mock) — ใช้ flaticon แทนอิโมจิ
 const SECTIONS = [
-  { key: "properties", title: "ทรัพย์สินของฉัน", desc: "รายการทรัพย์ (ขาย/เช่า/แนะนำ)", icon: "🏠" },
-  { key: "services", title: "งานบริการของฉัน", desc: "ฝากขาย/ประเมินราคา/ปรึกษาสินเชื่อ", icon: "🧰" },
-  { key: "courses", title: "คอร์สเรียนของฉัน", desc: "คอร์ส/คอร์สออนไลน์", icon: "🎓" },
-  { key: "about", title: "เกี่ยวกับฉัน", desc: "แนะนำตัว/ประสบการณ์/บริษัท", icon: "👤" },
-  { key: "contact", title: "ช่องทางติดต่อ", desc: "โทร/Line/โซเชียล", icon: "☎️" },
-  { key: "video", title: "วิดีโอ", desc: "วิดีโอแนะนำ/พาชมทรัพย์", icon: "🎥" },
-  { key: "gallery", title: "แกลเลอรี่", desc: "รูปภาพแกลเลอรี่/ผลงาน/บรรยากาศ", icon: "🖼️" },
-  { key: "property_map", title: "แผนที่ทรัพย์สิน", desc: "แผนที่รวมทรัพย์สิน", icon: "🗺️" },
+  {
+    key: "properties",
+    title: "ทรัพย์สินของฉัน",
+    desc: "รายการทรัพย์ (ขาย/เช่า/แนะนำ)",
+    icon: "flaticon-home",
+  },
+  {
+    key: "services",
+    title: "งานบริการของฉัน",
+    desc: "ฝากขาย/ประเมินราคา/ปรึกษาสินเชื่อ",
+    icon: "fas fa-hard-hat",
+  },
+  {
+    key: "courses",
+    title: "คอร์สเรียนของฉัน",
+    desc: "คอร์ส/คอร์สออนไลน์",
+    icon: "fas fa-book",
+  },
+  {
+    key: "about",
+    title: "เกี่ยวกับฉัน",
+    desc: "แนะนำตัว/ประสบการณ์/บริษัท",
+    icon: "flaticon-user",
+  },
+  {
+    key: "contact",
+    title: "ช่องทางติดต่อ",
+    desc: "โทร/Line/โซเชียล",
+    icon: "flaticon-call",
+  },
+  {
+    key: "video",
+    title: "วิดีโอ",
+    desc: "วิดีโอแนะนำ/พาชมทรัพย์",
+    icon: "flaticon-play",
+  },
+  {
+    key: "gallery",
+    title: "แกลเลอรี่",
+    desc: "รูปภาพแกลเลอรี่/ผลงาน/บรรยากาศ",
+    icon: "flaticon-images",
+  },
+  {
+    key: "property_map",
+    title: "แผนที่ทรัพย์สิน",
+    desc: "แผนที่รวมทรัพย์สิน",
+    icon: "flaticon-map",
+  },
 ];
 
 export default function TemplateSettingClient() {
   const [selectedTemplate, setSelectedTemplate] = useState("sellpage-a");
 
-  // ✅ mock ค่าเริ่มต้น (ไม่มีบังคับเปิดอะไร)
+  // ✅ mock ค่าเริ่มต้น
   const initialSections = useMemo(
     () => ({
-      properties: true,
-      services: true,
+      properties: false,
+      services: false,
       courses: false,
-      about: true,
-      contact: true,
+      about: false,
+      contact: false,
       video: false,
-      gallery: true,
+      gallery: false,
       property_map: false,
     }),
     []
@@ -143,7 +183,6 @@ export default function TemplateSettingClient() {
                       ดูตัวอย่าง
                     </button>
 
-                    {/* ✅ hover เป็นส้มอ่อนสวย ๆ */}
                     <button
                       type="button"
                       className={s.btnPick}
@@ -183,7 +222,9 @@ export default function TemplateSettingClient() {
                 tabIndex={0}
               >
                 <div className={s.sectionLeft}>
-                  <div className={s.icon}>{sec.icon}</div>
+                  <div className={s.icon}>
+                    <i className={sec.icon} />
+                  </div>
                   <div>
                     <h5 className={s.sectionTitle}>{sec.title}</h5>
                     <p className={s.sectionDesc}>{sec.desc}</p>

@@ -2,15 +2,19 @@
   background: #fff;
   border-radius: 12px;
   padding: 18px;
-  overflow: hidden; /* ✅ กันเด้งเงา/สีออกขอบ */
+  overflow: hidden;
 
-  /* ✅ โทนส้ม/ขาว ตามธีมเว็บ */
-  --orange: #f97316;
-  --orange-soft: #fff7ed;
-  --orange-border: #fed7aa;
-  --orange-text: #9a3412;
+  /* 🎯 สีเดียวกับปุ่มเพิ่มรูปของจริง */
+  --orange: #eb6753;
+  --orange-hover: #e25845;
+  --orange-active: #d94f3d;
+
+  --orange-soft: #fff1ee;
+  --orange-border: #f3b2a8;
+  --orange-text: #9c2f21;
 }
 
+/* ================= Header ================= */
 .head {
   display: flex;
   justify-content: space-between;
@@ -46,6 +50,7 @@
   color: #111827;
 }
 
+/* ================= Blocks ================= */
 .block {
   margin-top: 18px;
 }
@@ -63,7 +68,7 @@
   font-size: 12px;
 }
 
-/* -------- Templates -------- */
+/* ================= Templates ================= */
 .grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -76,17 +81,16 @@
   border: 2px solid #eee;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  transition: border-color 0.18s ease, transform 0.18s ease;
 }
 
 .card:hover {
-  border-color: #cfcfcf;
+  border-color: #d1d5db;
   transform: translateY(-2px);
 }
 
 .active {
   border-color: var(--orange);
-  box-shadow: 0 10px 22px rgba(249, 115, 22, 0.18);
 }
 
 .preview {
@@ -100,6 +104,7 @@
   object-fit: cover;
 }
 
+/* 🎯 badge สีเดียวกับปุ่มเพิ่มรูป */
 .badge {
   position: absolute;
   top: 10px;
@@ -133,17 +138,16 @@
   margin-top: 12px;
 }
 
-/* -------- Buttons (custom: ไม่มี triangle effect) -------- */
+/* ================= Buttons ================= */
 .btnGhost {
   border: 1px solid #e5e7eb;
   background: #fff;
   color: #111827;
   font-size: 13px;
   padding: 8px 12px;
-  border-radius: 10px;
+  border-radius: 12px;
   transition: 0.15s ease;
   box-shadow: none;
-  outline: none;
 }
 
 .btnGhost:hover {
@@ -154,38 +158,38 @@
 .btnGhost:focus,
 .btnGhost:focus-visible,
 .btnGhost:active {
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none;
+  box-shadow: none;
 }
 
-/* ✅ ปุ่ม "เลือกเทมเพลต" */
+/* 🔥 ปุ่มเลือกเทมเพลต — กดแล้วจม */
 .btnPick {
-  border: 1px solid var(--orange);
   background: var(--orange);
   color: #fff;
+  border: none;
   font-size: 13px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  transition: 0.15s ease;
-  box-shadow: none;
-  outline: none;
+  padding: 8px 14px;
+  border-radius: 12px;
+  transition: background 0.15s ease, transform 0.12s ease;
 }
 
-/* ✅ hover เป็นส้มอ่อนสวย ๆ ตามที่ขอ */
 .btnPick:hover {
-  background: var(--orange-soft);
-  border-color: var(--orange-border);
-  color: var(--orange-text);
+  background: var(--orange-hover);
+  transform: translateY(1px);
+}
+
+.btnPick:active {
+  background: var(--orange-active);
+  transform: translateY(2px);
 }
 
 .btnPick:focus,
-.btnPick:focus-visible,
-.btnPick:active {
-  outline: none !important;
-  box-shadow: none !important;
+.btnPick:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 
-/* -------- Sections -------- */
+/* ================= Sections ================= */
 .sectionGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -202,32 +206,28 @@
   align-items: center;
   background: #fff;
   cursor: pointer;
-  transition: 0.18s ease;
+  transition: border-color 0.18s ease, transform 0.12s ease;
 }
 
 .sectionCard:hover {
-  border-color: #cfcfcf;
+  border-color: #d1d5db;
+  transform: translateY(1px);
 }
 
 .sectionOn {
   border-color: var(--orange);
-  box-shadow: 0 8px 18px rgba(249, 115, 22, 0.15);
 }
 
-.sectionLeft {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-}
-
+/* 🎯 icon สีเดียวกับปุ่มเพิ่มรูป */
 .icon {
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  background: #f7f7f7;
+  background: var(--orange-soft);
   display: grid;
   place-items: center;
-  font-size: 18px;
+  font-size: 16px;
+  color: var(--orange);
 }
 
 .sectionTitle {
@@ -246,6 +246,7 @@
   align-items: center;
 }
 
+/* 🎯 pill สีเดียวกับปุ่มเพิ่มรูป */
 .statePill {
   font-size: 12px;
   padding: 6px 10px;
@@ -264,7 +265,7 @@
   color: #6b7280;
 }
 
-/* -------- Footer -------- */
+/* ================= Footer ================= */
 .footerActions {
   display: flex;
   justify-content: flex-end;
@@ -272,31 +273,34 @@
   margin-top: 18px;
 }
 
+/* 🔥 ปุ่มบันทึก — ฟีลเดียวกับปุ่มเพิ่มรูป */
 .btnSave {
-  border: 1px solid var(--orange);
   background: var(--orange);
   color: #fff;
+  border: none;
   font-size: 14px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  transition: 0.15s ease;
+  padding: 10px 18px;
+  border-radius: 14px;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+.btnSave:hover {
+  background: var(--orange-hover);
+  transform: translateY(1px);
+}
+
+.btnSave:active {
+  background: var(--orange-active);
+  transform: translateY(2px);
+}
+
+.btnSave:focus,
+.btnSave:focus-visible {
   outline: none;
   box-shadow: none;
 }
 
-.btnSave:hover {
-  filter: brightness(0.96);
-}
-
-/* ✅ กันเด้ง outline/shadow */
-.btnSave:focus,
-.btnSave:focus-visible,
-.btnSave:active {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* -------- Responsive -------- */
+/* ================= Responsive ================= */
 @media (max-width: 1200px) {
   .grid {
     grid-template-columns: repeat(2, 1fr);
@@ -310,4 +314,47 @@
   .sectionGrid {
     grid-template-columns: 1fr;
   }
+}
+
+
+/* ===============================
+   Card press (hover / active)
+   =============================== */
+
+/* Template card */
+.card {
+  box-shadow: none;
+  transition: border-color 0.18s ease, transform 0.12s ease;
+}
+
+.card:hover {
+  transform: translateY(3px); /* hover = จมเบา */
+}
+
+.card:active {
+  transform: translateY(5px); /* active = จมจริง */
+}
+
+/* การ์ดที่ถูกเลือก */
+.active {
+  border-color: var(--orange);
+  transform: translateY(1px);
+}
+
+/* Section card */
+.sectionCard {
+  box-shadow: none;
+  transition: border-color 0.18s ease, transform 0.12s ease;
+}
+
+.sectionCard:hover {
+  transform: translateY(1px);
+}
+
+.sectionCard:active {
+  transform: translateY(2px);
+}
+
+.sectionOn {
+  border-color: var(--orange);
 }
