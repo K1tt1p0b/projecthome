@@ -42,7 +42,8 @@ const ProfilePersonalAndSocialForm = () => {
       { name: "line", label: "Line ID" },
       { name: "instagram", label: "Instagram Url" },
       { name: "tiktok", label: "Tiktok Url" },
-      { name: "linkedin", label: "Linkedin Url" },
+      { name: "youtube", label: "Youtube Url" },
+      { name: "x (Twitter)", label: "X (Twitter) Url" },
     ],
     []
   );

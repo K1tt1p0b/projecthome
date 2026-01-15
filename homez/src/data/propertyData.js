@@ -151,7 +151,7 @@ export const propertyData = [
     announcerStatus: "owner",
     announcerStatus_label: "เจ้าของทรัพย์",
 
-    status: "กำลังดำเนินการ",
+    status: "เผยแพร่แล้ว",
     views: 88,
     datePublished: "31 ธันวาคม 2022",
 

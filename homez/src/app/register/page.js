@@ -35,9 +35,9 @@ const Register = () => {
                       alt="logo"
                     />
                   </Link>
-                  <h2>Create account</h2>
+                  <h2>สร้างบัญชี</h2>
                   <p className="text">
-                    Sign in with this account across the following sites.
+                    เข้าสู่ระบบด้วยบัญชีนี้ในเว็บไซต์ต่อไปนี้
                   </p>
                 </div>
                 <SignUp />

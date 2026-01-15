@@ -1,7 +1,14 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { toast } from "react-toastify";
 
+// ✅ ใช้ไฟล์ config เดียวกับ auto
+import { PACKAGES, getPackage } from "./boost/config/boostPackages";
+import { LS_MANUAL } from "./boost/config/boostStorage";
+import { readLS, writeLS, formatCountdown } from "./boost/utils/boostUtils";
+
+// ===== Utils =====
 const canBoost = (p) => String(p?.status || "") === "เผยแพร่แล้ว";
 
 const pickLocationText = (p) => {
@@ -13,6 +20,25 @@ const pickLocationText = (p) => {
   return [sub, district, province].filter(Boolean).join(" · ") || "-";
 };
 
+function clampStep(s) {
+  const n = Number(s) || 1;
+  if (n < 1) return 1;
+  if (n > 2) return 2;
+  return n;
+}
+
+// ===== Toast helpers =====
+const tLoading = (msg) => toast.loading(msg);
+const tUpdate = (id, type, msg) =>
+  toast.update(id, {
+    render: msg,
+    type,
+    isLoading: false,
+    autoClose: 1600,
+    closeButton: true,
+  });
+
+// ===== UI Bits =====
 const ToneBadge = ({ tone = "gray", children }) => {
   const map = {
     green: { bg: "#E9FBF0", text: "#0A7A3B", border: "#BFECD0" },
@@ -22,6 +48,7 @@ const ToneBadge = ({ tone = "gray", children }) => {
     purple: { bg: "#F3EEFF", text: "#5B21B6", border: "#DDD6FE" },
   };
   const c = map[tone] || map.gray;
+
   return (
     <span
       style={{
@@ -115,31 +142,45 @@ const StickyBar = ({ children }) => (
   </div>
 );
 
-const todayISO = () => {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-};
-
-const PropertyPickRow = ({ p, checked, onPick }) => {
+const PropertyPickRow = ({
+  p,
+  checked,
+  onPick,
+  noteRight,
+  disabledAll,
+  disabledReason,
+  badgeText,
+  badgeTone,
+}) => {
   const boostable = canBoost(p);
+  const disabled = disabledAll || !boostable || !!disabledReason;
+
+  const finalBadgeText =
+    badgeText || (!boostable ? "ดันไม่ได้" : checked ? "เลือกแล้ว" : "ดันได้");
+  const finalBadgeTone =
+    badgeTone || (!boostable ? "red" : checked ? "purple" : disabled ? "gray" : "green");
+
   return (
     <button
       type="button"
       className="btn text-start"
-      onClick={boostable ? onPick : undefined}
+      onClick={!disabled ? onPick : undefined}
       style={{
         width: "100%",
         borderRadius: 14,
         padding: 12,
         border: checked ? "2px solid #0d6efd" : "1px solid #eee",
         background: checked ? "#F5F9FF" : "#fff",
-        opacity: boostable ? 1 : 0.55,
-        cursor: boostable ? "pointer" : "not-allowed",
+        opacity: disabled ? 0.6 : 1,
+        cursor: disabled ? "not-allowed" : "pointer",
       }}
-      title={boostable ? "กดเพื่อเลือก" : "ดันไม่ได้ (ต้องเป็นสถานะเผยแพร่แล้ว)"}
+      title={
+        !boostable
+          ? "ดันไม่ได้ (ต้องเป็นสถานะเผยแพร่แล้ว)"
+          : disabledReason
+          ? disabledReason
+          : "กดเพื่อเลือก"
+      }
     >
       <div className="d-flex align-items-center justify-content-between gap-2">
         <div style={{ minWidth: 0 }}>
@@ -148,7 +189,11 @@ const PropertyPickRow = ({ p, checked, onPick }) => {
             รหัส: {p.id} · {pickLocationText(p)}
           </div>
         </div>
-        <ToneBadge tone={boostable ? "green" : "red"}>{boostable ? "ดันได้" : "ดันไม่ได้"}</ToneBadge>
+
+        <div className="d-flex align-items-center gap-2">
+          {noteRight}
+          <ToneBadge tone={finalBadgeTone}>{finalBadgeText}</ToneBadge>
+        </div>
       </div>
     </button>
   );
@@ -162,16 +207,95 @@ export default function BootManual({
   toggleOne,
   clearSelected,
   goAuto,
+  initialStep = 1,
+  packageKey = "business", // ✅ แนะนำให้ใช้แพ็กเดียวกับ auto
 }) {
-  const [step, setStep] = useState(1);
+  const pkg = getPackage?.(packageKey) || PACKAGES?.[packageKey] || PACKAGES.business;
+
+  // ✅ manual ใช้คูลดาวน์ = interval ของแพ็ก (หรือถ้าคุณอยากแยก ก็ใส่ cooldownMs ใน package ได้)
+  const COOLDOWN_MS = Number(pkg.cooldownMs || pkg.intervalMs || 0) || 0;
+
+  const [step, setStep] = useState(() => clampStep(initialStep));
   const [q, setQ] = useState("");
+  const [now, setNow] = useState(Date.now());
+  const [isBusy, setIsBusy] = useState(false);
 
-  const [startDate, setStartDate] = useState(todayISO());
-  const [endDate, setEndDate] = useState(todayISO());
+  // ✅ เก็บ store ไว้ใน state แล้ว sync เป็นระยะ (ไม่ต้อง readLS ทุกวินาทีใน useMemo)
+  const [manualStore, setManualStore] = useState(() => readLS(LS_MANUAL, {}));
 
+  const syncManualStore = useCallback(() => {
+    const s = readLS(LS_MANUAL, {});
+    setManualStore(s && typeof s === "object" ? s : {});
+  }, []);
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    syncManualStore();
+  }, [syncManualStore]);
+
+  // step sync
+  useEffect(() => {
+    const next = clampStep(initialStep);
+    setStep(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialStep]);
+
+  // ✅ เลือกได้ทีละ 1 อันเสมอ
   const pickedBoostable = useMemo(() => selectedList.filter(canBoost)[0] || null, [selectedList]);
   const pickedCount = pickedBoostable ? 1 : 0;
 
+  const pickedSummary = useMemo(() => {
+    if (!pickedBoostable) return null;
+    return {
+      id: String(pickedBoostable.id),
+      title: pickedBoostable.title || `ประกาศ #${pickedBoostable.id}`,
+      location: pickLocationText(pickedBoostable),
+    };
+  }, [pickedBoostable]);
+
+  // ถ้า step 2 แต่ไม่มีที่เลือก -> เด้งกลับ
+  useEffect(() => {
+    if (step === 2 && !pickedBoostable) setStep(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickedBoostable]);
+
+  // ===== สถานะคูลดาวน์ของแต่ละโพส =====
+  const cooldownInfoById = useMemo(() => {
+    const m = {};
+    (properties || []).forEach((p) => {
+      const id = String(p.id);
+      const last = manualStore?.[id]?.lastBoostAt || 0;
+      const nextAt = last ? last + COOLDOWN_MS : 0;
+      const remain = nextAt ? Math.max(0, nextAt - now) : 0;
+      m[id] = { lastBoostAt: last, nextAt, remain };
+    });
+    return m;
+  }, [properties, manualStore, COOLDOWN_MS, now]);
+
+  const manualRunningList = useMemo(() => {
+    const arr = (properties || [])
+      .map((p) => {
+        const id = String(p.id);
+        const info = cooldownInfoById[id] || {};
+        return {
+          id,
+          title: p.title,
+          lastBoostAt: info.lastBoostAt || 0,
+          remain: info.remain || 0,
+        };
+      })
+      .filter((x) => x.lastBoostAt > 0 && x.remain > 0)
+      .sort((a, b) => (a.remain || 0) - (b.remain || 0))
+      .slice(0, 10);
+
+    return arr;
+  }, [properties, cooldownInfoById]);
+
+  // ===== list filter =====
   const filtered = useMemo(() => {
     const keyword = q.trim().toLowerCase();
     let arr = [...(properties || [])];
@@ -187,13 +311,14 @@ export default function BootManual({
     return arr;
   }, [properties, q]);
 
+  // ===== pick behavior =====
   const handlePickOne = (id, p) => {
+    if (isBusy) return;
     if (!canBoost(p)) return;
 
     const sid = String(id);
     const already = selectedIds.includes(sid);
 
-    // ✅ manual เลือกได้ 1: ถ้ากดตัวเดิม = ยกเลิก, ถ้ากดตัวใหม่ = clear แล้วเลือกใหม่
     if (already) {
       clearSelected();
       return;
@@ -203,49 +328,67 @@ export default function BootManual({
     toggleOne(sid);
   };
 
-  const validateDate = () => {
-    if (!startDate || !endDate) return "กรุณาเลือกวันที่เริ่มและวันที่จบ";
-    if (endDate < startDate) return "วันที่จบต้องไม่น้อยกว่าวันที่เริ่ม";
-    return "";
-  };
+  // ===== picked cooldown =====
+  const pickedCooldown = useMemo(() => {
+    if (!pickedBoostable) return { remain: 0, ready: false };
+    const id = String(pickedBoostable.id);
+    const info = cooldownInfoById[id] || { remain: 0 };
+    const remain = Number(info.remain || 0);
+    const ready = canBoost(pickedBoostable) && remain === 0;
+    return { remain, ready };
+  }, [pickedBoostable, cooldownInfoById]);
 
+  // ===== step nav =====
   const goNext = () => {
-    if (step === 1) {
-      if (!pickedBoostable) return alert("กรุณาเลือกประกาศที่เผยแพร่แล้ว 1 รายการ");
-      setStep(2);
-      return;
-    }
-    if (step === 2) {
-      const err = validateDate();
-      if (err) return alert(err);
-      setStep(3);
+    if (step !== 1) return;
+    if (!pickedBoostable) return toast.warn("กรุณาเลือกประกาศที่เผยแพร่แล้ว 1 รายการ");
+    if (!pickedCooldown.ready) return toast.warn(`ยังดันซ้ำไม่ได้ ต้องรออีก ${formatCountdown(pickedCooldown.remain)}`);
+    setStep(2);
+  };
+
+  const goBack = () => setStep(1);
+
+  // ===== submit =====
+  const submit = async () => {
+    if (isBusy) return;
+    if (!pickedBoostable) return toast.warn("กรุณาเลือกประกาศที่เผยแพร่แล้ว 1 รายการ");
+    if (!pickedCooldown.ready) return toast.warn(`ยังดันซ้ำไม่ได้ ต้องรออีก ${formatCountdown(pickedCooldown.remain)}`);
+
+    setIsBusy(true);
+    const tid = tLoading("กำลังดันแมนนวล...");
+
+    try {
+      await new Promise((r) => setTimeout(r, 250));
+
+      const id = String(pickedBoostable.id);
+      const store = readLS(LS_MANUAL, {});
+      const nextStore = store && typeof store === "object" ? store : {};
+      nextStore[id] = { lastBoostAt: Date.now() };
+
+      writeLS(LS_MANUAL, nextStore);
+      setManualStore(nextStore);
+
+      clearSelected();
+      setStep(1);
+      tUpdate(tid, "success", `ดันแมนนวลสำเร็จ: ${pickedBoostable.title}`);
+    } catch (e) {
+      tUpdate(tid, "error", "ดันแมนนวลไม่สำเร็จ");
+    } finally {
+      setIsBusy(false);
     }
   };
 
-  const goBack = () => setStep((s) => Math.max(1, s - 1));
-
-  const submit = () => {
-    if (!pickedBoostable) return alert("กรุณาเลือกประกาศที่เผยแพร่แล้ว 1 รายการ");
-    const err = validateDate();
-    if (err) return alert(err);
-
-    alert(
-      `ยืนยันดันแมนนวล (จำลอง)\n` +
-        `- ประกาศ: ${pickedBoostable.title} (รหัส ${pickedBoostable.id})\n` +
-        `- ช่วงวัน: ${startDate} ถึง ${endDate}`
-    );
-
-    clearSelected();
-    setStep(1);
-  };
-
-  const stepDone1 = !!pickedBoostable;
-  const stepDone2 = !validateDate();
+  // ===== Header =====
+  const descText =
+    `${pkg.label}: ` +
+    `Auto ได้ ${pkg.autoMaxPosts} โพส · ` +
+    `ออโต้ดัน ${pkg.intervalLabel} · ` +
+    `Manual: ${pkg.manualFreeText}`;
 
   return (
     <Card
       title="ดันขึ้นฟีด (แมนนวล)"
-      desc="เลือก 1 ประกาศ → เลือกช่วงวัน → ยืนยัน"
+      desc={descText}
       right={
         <div className="d-flex gap-2 flex-wrap justify-content-end">
           <ToneBadge tone="gray">เลือกแล้ว {pickedCount}/1</ToneBadge>
@@ -254,6 +397,7 @@ export default function BootManual({
             className="ud-btn btn-white2"
             style={{ height: 44, padding: "0 14px", borderRadius: 12 }}
             onClick={goAuto}
+            disabled={isBusy}
           >
             ไปแท็บออโต้
           </button>
@@ -261,17 +405,59 @@ export default function BootManual({
       }
     >
       <div className="d-flex gap-2 flex-wrap mb20">
-        <StepPill active={step === 1} done={stepDone1} onClick={() => setStep(1)}>
+        <StepPill active={step === 1} done={!!pickedBoostable} onClick={() => setStep(1)} disabled={false}>
           1) เลือกประกาศ
         </StepPill>
-        <StepPill active={step === 2} done={stepDone2} onClick={() => setStep(2)} disabled={!stepDone1}>
-          2) เลือกช่วงวัน
-        </StepPill>
-        <StepPill active={step === 3} done={false} onClick={() => setStep(3)} disabled={!stepDone1}>
-          3) ยืนยัน
+        <StepPill active={step === 2} done={false} onClick={() => setStep(2)} disabled={!pickedBoostable}>
+          2) ยืนยัน
         </StepPill>
       </div>
 
+      {/* ===== กล่องรายการติดคูลดาวน์ ===== */}
+      <div style={{ border: "1px solid #eee", borderRadius: 14, padding: 14, background: "#fafafa" }} className="mb20">
+        <div className="fw700">รายการกำลังดันอยู่ (แมนนวล)</div>
+
+        {manualRunningList.length === 0 ? (
+          <div className="text-muted mt10" style={{ fontSize: 13 }}>
+            ยังไม่มีรายการที่ติดคูลดาวน์
+          </div>
+        ) : (
+          <div className="mt10" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {manualRunningList.map((x) => (
+              <div
+                key={x.id}
+                style={{
+                  background: "#fff",
+                  border: "1px solid #eee",
+                  borderRadius: 12,
+                  padding: "10px 12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 10,
+                }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div className="fw600" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {x.title}
+                  </div>
+                  <div className="text-muted" style={{ fontSize: 12 }}>
+                    รหัส: {x.id} · ดันล่าสุด: {new Date(x.lastBoostAt).toLocaleString()}
+                  </div>
+                </div>
+
+                <ToneBadge tone="red">ดันได้อีกใน {formatCountdown(x.remain)}</ToneBadge>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="text-muted mt10" style={{ fontSize: 12 }}>
+          * Manual: หลังจากกดดัน จะติดคูลดาวน์ตามแพ็กเกจ แล้วนับถอยหลังจนกดซ้ำได้
+        </div>
+      </div>
+
+      {/* ===== Step 1 ===== */}
       {step === 1 ? (
         <>
           <div className="row g-3 align-items-end mb20">
@@ -283,6 +469,7 @@ export default function BootManual({
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="ชื่อประกาศ / รหัส / ทำเล"
                 style={{ height: 48, borderRadius: 12 }}
+                disabled={isBusy}
               />
             </div>
 
@@ -292,6 +479,7 @@ export default function BootManual({
                 className="ud-btn btn-white2"
                 style={{ height: 48, borderRadius: 12, padding: "0 14px" }}
                 onClick={clearSelected}
+                disabled={isBusy}
               >
                 ล้างที่เลือก {pickedCount ? "(1)" : ""}
               </button>
@@ -304,11 +492,28 @@ export default function BootManual({
             ) : (
               filtered.map((p) => {
                 const id = String(p.id);
+
+                const info = cooldownInfoById[id] || {};
+                const remain = Number(info.remain || 0);
+
+                const isCoolingDown = canBoost(p) && remain > 0;
+
+                const disabledReason = !canBoost(p)
+                  ? "ดันไม่ได้ (ต้องเป็นสถานะเผยแพร่แล้ว)"
+                  : isCoolingDown
+                  ? `กำลังดันอยู่ — ดันได้อีกใน ${formatCountdown(remain)}`
+                  : "";
+
                 return (
                   <PropertyPickRow
                     key={id}
                     p={p}
                     checked={!!selectedMap?.[id]}
+                    disabledAll={isBusy || isCoolingDown}
+                    disabledReason={disabledReason}
+                    noteRight={isCoolingDown ? <ToneBadge tone="red">{formatCountdown(remain)}</ToneBadge> : null}
+                    badgeText={isCoolingDown ? "กำลังดัน" : undefined}
+                    badgeTone={isCoolingDown ? "blue" : undefined}
                     onPick={() => handlePickOne(id, p)}
                   />
                 );
@@ -320,9 +525,15 @@ export default function BootManual({
             <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
               <div className="text-muted" style={{ fontSize: 13 }}>
                 {pickedBoostable ? (
-                  <>
-                    เลือกแล้ว: <b>{pickedBoostable.title}</b> (รหัส <b>{pickedBoostable.id}</b>)
-                  </>
+                  pickedCooldown.ready ? (
+                    <>
+                      พร้อมดัน: <b>{pickedSummary?.title}</b> · <span>{pickedSummary?.location}</span>
+                    </>
+                  ) : (
+                    <>
+                      โพสนี้ดันได้อีกใน <b>{formatCountdown(pickedCooldown.remain)}</b>
+                    </>
+                  )
                 ) : (
                   "เลือกประกาศที่ “เผยแพร่แล้ว” เพื่อดันขึ้นฟีด"
                 )}
@@ -333,101 +544,48 @@ export default function BootManual({
                 className="ud-btn btn-thme"
                 style={{ height: 46, padding: "0 18px", borderRadius: 12 }}
                 onClick={goNext}
-                disabled={!pickedBoostable}
+                disabled={isBusy || !pickedBoostable || !pickedCooldown.ready}
+                title={!pickedBoostable ? "กรุณาเลือกประกาศ" : !pickedCooldown.ready ? "ยังติดคูลดาวน์" : ""}
               >
-                ถัดไป
+                {isBusy ? "กำลังทำ..." : "ถัดไป"}
               </button>
             </div>
           </StickyBar>
         </>
       ) : null}
 
+      {/* ===== Step 2 ===== */}
       {step === 2 ? (
         <>
           <div style={{ border: "1px solid #eee", borderRadius: 14, padding: 14, background: "#fafafa" }}>
-            <div className="fw700 mb10">เลือกช่วงวันที่ต้องการดันขึ้นฟีด</div>
-
-            <div className="row g-3">
-              <div className="col-lg-6">
-                <label className="form-label fw600">วันที่เริ่ม</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  value={startDate}
-                  min={todayISO()}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  style={{ height: 48, borderRadius: 12 }}
-                />
-              </div>
-
-              <div className="col-lg-6">
-                <label className="form-label fw600">วันที่จบ</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  value={endDate}
-                  min={startDate || todayISO()}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  style={{ height: 48, borderRadius: 12 }}
-                />
-              </div>
-            </div>
-
-            {validateDate() ? (
-              <div className="mt10" style={{ color: "#A40000", fontSize: 13 }}>
-                *{validateDate()}
-              </div>
-            ) : null}
-          </div>
-
-          <StickyBar>
-            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-                <ToneBadge tone="green">เลือก 1 รายการ</ToneBadge>
-                <ToneBadge tone="blue">
-                  {startDate} → {endDate}
-                </ToneBadge>
-              </div>
-
-              <div className="d-flex gap-2">
-                <button
-                  type="button"
-                  className="ud-btn btn-white2"
-                  style={{ height: 46, padding: "0 16px", borderRadius: 12 }}
-                  onClick={goBack}
-                >
-                  ย้อนกลับ
-                </button>
-
-                <button
-                  type="button"
-                  className="ud-btn btn-thme"
-                  style={{ height: 46, padding: "0 18px", borderRadius: 12 }}
-                  onClick={goNext}
-                  disabled={!!validateDate()}
-                >
-                  ไปยืนยัน
-                </button>
-              </div>
-            </div>
-          </StickyBar>
-        </>
-      ) : null}
-
-      {step === 3 ? (
-        <>
-          <div style={{ border: "1px solid #eee", borderRadius: 14, padding: 14, background: "#fafafa" }}>
-            <div className="fw700 mb10">ตรวจสอบก่อนยืนยัน</div>
+            <div className="fw700 mb10">ยืนยันการดัน (แมนนวล)</div>
 
             <div style={{ border: "1px solid #eee", borderRadius: 14, padding: 12, background: "#fff" }}>
               <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                <div className="fw700">สรุปการดันแมนนวล</div>
-                <ToneBadge tone="purple">ดันขึ้นฟีด</ToneBadge>
+                <div className="fw700">สรุป</div>
+                <ToneBadge tone="purple">{pkg.label}</ToneBadge>
+              </div>
+
+              <div className="mt10" style={{ background: "#fafafa", border: "1px solid #eee", borderRadius: 12, padding: 12 }}>
+                <div className="fw700" style={{ marginBottom: 6 }}>
+                  {pickedSummary?.title || "-"}
+                </div>
+                <div className="text-muted" style={{ fontSize: 12, lineHeight: 1.6 }}>
+                  รหัส: <b>{pickedSummary?.id || "-"}</b>
+                  <br />
+                  ทำเล: <b>{pickedSummary?.location || "-"}</b>
+                </div>
               </div>
 
               <div className="text-muted mt10" style={{ fontSize: 13, lineHeight: 1.7 }}>
-                - ประกาศ: <b>{pickedBoostable?.title || "-"}</b> (รหัส <b>{pickedBoostable?.id || "-"}</b>) <br />
-                - ช่วงวัน: <b>{startDate}</b> ถึง <b>{endDate}</b>
+                - Manual: <b>{pkg.manualFreeText}</b>
+                <br />
+                - สถานะตอนนี้:{" "}
+                {pickedCooldown.ready ? (
+                  <b style={{ color: "#0A7A3B" }}>พร้อมดัน</b>
+                ) : (
+                  <b style={{ color: "#374151" }}>รออีก {formatCountdown(pickedCooldown.remain)}</b>
+                )}
               </div>
             </div>
           </div>
@@ -435,7 +593,9 @@ export default function BootManual({
           <StickyBar>
             <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
               <div className="text-muted" style={{ fontSize: 13 }}>
-                พร้อมยืนยันดันแมนนวล: <b>{pickedBoostable?.id || "-"}</b> · {startDate} → {endDate}
+                {pickedCooldown.ready
+                  ? "กด “ยืนยันดัน” เพื่อดันขึ้นฟีดทันที"
+                  : `ยังดันซ้ำไม่ได้ ต้องรออีก ${formatCountdown(pickedCooldown.remain)}`}
               </div>
 
               <div className="d-flex gap-2">
@@ -444,6 +604,7 @@ export default function BootManual({
                   className="ud-btn btn-white2"
                   style={{ height: 46, padding: "0 16px", borderRadius: 12 }}
                   onClick={goBack}
+                  disabled={isBusy}
                 >
                   ย้อนกลับ
                 </button>
@@ -453,9 +614,9 @@ export default function BootManual({
                   className="ud-btn btn-thme"
                   style={{ height: 46, padding: "0 18px", borderRadius: 12 }}
                   onClick={submit}
-                  disabled={!pickedBoostable || !!validateDate()}
+                  disabled={isBusy || !pickedBoostable || !pickedCooldown.ready}
                 >
-                  ยืนยันดัน
+                  {isBusy ? "กำลังดัน..." : "ยืนยันดัน"}
                 </button>
               </div>
             </div>

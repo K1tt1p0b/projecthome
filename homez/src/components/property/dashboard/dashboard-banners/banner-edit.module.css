@@ -1,0 +1,175 @@
+.hiddenFile {
+  display: none;
+}
+
+/* Top header */
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding: 14px 16px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 90, 95, 0.06),
+    rgba(255, 90, 95, 0)
+  );
+  margin-bottom: 14px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 90, 95, 0.12);
+  color: #ff5a5f;
+  flex: 0 0 auto;
+}
+
+.h1 {
+  font-weight: 900;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.sub {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.55);
+  margin-top: 2px;
+}
+
+/* Layout paddings */
+.previewWrap {
+  padding: 0 18px 16px;
+}
+
+.formPad {
+  padding: 0 18px;
+}
+
+.actions {
+  padding: 16px 18px 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Labels/hint */
+.label {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+/* Preview clickable area */
+.previewBtn {
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.previewBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.9;
+}
+
+.preview {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: #f7f7f7;
+  min-height: 280px;
+}
+
+/* Dragging effect */
+.dragging .preview {
+  border: 2px dashed rgba(255, 90, 95, 0.85);
+  background: rgba(255, 90, 95, 0.06);
+}
+
+/* Image */
+.previewImg {
+  width: 100%;
+  height: 320px;
+  object-fit: cover;
+  display: block;
+}
+
+/* Empty state */
+.previewEmpty {
+  height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: rgba(0, 0, 0, 0.55);
+  text-align: center;
+}
+
+.previewEmptyIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.previewTitle {
+  font-weight: 900;
+  font-size: 15px;
+  color: rgba(0, 0, 0, 0.82);
+}
+
+.previewSub {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+/* Hover overlay */
+.previewOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  background: rgba(0, 0, 0, 0.28);
+  color: #fff;
+  font-weight: 800;
+}
+
+.previewBtn:hover .previewOverlay {
+  opacity: 1;
+}

@@ -44,13 +44,6 @@ const SingleV5 = async (props) => {
             {/* 🟢 ฝั่งซ้าย */}
             {/* ================================================= */}
             <div className="col-lg-6">
-              {/* Overview */}
-              <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                <h4 className="title fz17 mb30">ภาพรวม</h4>
-                <div className="row">
-                  <OverView id={params.id} />
-                </div>
-              </div>
 
               {/* Description & Details */}
               <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
@@ -60,6 +53,14 @@ const SingleV5 = async (props) => {
                 <h4 className="title fz17 mb30 mt50">ข้อมูลเพิ่มเติม</h4>
                 <div className="row">
                   <PropertyDetails id={params.id} />
+                </div>
+              </div>
+
+              {/* Overview */}
+              <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
+                <h4 className="title fz17 mb30">ภาพรวม</h4>
+                <div className="row">
+                  <OverView id={params.id} />
                 </div>
               </div>
 
@@ -85,12 +86,6 @@ const SingleV5 = async (props) => {
             {/* ================================================= */}
             <div className="col-lg-6">
               <div className="column">
-                {/* ===== Contact Form (ใช้ FormContact) ===== */}
-                <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                  <h4 className="title fz17 mb30">ติดต่อผู้ประกาศ</h4>
-                  <FormContact />
-                </div>
-
                 {/* ===== Address / Map ===== */}
                 <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
                   <h4 className="title fz17 mb30">ที่ตั้ง</h4>
@@ -103,6 +98,12 @@ const SingleV5 = async (props) => {
                 <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
                   <h4 className="title fz17 mb30">ติดต่อสอบถาม</h4>
                   <InfoWithForm />
+                </div>
+
+                {/* ===== Contact Form (ใช้ FormContact) ===== */}
+                <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
+                  <h4 className="title fz17 mb30">ติดต่อผู้ประกาศ</h4>
+                  <FormContact />
                 </div>
               </div>
             </div>

@@ -21,9 +21,9 @@ const getStatusStyle = (status) => {
   }
 };
 
-// ✅ รองรับส่ง mode ไปเปิดแท็บให้ตรงในหน้า boost
+// ✅ ส่ง mode + step=2 ไปหน้า boost (เพื่อเด้งเข้า step 2)
 const BOOST_URL = (id, mode) =>
-  `/dashboard-boost-property?propertyId=${id}${mode ? `&mode=${mode}` : ""}`;
+  `/dashboard-boost-property?propertyId=${id}&step=2${mode ? `&mode=${mode}` : ""}`;
 
 const VIDEO_URL = (id) => `/dashboard-video-gallery?propertyId=${id}`;
 
@@ -194,7 +194,7 @@ const PropertyDataTable = () => {
   const [videoInputs, setVideoInputs] = useState(Array(MAX_SLOTS).fill(""));
   const [videoSaving, setVideoSaving] = useState(false);
 
-  // ===== modal states (boost picker) ✅ NEW =====
+  // ===== modal states (boost picker) =====
   const [boostModalOpen, setBoostModalOpen] = useState(false);
   const [boostModalProperty, setBoostModalProperty] = useState(null);
 
@@ -303,6 +303,7 @@ const PropertyDataTable = () => {
     setBoostModalProperty(null);
   };
 
+  // ✅ ไปหน้า boost พร้อม mode + step=2
   const goBoost = async (mode) => {
     const id = boostModalProperty?.id;
     if (!id) return;
@@ -532,7 +533,7 @@ const PropertyDataTable = () => {
         </div>
       )}
 
-      {/* ===== Modal Popup (Boost Picker) ✅ NEW ===== */}
+      {/* ===== Modal Popup (Boost Picker) ===== */}
       {boostModalOpen && (
         <div
           role="dialog"
@@ -670,7 +671,13 @@ const PropertyDataTable = () => {
                   <th scope="row">
                     <div className="listing-style1 dashboard-style d-xxl-flex align-items-center mb-0">
                       <div className="list-thumb">
-                        <Image width={110} height={94} className="w-100" src={property.imageSrc} alt="property" />
+                        <Image
+                          width={110}
+                          height={94}
+                          className="w-100"
+                          src={property.imageSrc}
+                          alt="property"
+                        />
                       </div>
 
                       <div className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4">
@@ -702,7 +709,11 @@ const PropertyDataTable = () => {
                                 <span style={{ fontSize: 12, opacity: 0.85 }}>{count}</span>
                               </button>
 
-                              <ReactTooltip id={`video-${property.id}`} place="top" content={`วิดีโอ (${count})`} />
+                              <ReactTooltip
+                                id={`video-${property.id}`}
+                                place="top"
+                                content={`วิดีโอ (${count})`}
+                              />
                             </>
                           )}
                         </div>
@@ -716,7 +727,9 @@ const PropertyDataTable = () => {
                     </div>
                   </th>
 
-                  <td className="vam">{property.priceText || property.price?.toLocaleString?.() || "-"}</td>
+                  <td className="vam">
+                    {property.priceText || property.price?.toLocaleString?.() || "-"}
+                  </td>
 
                   <td className="vam">
                     <span className={getStatusStyle(property.status)}>{property.status}</span>
@@ -768,7 +781,7 @@ const PropertyDataTable = () => {
                               type="button"
                               className="dropdown-item d-flex align-items-center gap-2"
                               disabled={busy}
-                              onClick={() => openBoostPicker(property)} // ✅ เปลี่ยนจาก push เป็นเปิด modal
+                              onClick={() => openBoostPicker(property)} // ✅ เปิด modal เลือก manual/auto
                             >
                               {boostingId === property.id ? (
                                 <span className="fas fa-spinner fa-spin" />

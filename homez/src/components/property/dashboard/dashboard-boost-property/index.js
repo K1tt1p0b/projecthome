@@ -5,8 +5,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import BootManual from "./boot-manual";
 import BootAuto from "./boot-auto";
-
-// ตัวอย่าง: ดึงจาก mock ในโปรเจกต์คุณ
 import { propertyData } from "@/data/propertyData";
 
 const toId = (v) => String(v ?? "").trim();
@@ -18,25 +16,24 @@ const findPropertyById = (id) => {
 
 const parseMode = (m) => {
   const s = String(m || "").toLowerCase().trim();
-  if (s === "auto") return "auto";
-  return "manual";
+  return s === "auto" ? "auto" : "manual";
+};
+
+const clampStep = (n) => {
+  const s = Number(n) || 1;
+  if (s < 1) return 1;
+  if (s > 2) return 2;
+  return s;
 };
 
 export default function DashboardBoostProperty() {
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
-
   const properties = useMemo(() => propertyData || [], []);
 
-  // -----------------------------
-  // ✅ Tabs
-  // -----------------------------
-  const [tab, setTab] = useState("manual"); // "manual" | "auto"
+  const [tab, setTab] = useState("manual");
 
-  // -----------------------------
-  // ✅ Separate selection states
-  // -----------------------------
   const [manualSelectedMap, setManualSelectedMap] = useState({});
   const [autoSelectedMap, setAutoSelectedMap] = useState({});
 
@@ -59,48 +56,45 @@ export default function DashboardBoostProperty() {
     return (properties || []).filter((p) => ids.has(toId(p.id)));
   }, [properties, autoSelectedIds]);
 
-  // -----------------------------
-  // ✅ Actions: manual (เลือกได้ 1 หรือหลายก็ได้ แต่โดย UX แมนนวลคุณใช้ 1)
-  // ถ้าแมนนวลต้องการ 1 รายการจริง ๆ ให้ทำแบบ single ก็ได้เหมือน auto
-  // -----------------------------
+  const [manualStep, setManualStep] = useState(1);
+  const [autoStep, setAutoStep] = useState(1);
+
+  // ✅✅ ใช้แพ็กเดียวทั้งระบบ (ต่อไปเปลี่ยนให้ดึงจาก user จริง)
+  const PACKAGE_KEY = "pro";
+
+  // manual toggle (ปล่อยให้ boot-manual คุมเองได้)
   const manualToggleOne = (id) => {
     const sid = toId(id);
     setManualSelectedMap((prev) => ({ ...prev, [sid]: !prev?.[sid] }));
   };
   const manualClearSelected = () => setManualSelectedMap({});
 
-  // -----------------------------
-  // ✅ Actions: auto (ทำเป็น SINGLE-SELECT กัน multi)
-  // - คลิกตัวเดิม: จะไม่ทำอะไร (หรือจะให้ unselect ก็ได้ แล้วแต่)
-  // - คลิกตัวใหม่: เคลียร์เก่า แล้วเลือกตัวใหม่
-  // -----------------------------
+  // ✅ auto: toggle multi (BootAuto จะเป็นคนกัน limit ตามแพ็กเอง)
   const autoToggleOne = (id) => {
     const sid = toId(id);
     setAutoSelectedMap((prev) => {
-      const already = !!prev?.[sid];
-      if (already) return prev; // ถ้าอยากให้กดซ้ำแล้วเอาออก เปลี่ยนเป็น {}
-      return { [sid]: true };
+      const next = { ...(prev || {}) };
+      if (next[sid]) {
+        delete next[sid];
+        return next;
+      }
+      next[sid] = true;
+      return next;
     });
   };
   const autoClearSelected = () => setAutoSelectedMap({});
 
-  // -----------------------------
-  // ✅ Deep-link:
-  // 1) /dashboard-boost-property/2
-  // 2) /dashboard-boost-property?propertyId=2
-  // + รองรับ mode:
-  // ?mode=manual | auto
-  //
-  // Behavior:
-  // - ถ้ามี propertyId → เปิดแท็บตาม mode และ select ให้แท็บนั้น (แบบ 1 รายการ)
-  // - แล้ว clean URL
-  // -----------------------------
-  useEffect(() => {
-    // query
-    const qid = sp?.get("propertyId");
-    const modeQ = parseMode(sp?.get("mode"));
+  // ✅ ให้ BootAuto บังคับ selection ให้ตรงกับ store ตอน lock/แสดง active
+  const autoSelectOnly = (ids = []) => {
+    const arr = Array.isArray(ids) ? ids.map(toId).filter(Boolean) : [];
+    const next = {};
+    arr.forEach((id) => (next[id] = true));
+    setAutoSelectedMap(next);
+  };
 
-    // path /dashboard-boost-property/2
+  useEffect(() => {
+    const qid = sp?.get("propertyId");
+
     const parts = (pathname || "").split("/").filter(Boolean);
     const last = parts[parts.length - 1];
     const pathId = /^\d+$/.test(last) ? last : null;
@@ -111,43 +105,34 @@ export default function DashboardBoostProperty() {
     const found = findPropertyById(id);
     if (!found) return;
 
-    const pickedId = toId(found.id);
+    const modeQ = parseMode(sp?.get("mode"));
+    const stepQ = clampStep(sp?.get("step"));
 
-    // ✅ เลือกแท็บตาม mode
+    const pickedId = toId(found.id);
     setTab(modeQ);
 
-    // ✅ set selection ให้ถูกแท็บ + เคลียร์อีกฝั่งกันงง
     if (modeQ === "auto") {
       setAutoSelectedMap({ [pickedId]: true });
       setManualSelectedMap({});
+      setAutoStep(stepQ);
+      setManualStep(1);
     } else {
       setManualSelectedMap({ [pickedId]: true });
       setAutoSelectedMap({});
+      setManualStep(stepQ);
+      setAutoStep(1);
     }
 
-    // ✅ clean url
     router.replace("/dashboard-boost-property");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // -----------------------------
-  // ✅ Optional UX: clear selection when switching tab
-  // - ถ้าอยากให้สลับแท็บแล้วไม่ค้าง ให้เปิดเคลียร์ได้
-  // -----------------------------
-  const switchTab = (next) => {
-    setTab(next);
-
-    // ถ้าอยาก “ไม่ค้าง” เวลาเปลี่ยนแท็บ ให้เปิด 2 บรรทัดนี้:
-    // if (next === "manual") autoClearSelected();
-    // if (next === "auto") manualClearSelected();
-  };
-
+  const switchTab = (next) => setTab(next);
   const goManual = () => switchTab("manual");
   const goAuto = () => switchTab("auto");
 
   return (
     <div className="ps-widget bgc-white bdrs12 p30 overflow-hidden position-relative">
-      {/* Tabs header (bootstrap-ish) */}
       <ul className="nav nav-tabs mb30">
         <li className="nav-item">
           <button
@@ -156,7 +141,7 @@ export default function DashboardBoostProperty() {
             onClick={() => switchTab("manual")}
             style={{ display: "flex", alignItems: "center", gap: 8 }}
           >
-            ⚡ ดันแบบแมนนวล
+            ดันแบบแมนนวล
           </button>
         </li>
         <li className="nav-item">
@@ -166,7 +151,7 @@ export default function DashboardBoostProperty() {
             onClick={() => switchTab("auto")}
             style={{ display: "flex", alignItems: "center", gap: 8 }}
           >
-            🤖 ดันแบบออโต้
+            ดันแบบออโต้
           </button>
         </li>
       </ul>
@@ -180,6 +165,8 @@ export default function DashboardBoostProperty() {
           toggleOne={manualToggleOne}
           clearSelected={manualClearSelected}
           goAuto={goAuto}
+          initialStep={manualStep}
+          packageKey={PACKAGE_KEY} // ✅ ส่งแพ็กเดียวกัน
         />
       ) : (
         <BootAuto
@@ -187,9 +174,12 @@ export default function DashboardBoostProperty() {
           selectedMap={autoSelectedMap}
           selectedIds={autoSelectedIds}
           selectedList={autoSelectedList}
-          toggleOne={autoToggleOne}          // ✅ auto เป็น single-select แล้ว
+          toggleOne={autoToggleOne}
           clearSelected={autoClearSelected}
           goManual={goManual}
+          initialStep={autoStep}
+          packageKey={PACKAGE_KEY} // ✅ ส่งแพ็กเดียวกัน
+          selectOnly={autoSelectOnly}
         />
       )}
     </div>

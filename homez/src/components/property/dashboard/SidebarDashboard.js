@@ -3,6 +3,7 @@ import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 
+
 const SidebarDashboard = () => {
   const pathname = usePathname();
   const [hovered, setHovered] = useState(null);
@@ -20,7 +21,7 @@ const SidebarDashboard = () => {
       { href: "/dashboard-about-me", icon: "flaticon-user", text: "About me" },
       { href: "/dashboard-gallery", icon: "flaticon-images", text: "แกลเลอรี่" },
       { href: "/dashboard-video-gallery", icon: "flaticon-play", text: "วิดีโอ" },
-      { href: "/microsite/settings", icon: "fas fa-cog", text: "ตั้งค่า" },
+      { href: "/dashboard-setting-template", icon: "fas fa-cog", text: "ตั้งค่า" },
     ],
     []
   );
@@ -107,15 +108,21 @@ const SidebarDashboard = () => {
         {
           href: "/dashboard-my-construction",
           icon: "fas fa-hard-hat",
-          text: "งานรับเหมาของฉัน",
+          text: "งานบริการของฉัน",
         },
         {
           href: "/dashboard-my-course",
           icon: "fas fa-book",
           text: "คอร์สเรียนของฉัน",
         },
+        {
+          href: "/dashboard-boost-property",
+          icon: "fas fa-rocket",
+          text: "โปรโมตทรัพย์สิน",
+        }
       ],
     },
+
     {
       title: "การตั้งค่าบัญชี",
       items: [
