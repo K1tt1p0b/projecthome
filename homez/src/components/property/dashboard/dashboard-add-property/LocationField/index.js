@@ -198,7 +198,7 @@ const LocationField = ({ initialValue, onBack, onNext, onSaveDraft }) => {
               }}
               scrollWheelZoom={true}
               requireCtrlToZoom={true}
-              wheelHintText="กด Ctrl + Scroll เพื่อซูมแผนที่"
+              wheelHintText="กด Ctrl + Scroll Mouse ขึ้นลงเพื่อซูมแผนที่"
               onAddressChange={({ displayName, address }) => {
               // displayName = ที่อยู่เต็มแบบสตริง
               // address = object แยกส่วน เช่น { province, state, county, ... } (แล้วแต่พื้นที่)

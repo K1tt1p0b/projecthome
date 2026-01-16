@@ -382,7 +382,7 @@ export default function LeafletMapClient({
 
   requireCtrlToZoom = true,
   enableFullscreen = true,
-  wheelHintText = "กด Ctrl + Scroll เพื่อซูมแผนที่",
+  wheelHintText = "กด Ctrl + Scroll Mouse ขึ้นลงเพื่อซูมแผนที่",
 
   // ✅ Nearby (ใกล้ฉัน)
   enableNearMe = true,
