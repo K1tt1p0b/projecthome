@@ -32,34 +32,6 @@ const TopFilterBar = ({
           </p>
         </div>
       </div>
-
-      <div className="col-sm-6">
-        <div className="page_control_shorting d-flex align-items-center justify-content-center justify-content-sm-end">
-
-
-          <button
-            type="button"
-            className={`pl15 pr15 bdrl1 bdrr1 d-none d-md-block cursor ${
-              !colstyle ? "menuActive" : ""
-            }`}
-            onClick={() => setColstyle?.(false)}
-            aria-pressed={!colstyle}
-          >
-            Grid
-          </button>
-
-          <button
-            type="button"
-            className={`pl15 d-none d-md-block cursor ${
-              colstyle ? "menuActive" : ""
-            }`}
-            onClick={() => setColstyle?.(true)}
-            aria-pressed={colstyle}
-          >
-            List
-          </button>
-        </div>
-      </div>
     </>
   );
 };

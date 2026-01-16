@@ -1,0 +1,44 @@
+body.page-map-v1 {
+  /* 🔥 เอา scrollbar ขวาของเว็บออก */
+  overflow: hidden;
+
+  --mapv1-header-h: 92px; // ปรับตาม header จริง
+}
+
+/* bootstrap fix */
+body.page-map-v1 .map-v1-container {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+body.page-map-v1 .map-v1-row {
+  --bs-gutter-x: 0 !important;
+  --bs-gutter-y: 0 !important;
+  margin: 0 !important;
+}
+
+/* map เต็มจอ */
+body.page-map-v1 .map-v1-mapwrap {
+  height: calc(100vh - var(--mapv1-header-h)) !important;
+  min-height: 650px;
+  overflow: hidden;
+}
+
+body.page-map-v1 .map-v1-mapwrap,
+body.page-map-v1 .map-v1-mapwrap > * {
+  height: 100% !important;
+}
+
+body.page-map-v1 .map-v1-mapwrap .half_map_area,
+body.page-map-v1 .map-v1-mapwrap .lx-map-wrap,
+body.page-map-v1 .map-v1-mapwrap .leaflet-container {
+  height: 100% !important;
+}
+
+/* ซ้ายเลื่อน ขวาไม่เลื่อน */
+body.page-map-v1 .map-v1-left-scroll {
+  height: calc(100vh - var(--mapv1-header-h));
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 8px;
+}
