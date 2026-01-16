@@ -1,269 +1,231 @@
+"use client";
 
+import React, { useEffect, useMemo, useState } from "react";
 
+import { propertyData } from "@/data/propertyData"; // ✅ ใช้ข้อมูลใหม่
 
-'use client'
-
-
-import listings from "@/data/listings";
-import React, { useState,useEffect } from 'react'
 import TopFilterBar from "./TopFilterBar";
 import TopFilterBar2 from "./TopFilterBar2";
 import FeaturedListings from "./FeatuerdListings";
 
+
 import AdvanceFilterModal from "@/components/common/advance-filter-two";
 import PaginationTwo from "../../PaginationTwo";
-import ListingMap1 from "../ListingMap1";
-export default function PropertyFilteringTwo() {
-    const [filteredData, setFilteredData] = useState([]);
 
-    const [currentSortingOption, setCurrentSortingOption] = useState('Newest')
+// ✅ ใช้ dynamic กัน SSR พัง
+import MapV1LeafletDynamic from "./MapV1Leaflet.dynamic";
 
-    const [sortedFilteredData, setSortedFilteredData] = useState([]);
+export default function PropertyFilteringTwo({ agentOnly = true }) {
+  // ✅ agent-only mock: กรองจาก announcerStatus
+  const baseData = useMemo(() => {
+    const arr = Array.isArray(propertyData) ? propertyData : [];
+    if (!agentOnly) return arr;
+    return arr.filter((x) => String(x?.announcerStatus) === "agent");
+  }, [agentOnly]);
 
+  const [filteredData, setFilteredData] = useState([]);
+  const [currentSortingOption, setCurrentSortingOption] = useState("Newest");
+  const [sortedFilteredData, setSortedFilteredData] = useState([]);
 
-        const [pageNumber, setPageNumber] = useState(1)
-    const [colstyle, setColstyle] = useState(true)
-    const [pageItems, setPageItems] = useState([])
-    const [pageContentTrac, setPageContentTrac] = useState([])
-  
-    useEffect(() => {
-      setPageItems(sortedFilteredData
-        .slice((pageNumber - 1) * 4, pageNumber * 4))
-        setPageContentTrac([((pageNumber - 1) * 4) + 1 ,pageNumber * 4,sortedFilteredData.length])
-    }, [pageNumber,sortedFilteredData])
-    
+  const [pageNumber, setPageNumber] = useState(1);
+  const [colstyle, setColstyle] = useState(true);
+  const [pageItems, setPageItems] = useState([]);
+  const [pageContentTrac, setPageContentTrac] = useState([]);
 
+  useEffect(() => {
+    setPageItems(sortedFilteredData.slice((pageNumber - 1) * 4, pageNumber * 4));
+    setPageContentTrac([
+      (pageNumber - 1) * 4 + 1,
+      pageNumber * 4,
+      sortedFilteredData.length,
+    ]);
+  }, [pageNumber, sortedFilteredData]);
 
-    const [listingStatus, setListingStatus] = useState('All')
-    const [propertyTypes, setPropertyTypes] = useState([])
-    const [priceRange, setPriceRange] = useState([0,100000])
-    const [bedrooms, setBedrooms] = useState(0)
-    const [bathroms, setBathroms] = useState(0)
-    const [location, setLocation] = useState('All Cities')
-     const [squirefeet, setSquirefeet] = useState([])
-    const [yearBuild, setyearBuild] = useState([])
-    const [categories, setCategories] = useState([])
+  // ===== Filters (ปรับให้เข้ากับ propertyData) =====
+  const [listingStatus, setListingStatus] = useState("All"); // Buy/Rent
+  const [propertyTypes, setPropertyTypes] = useState([]);
+  const [priceRange, setPriceRange] = useState([0, 100000000]); // ✅ propertyData เป็น number
+  const [bedrooms, setBedrooms] = useState(0);
+  const [bathroms, setBathroms] = useState(0);
+  const [location, setLocation] = useState("All Provinces"); // ✅ แทน Cities
+  const [yearBuild, setyearBuild] = useState([0, 2050]);
+  const [categories, setCategories] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
-    const resetFilter = ()=>{
-      setListingStatus('All')
-      setPropertyTypes([])
-      setPriceRange([0,100000])
-      setBedrooms(0)
-      setBathroms(0)
-      setLocation('All Cities')
-      setSquirefeet([])
-      setyearBuild([0,2050])
-      setCategories([])
-      setCurrentSortingOption('Newest')
-     document.querySelectorAll(".filterInput").forEach(function(element) {
-      element.value = null;
-  });
+  const resetFilter = () => {
+    setListingStatus("All");
+    setPropertyTypes([]);
+    setPriceRange([0, 100000000]);
+    setBedrooms(0);
+    setBathroms(0);
+    setLocation("All Provinces");
+    setyearBuild([0, 2050]);
+    setCategories([]);
+    setCurrentSortingOption("Newest");
+    setSearchQuery("");
 
-     document.querySelectorAll(".filterSelect").forEach(function(element) {
-      element.value = 'All Cities';
-  });
-  
+    // กันพัง: บางหน้ามันไม่มี element พวกนี้
+    document.querySelectorAll(".filterInput").forEach((el) => (el.value = null));
+    document.querySelectorAll(".filterSelect").forEach((el) => (el.value = "All Provinces"));
+  };
 
+  const handlelistingStatus = (elm) => setListingStatus((pre) => (pre === elm ? "All" : elm));
 
-    }
-    const [searchQuery, setSearchQuery] = useState('')
+  const handlepropertyTypes = (elm) => {
+    if (elm === "All") setPropertyTypes([]);
+    else
+      setPropertyTypes((pre) =>
+        pre.includes(elm) ? pre.filter((x) => x !== elm) : [...pre, elm]
+      );
+  };
 
-    const handlelistingStatus =(elm)=>{
-      setListingStatus(pre => pre == elm ? 'All':elm)
+  const handlepriceRange = (elm) => setPriceRange(elm);
+  const handlebedrooms = (elm) => setBedrooms(elm);
+  const handlebathroms = (elm) => setBathroms(elm);
+  const handlelocation = (elm) => setLocation(elm);
+  const handleyearBuild = (elm) => setyearBuild(elm);
 
+  const handlecategories = (elm) => {
+    if (elm === "All") setCategories([]);
+    else
+      setCategories((pre) =>
+        pre.includes(elm) ? pre.filter((x) => x !== elm) : [...pre, elm]
+      );
+  };
 
-    }
-
-    
-    
-    const handlepropertyTypes =(elm)=>{
-
-
-      if (elm == 'All') {
-        setPropertyTypes([])
-        
-      } else {
-        setPropertyTypes(pre=>pre.includes(elm) ? [...pre.filter((el)=>el!=elm)] : [...pre,elm])
-      }
-    
-
-    }
-    const handlepriceRange =(elm)=>{
-      setPriceRange(elm)
-
-    }
-    const handlebedrooms =(elm)=>{
-      setBedrooms(elm)
-    }
-    const handlebathroms =(elm)=>{
-      setBathroms(elm)
-    }
-    const handlelocation =(elm)=>{
-      console.log(elm)
-      setLocation(elm)
-    }
-    const handlesquirefeet =(elm)=>{
-      setSquirefeet(elm)
-    }
-    const handleyearBuild =(elm)=>{
-      setyearBuild(elm)
-    }
-    const handlecategories =(elm)=>{
-      if (elm == 'All') {
-        setCategories([])
-        
-      } else {
-        setCategories(pre=>pre.includes(elm) ? [...pre.filter((el)=>el!=elm)] : [...pre,elm])
-      }
-
-    }
-   const filterFunctions={
+  const filterFunctions = {
     handlelistingStatus,
     handlepropertyTypes,
     handlepriceRange,
     handlebedrooms,
     handlebathroms,
     handlelocation,
-    handlesquirefeet,
     handleyearBuild,
-        handlecategories,
+    handlecategories,
+
     priceRange,
     listingStatus,
     propertyTypes,
     resetFilter,
-   
+
     bedrooms,
     bathroms,
     location,
-    squirefeet,
     yearBuild,
     categories,
+
     setPropertyTypes,
-    setSearchQuery
-  }
+    setSearchQuery,
+  };
 
+  // ✅ filter หลัก (ให้เข้ากับ propertyData)
+  useEffect(() => {
+    const refItems = baseData.filter((elm) => {
+      // listingTypes: ["sell"] / ["rent"]
+      const types = Array.isArray(elm?.listingTypes) ? elm.listingTypes : [];
 
+      if (listingStatus === "All") return true;
+      if (listingStatus === "Buy") return types.includes("sell");
+      if (listingStatus === "Rent") return types.includes("rent");
+      return true;
+    });
 
-    useEffect(() => {
-      
-        const refItems = listings.filter((elm) => {
-            if (listingStatus == "All") {
-              return true;
-            } else if (listingStatus == "Buy") {
-              return !elm.forRent;
-            } else if (listingStatus == "Rent") {
-              return elm.forRent;
-            }
-          });
-      
-          let filteredArrays = [];
+    let filteredArrays = [];
 
+    // propertyType
+    if (propertyTypes.length > 0) {
+      const filtered = refItems.filter((elm) => propertyTypes.includes(elm?.propertyType));
+      filteredArrays.push(filtered);
+    }
 
-      
-          if (propertyTypes.length > 0) {
-            const filtered = refItems.filter((elm) =>
-            propertyTypes.includes(elm.propertyType)
-            );
-            filteredArrays = [...filteredArrays, filtered];
-          }
-          filteredArrays = [...filteredArrays,refItems.filter((el=>el.bed >=bedrooms)) ];
-          filteredArrays = [...filteredArrays,refItems.filter((el=>el.bath >=bathroms)) ];
-          filteredArrays = [...filteredArrays,refItems.filter((el=>el.city.toLocaleLowerCase().includes(searchQuery.toLocaleLowerCase()) ||  el.location.toLocaleLowerCase().includes(searchQuery.toLocaleLowerCase()) ||  el.title.toLocaleLowerCase().includes(searchQuery.toLocaleLowerCase())  ||  el.features.join(' ').toLocaleLowerCase().includes(searchQuery.toLocaleLowerCase()))) ];
-         
-    
-          filteredArrays = [...filteredArrays,!categories.length ? [...refItems] : refItems.filter((elm)=>categories.every(elem=>elm.features.includes(elem))) ];
-  
-          if (location != 'All Cities') {
-           
-            
-            filteredArrays = [...filteredArrays,refItems.filter((el=>el.city == location)) ];
-          }
-         
-         
-          if (priceRange.length > 0) {
-            const filtered = refItems.filter(
-              (elm) =>
-                Number(elm.price.split('$')[1].split(',').join('')) >= priceRange[0] &&
-                Number(elm.price.split('$')[1].split(',').join('')) <= priceRange[1],
-            );
-            filteredArrays = [...filteredArrays, filtered];
-          }
-          if (squirefeet.length > 0 && squirefeet[1]) {
-            const filtered = refItems.filter(
-              (elm) =>
-              elm.sqft >= squirefeet[0] &&
-             elm.sqft <= squirefeet[1],
-            );
-            filteredArrays = [...filteredArrays, filtered];
-          }
-          if (yearBuild.length > 0) {
-            const filtered = refItems.filter(
-              (elm) =>
-                elm.yearBuilding >= yearBuild[0] &&
-                 elm.yearBuilding <= yearBuild[1]
-            );
-            filteredArrays = [...filteredArrays, filtered];
-          }
-          
+    // bedrooms / bathrooms
+    filteredArrays.push(
+      refItems.filter((el) => Number(el?.details?.bedrooms ?? 0) >= Number(bedrooms))
+    );
+    filteredArrays.push(
+      refItems.filter((el) => Number(el?.details?.bathrooms ?? 0) >= Number(bathroms))
+    );
 
- 
-         
-      
-          const commonItems = refItems.filter((item) =>
-            filteredArrays.every((array) => array.includes(item))
-          );
+    // search: title / location.fullText / province / district
+    const q = String(searchQuery || "").toLowerCase().trim();
+    filteredArrays.push(
+      refItems.filter((el) => {
+        if (!q) return true;
+        const t = String(el?.title || "").toLowerCase();
+        const full = String(el?.location?.fullText || "").toLowerCase();
+        const prov = String(el?.location?.province || "").toLowerCase();
+        const dist = String(el?.location?.district || "").toLowerCase();
+        return t.includes(q) || full.includes(q) || prov.includes(q) || dist.includes(q);
+      })
+    );
 
-         
-          setFilteredData(commonItems);
-         
-          
-      
-    }, [
-        listingStatus,
-        propertyTypes,
-        priceRange,
-        bedrooms,
-        bathroms,
-        location,
-        squirefeet,
-        yearBuild,
-        categories,
-        searchQuery
+    // categories: ใช้ details.amenities แทน features เดิม
+    filteredArrays.push(
+      !categories.length
+        ? [...refItems]
+        : refItems.filter((elm) =>
+            categories.every((c) => (elm?.details?.amenities || []).includes(c))
+          )
+    );
 
-    ])
+    // location filter: ใช้ province
+    if (location !== "All Provinces") {
+      filteredArrays.push(refItems.filter((el) => String(el?.location?.province) === String(location)));
+    }
 
-    useEffect(() => {
-      setPageNumber(1)
-      if (currentSortingOption == 'Newest') {
-        const sorted = [...filteredData].sort((a,b)=>a.yearBuilding - b.yearBuilding)
-        setSortedFilteredData(sorted)
-       
-        
-      } 
-      else if (currentSortingOption.trim() == 'Price Low') {
-        const sorted = [...filteredData].sort((a,b)=>a.price.split('$')[1].split(',').join('') - b.price.split('$')[1].split(',').join(''))
-        setSortedFilteredData(sorted)
+    // price range: propertyData.price เป็น number
+    if (priceRange?.length === 2) {
+      filteredArrays.push(
+        refItems.filter((elm) => {
+          const p = Number(elm?.price ?? 0);
+          return p >= Number(priceRange[0]) && p <= Number(priceRange[1]);
+        })
+      );
+    }
 
-        
-      } 
-      else if (currentSortingOption.trim() == 'Price High') {
-        const sorted = [...filteredData].sort((a,b)=>b.price.split('$')[1].split(',').join('') - a.price.split('$')[1].split(',').join(''))
-        setSortedFilteredData(sorted)
+    // yearBuild: ไม่มีจริงใน data -> ปล่อยผ่าน (ถ้าจะใช้จริงค่อยเพิ่ม field)
+    filteredArrays.push([...refItems]);
 
-        
-      } 
-    
-      else {
-        setSortedFilteredData(filteredData)
-    
-        
-      }
+    const commonItems = refItems.filter((item) =>
+      filteredArrays.every((array) => array.includes(item))
+    );
 
-      
-    }, [filteredData,currentSortingOption,])
+    setFilteredData(commonItems);
+  }, [
+    baseData,
+    listingStatus,
+    propertyTypes,
+    priceRange,
+    bedrooms,
+    bathroms,
+    location,
+    yearBuild,
+    categories,
+    searchQuery,
+  ]);
+
+  // sort
+  useEffect(() => {
+    setPageNumber(1);
+
+    if (currentSortingOption === "Newest") {
+      // ไม่มี createdAt → ใช้ id มาก่อน
+      const sorted = [...filteredData].sort((a, b) => Number(b.id) - Number(a.id));
+      setSortedFilteredData(sorted);
+    } else if (currentSortingOption.trim() === "Price Low") {
+      const sorted = [...filteredData].sort((a, b) => Number(a.price) - Number(b.price));
+      setSortedFilteredData(sorted);
+    } else if (currentSortingOption.trim() === "Price High") {
+      const sorted = [...filteredData].sort((a, b) => Number(b.price) - Number(a.price));
+      setSortedFilteredData(sorted);
+    } else {
+      setSortedFilteredData(filteredData);
+    }
+  }, [filteredData, currentSortingOption]);
+
   return (
     <>
-     <div className="advance-feature-modal">
+      <div className="advance-feature-modal">
         <div
           className="modal fade"
           id="advanceSeachModal"
@@ -274,12 +236,11 @@ export default function PropertyFilteringTwo() {
           <AdvanceFilterModal filterFunctions={filterFunctions} />
         </div>
       </div>
-      {/* <!-- Advance Feature Modal End --> */}
 
-      {/* Property Filtering */}
       <section className="p-0 bgc-f7">
         <div className="container-fluid">
-          <div className="row" data-aos="fade-up" data-aos-duration="200">
+          {/* ✅ ตัด data-aos ออกกัน hydration พัง */}
+          <div className="row">
             <div className="col-xl-5">
               <div className="half_map_area_content mt30">
                 <div className="col-lg-12">
@@ -291,47 +252,43 @@ export default function PropertyFilteringTwo() {
                     </div>
                   </div>
                 </div>
-                {/* End .col-12 */}
 
-                <h4 className="mb-1">New York Homes for Sale</h4>
+                {/* ✅ เปลี่ยนเป็นภาษาไทย */}
+                <h4 className="mb-1">ทรัพย์สินของฉัน (เฉพาะนายหน้า)</h4>
 
                 <div className="row align-items-center mb10">
-                  <TopFilterBar  pageContentTrac={pageContentTrac}  colstyle ={colstyle} setColstyle={setColstyle}  setCurrentSortingOption={setCurrentSortingOption}/>
+                  <TopFilterBar
+                    pageContentTrac={pageContentTrac}
+                    colstyle={colstyle}
+                    setColstyle={setColstyle}
+                    setCurrentSortingOption={setCurrentSortingOption}
+                  />
                 </div>
+
                 <div className="row">
-                  <FeaturedListings  colstyle ={colstyle}  data={pageItems}/>
+                  <FeaturedListings colstyle={colstyle} data={pageItems} />
                 </div>
-                {/* End .row */}
 
                 <div className="row text-center">
-                <PaginationTwo pageCapacity={4} data={sortedFilteredData} pageNumber={pageNumber} setPageNumber={setPageNumber}/>
-          
+                  <PaginationTwo
+                    pageCapacity={4}
+                    data={sortedFilteredData}
+                    pageNumber={pageNumber}
+                    setPageNumber={setPageNumber}
+                  />
                 </div>
-                {/* End .row */}
               </div>
-              {/* End .half_map_area_content */}
             </div>
-            {/* End col-5 */}
 
+            {/* ✅ ฝั่งขวา map ใหม่ */}
             <div className="col-xl-7 overflow-hidden position-relative">
-              <div className="half_map_area map-canvas half_style">
-                {/* <iframe
-                  style={{ height: "100%" }}
-                  className="home8-map contact-page"
-                  loading="lazy"
-                  src="https://maps.google.com/maps?q=London%20Eye%2C%20London%2C%20United%20Kingdom&t=m&z=14&output=embed&iwloc=near"
-                  title="London Eye, London, United Kingdom"
-                  aria-label="London Eye, London, United Kingdom"
-                /> */}
-                <ListingMap1/>
+              <div className="half_map_area map-canvas half_style map-v1-mapwrap">
+                <MapV1LeafletDynamic items={sortedFilteredData} />
               </div>
             </div>
-            {/* End col-7 */}
           </div>
-          {/* End TopFilterBar */}
         </div>
-        {/* End .container */}
       </section>
     </>
-  )
+  );
 }

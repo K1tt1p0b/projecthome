@@ -1,32 +1,21 @@
+"use client";
+
+import { useEffect } from "react";
 import DefaultHeader from "@/components/common/DefaultHeader";
-
 import MobileMenu from "@/components/common/mobile-menu";
-
 import PropertyFilteringTwo from "@/components/listing/map-style/map-v1/PropertyFilteringTwo";
 
-import React from "react";
+export default function MapV1() {
+  useEffect(() => {
+    // ❌ ปิด AOS เฉพาะหน้านี้
+    document.documentElement.classList.remove("aos-init", "aos-animate");
+  }, []);
 
-export const metadata = {
-  title: "Map V1 || Homez - Real Estate NextJS Template",
-};
-
-const MapV1 = () => {
   return (
     <>
-      {/* Main Header Nav */}
       <DefaultHeader />
-      {/* End Main Header Nav */}
-
-      {/* Mobile Nav  */}
       <MobileMenu />
-      {/* End Mobile Nav  */}
-      <PropertyFilteringTwo/>
-
-      {/* <!-- Advance Feature Modal Start --> */}
-     
-      {/* Property Filtering */}
+      <PropertyFilteringTwo />
     </>
   );
-};
-
-export default MapV1;
+}

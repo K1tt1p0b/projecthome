@@ -1,20 +1,13 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  useMap,
-  useMapEvents,
-} from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 // ===== Marker Icon Fix =====
 const markerIcon = new L.Icon({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
   iconSize: [25, 41],
@@ -22,13 +15,8 @@ const markerIcon = new L.Icon({
 });
 
 // ===== Thailand bounds (approx) =====
-const TH_BOUNDS = L.latLngBounds(
-  L.latLng(5.61, 97.34),
-  L.latLng(20.47, 105.64)
-);
-
-// ✅ เพิ่ม: ขยาย bounds ออกนิดนึงเพื่อให้ autoPan ของ Popup ทำงานได้ (กันโดนตัด)
-const SAFE_TH_BOUNDS = TH_BOUNDS.pad(0.12); // ปรับได้: 0.10 - 0.20
+const TH_BOUNDS = L.latLngBounds(L.latLng(5.61, 97.34), L.latLng(20.47, 105.64));
+const SAFE_TH_BOUNDS = TH_BOUNDS.pad(0.12);
 
 function clampToBounds({ lat, lng }, bounds = TH_BOUNDS) {
   const sw = bounds.getSouthWest();
@@ -37,6 +25,36 @@ function clampToBounds({ lat, lng }, bounds = TH_BOUNDS) {
     lat: Math.min(Math.max(lat, sw.lat), ne.lat),
     lng: Math.min(Math.max(lng, sw.lng), ne.lng),
   };
+}
+
+// ✅ ปัดทศนิยมไม่เกิน 4 ตำแหน่ง
+const roundTo = (n, digits = 4) => {
+  const num = Number(n);
+  if (!Number.isFinite(num)) return num;
+  const p = Math.pow(10, digits);
+  return Math.round(num * p) / p;
+};
+
+const normalizeLatLng = ({ lat, lng }, digits = 4) => ({
+  lat: roundTo(lat, digits),
+  lng: roundTo(lng, digits),
+});
+
+// ✅ Haversine distance (km)
+function haversineKm(a, b) {
+  const toRad = (v) => (v * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+
+  const s =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+  return R * c;
 }
 
 function Recenter({ center, zoom }) {
@@ -108,10 +126,7 @@ function BottomRightLocateControl({
     const LocateControl = L.Control.extend({
       options: { position: "bottomright" },
       onAdd() {
-        const container = L.DomUtil.create(
-          "div",
-          "leaflet-bar lx-locate-control"
-        );
+        const container = L.DomUtil.create("div", "leaflet-bar lx-locate-control");
         const btnClass = loading ? "lx-locate-btn is-loading" : "lx-locate-btn";
         const btn = L.DomUtil.create("a", btnClass, container);
 
@@ -132,8 +147,7 @@ function BottomRightLocateControl({
         };
 
         btn.addEventListener("click", clickHandler);
-        container._cleanup = () =>
-          btn.removeEventListener("click", clickHandler);
+        container._cleanup = () => btn.removeEventListener("click", clickHandler);
 
         return container;
       },
@@ -161,10 +175,7 @@ function BottomRightFullscreenControl({ enabled, isOn, onToggle }) {
     const FullscreenControl = L.Control.extend({
       options: { position: "bottomright" },
       onAdd() {
-        const container = L.DomUtil.create(
-          "div",
-          "leaflet-bar lx-fullscreen-control"
-        );
+        const container = L.DomUtil.create("div", "leaflet-bar lx-fullscreen-control");
         const btn = L.DomUtil.create("a", "lx-fullscreen-btn", container);
 
         btn.href = "#";
@@ -178,11 +189,12 @@ function BottomRightFullscreenControl({ enabled, isOn, onToggle }) {
         const clickHandler = (e) => {
           e.preventDefault();
           onToggle?.();
+          setTimeout(() => map.invalidateSize(), 60);
+          setTimeout(() => map.invalidateSize(), 180);
         };
 
         btn.addEventListener("click", clickHandler);
-        container._cleanup = () =>
-          btn.removeEventListener("click", clickHandler);
+        container._cleanup = () => btn.removeEventListener("click", clickHandler);
 
         return container;
       },
@@ -200,18 +212,57 @@ function BottomRightFullscreenControl({ enabled, isOn, onToggle }) {
   return null;
 }
 
+// ✅ Near Me control (ค้นหาทรัพย์สินใกล้ฉัน)
+function BottomRightNearMeControl({ enabled, title = "ใกล้ฉัน", onClick, loading }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const NearMeControl = L.Control.extend({
+      options: { position: "bottomright" },
+      onAdd() {
+        const container = L.DomUtil.create("div", "leaflet-bar lx-nearme-control");
+        const btnClass = loading ? "lx-nearme-btn is-loading" : "lx-nearme-btn";
+        const btn = L.DomUtil.create("a", btnClass, container);
+
+        btn.href = "#";
+        btn.title = title;
+        btn.setAttribute("role", "button");
+        btn.setAttribute("aria-label", title);
+        btn.setAttribute("aria-busy", loading ? "true" : "false");
+
+        L.DomEvent.disableClickPropagation(container);
+        L.DomEvent.disableScrollPropagation(container);
+
+        const clickHandler = (e) => {
+          e.preventDefault();
+          if (loading) return;
+          onClick?.();
+          setTimeout(() => map.invalidateSize(), 60);
+        };
+
+        btn.addEventListener("click", clickHandler);
+        container._cleanup = () => btn.removeEventListener("click", clickHandler);
+
+        return container;
+      },
+      onRemove(control) {
+        if (control?._container?._cleanup) control._container._cleanup();
+      },
+    });
+
+    const ctrl = new NearMeControl();
+    ctrl.addTo(map);
+
+    return () => ctrl.remove();
+  }, [map, enabled, title, onClick, loading]);
+
+  return null;
+}
+
 /**
- * ✅ Universal Zoom Guard (Mouse + Trackpad + Pinch)
- *
- * เป้าหมาย:
- * - Mouse wheel: ต้องกด Ctrl ถึงซูม (กัน browser zoom)
- * - Trackpad pinch: ให้ซูม map ได้ (ถือว่า intent ซูม) + กัน browser zoom
- * - Trackpad scroll ธรรมดา: ไม่ซูม map (ให้เว็บเลื่อนได้) + hint
- *
- * หลักการ:
- * - ปิด scrollWheelZoom ของ Leaflet ไว้เป็น default
- * - จับ event ที่ container ด้วย capture + passive:false เพื่อ preventDefault ได้
- * - ถ้า detect ว่าเป็น "intent zoom" => enable ชั่วคราว + preventDefault
+ * ✅ Universal Zoom Guard (Ctrl+Scroll)
  */
 function UniversalZoomGuard({
   enabled,
@@ -221,9 +272,7 @@ function UniversalZoomGuard({
   const map = useMap();
 
   useEffect(() => {
-    // reset
     map.scrollWheelZoom.disable();
-
     if (!enabled) return;
 
     const container = map.getContainer();
@@ -231,7 +280,6 @@ function UniversalZoomGuard({
 
     container.setAttribute("data-wheel-hint", hintText);
 
-    // hint UI
     const showHint = () => {
       container.classList.add("lx-wheel-hint");
       window.clearTimeout(container._lxHintTimer);
@@ -249,69 +297,39 @@ function UniversalZoomGuard({
       }, 220);
     };
 
-    /**
-     * ตรวจว่าเป็น "trackpad pinch zoom" หรือไม่
-     * - บน Mac/Chrome pinch มักมาเป็น wheel event ที่ ctrlKey=true
-     * - deltaY มักเล็กมากและ continuous
-     */
     const looksLikePinchZoom = (e) => {
-      // ctrlKey true บน Mac pinch เป็น common behavior
       if (!e.ctrlKey) return false;
-
-      // deltaMode 0 = pixels (trackpad) / 1 = lines (mouse wheel)
-      // pinch/trackpad มักเป็น pixels และ deltaY เล็กต่อเนื่อง
       const isPixels = e.deltaMode === 0;
-      const smallDelta = Math.abs(e.deltaY) < 120; // heuristic
+      const smallDelta = Math.abs(e.deltaY) < 120;
       return isPixels && smallDelta;
     };
 
-    /**
-     * จัดการ wheel:
-     * - ถ้า requireCtrl:
-     *    - ctrlKey => ซูม map + preventDefault (กัน browser zoom)
-     *    - ไม่ ctrl => ไม่ซูม map (ปล่อยเว็บเลื่อน) + hint
-     * - ถ้าไม่ requireCtrl:
-     *    - ให้ซูม map ปกติ แต่ก็กัน browser zoom เฉพาะกรณี ctrlKey (เพื่อไม่ให้ page zoom)
-     */
     const onWheelCapture = (e) => {
       const isPinch = looksLikePinchZoom(e);
-
-      // ✅ กรณี "ตั้งใจซูม" (ctrl+wheel หรือ pinch)
       const wantsZoom = requireCtrl ? e.ctrlKey || isPinch : true;
 
       if (wantsZoom) {
-        // กัน browser zoom เมื่อมี ctrlKey (รวม pinch)
         if (e.ctrlKey || isPinch) e.preventDefault();
         enableTemporarily();
         return;
       }
 
-      // ไม่ได้ตั้งใจซูม map -> ปล่อยให้หน้า scroll ได้
       map.scrollWheelZoom.disable();
       showHint();
     };
 
-    // ✅ สำคัญ: passive:false เพื่อ preventDefault ได้
     container.addEventListener("wheel", onWheelCapture, {
       capture: true,
       passive: false,
     });
 
-    /**
-     * ✅ กัน "Keyboard Zoom" (Ctrl + / Ctrl - / Ctrl 0) ตอนโฟกัสอยู่บน map
-     * วิธีนี้ช่วยลดเคสผู้ใช้กดคีย์ลัดแล้วหน้า zoom
-     * (ถ้าไม่ต้องการ เอา block นี้ออกได้)
-     */
     const onKeyDownCapture = (e) => {
       if (!container.matches(":hover")) return;
       if (!e.ctrlKey && !e.metaKey) return;
 
       const k = String(e.key || "").toLowerCase();
       const isZoomKey = k === "+" || k === "=" || k === "-" || k === "0";
-      if (isZoomKey) {
-        // กัน page zoom เฉพาะตอน hover map
-        e.preventDefault();
-      }
+      if (isZoomKey) e.preventDefault();
     };
 
     window.addEventListener("keydown", onKeyDownCapture, {
@@ -365,18 +383,45 @@ export default function LeafletMapClient({
   requireCtrlToZoom = true,
   enableFullscreen = true,
   wheelHintText = "กด Ctrl + Scroll เพื่อซูมแผนที่",
+
+  // ✅ Nearby (ใกล้ฉัน)
+  enableNearMe = true,
+  nearMeRadiusKm = 5,
+  nearMeLimit = 10,
+  /**
+   * nearbyItems: รายการทรัพย์สินที่ใช้คำนวณใกล้ฉัน
+   * รูปแบบขั้นต่ำที่ต้องมี:
+   * [{ id, title?, lat, lng, ... }]
+   */
+  nearbyItems = [],
+
+  // ✅ Agent-only (ใช้เฉพาะหน้าที่ต้องการ)
+  agentOnly = false,
+  currentAgentId,
+
+  // ✅ callbacks ส่งผล near me ออกไป
+  onNearMeResults,
+  onNearMeLocation,
+
+  // ✅ ปิด sheet ใกล้ฉันใน map ได้ (ให้ไปโชว์ list ที่ฝั่งซ้ายแทน)
+  nearMeShowSheet = true,
 }) {
   const mapWrapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
 
   const initialRef = useRef(
     initialPosition?.lat != null && initialPosition?.lng != null
-      ? { lat: Number(initialPosition.lat), lng: Number(initialPosition.lng) }
-      : { lat: Number(lat), lng: Number(lng) }
+      ? normalizeLatLng(
+          { lat: Number(initialPosition.lat), lng: Number(initialPosition.lng) },
+          4
+        )
+      : normalizeLatLng({ lat: Number(lat), lng: Number(lng) }, 4)
   );
 
   const [pos, setPos] = useState(() => {
     const base = { lat: Number(lat), lng: Number(lng) };
-    return restrictToThailand ? clampToBounds(base) : base;
+    const bounded = restrictToThailand ? clampToBounds(base) : base;
+    return normalizeLatLng(bounded, 4);
   });
 
   const [query, setQuery] = useState("");
@@ -391,13 +436,17 @@ export default function LeafletMapClient({
 
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // ✅ near me states
+  const [nearMeLoading, setNearMeLoading] = useState(false);
+  const [nearMeList, setNearMeList] = useState([]);
+  const [nearMeOpen, setNearMeOpen] = useState(false);
+
   const reverseTimerRef = useRef(null);
   const lastReverseKeyRef = useRef("");
 
   const center = useMemo(() => [pos.lat, pos.lng], [pos]);
 
   const isDisplay = mode === "display";
-
   const _showOverlay = showOverlay ?? !isDisplay;
   const _showPickerMarker = showPickerMarker ?? !isDisplay;
 
@@ -409,21 +458,87 @@ export default function LeafletMapClient({
 
   const _wantWheelZoom = scrollWheelZoom ?? (isDisplay ? true : false);
 
+  // ✅ commit: clamp + ปัด 4 ตำแหน่ง
   const commit = (nextRaw) => {
-    const next = restrictToThailand ? clampToBounds(nextRaw) : nextRaw;
+    const bounded = restrictToThailand ? clampToBounds(nextRaw) : nextRaw;
+    const next = normalizeLatLng(bounded, 4);
     setPos(next);
     onChange?.(next);
   };
 
+  // ✅ sync จาก props lat/lng แล้วปัด 4 ตำแหน่งด้วย
   useEffect(() => {
     if (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) return;
     const next = { lat: Number(lat), lng: Number(lng) };
-    const safe = restrictToThailand ? clampToBounds(next) : next;
-    setPos(safe);
-    onChange?.(safe);
+    const bounded = restrictToThailand ? clampToBounds(next) : next;
+    const normalized = normalizeLatLng(bounded, 4);
+    setPos(normalized);
+    onChange?.(normalized);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lat, lng, restrictToThailand]);
 
+  // ==========================
+  // ✅ Fullscreen API
+  // ==========================
+  const isActuallyFullscreen = () => {
+    if (typeof document === "undefined") return false;
+    return !!document.fullscreenElement;
+  };
+
+  const syncFullscreenState = () => {
+    const on = isActuallyFullscreen();
+    setIsFullscreen(on);
+
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = on ? "hidden" : "";
+    }
+
+    const map = mapInstanceRef.current;
+    if (map) {
+      setTimeout(() => map.invalidateSize(), 0);
+      setTimeout(() => map.invalidateSize(), 160);
+    }
+  };
+
+  const toggleFullscreen = async () => {
+    if (!enableFullscreen) return;
+    if (typeof document === "undefined") return;
+
+    const el = mapWrapRef.current;
+    if (!el) return;
+
+    try {
+      if (!isActuallyFullscreen()) {
+        if (el.requestFullscreen) await el.requestFullscreen();
+      } else {
+        if (document.exitFullscreen) await document.exitFullscreen();
+      }
+    } catch {
+      setIsFullscreen((v) => !v);
+      const map = mapInstanceRef.current;
+      if (map) {
+        setTimeout(() => map.invalidateSize(), 0);
+        setTimeout(() => map.invalidateSize(), 160);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    const handler = () => syncFullscreenState();
+    document.addEventListener("fullscreenchange", handler);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handler);
+      document.body.style.overflow = "";
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ==========================
+  // Reverse geocode (เดิม)
+  // ==========================
   const reverseGeocode = async ({ lat, lng }) => {
     if (!_showOverlay) return;
     if (!onAddressChange) return;
@@ -499,6 +614,89 @@ export default function LeafletMapClient({
     );
   };
 
+  // ✅ agent-only filter (ใช้ตอนคำนวณ near me)
+  const norm = (v) => String(v ?? "").trim();
+  const filterAgentOnly = (items) => {
+    if (!agentOnly) return items;
+    const aid = norm(currentAgentId);
+    if (!aid) return items;
+
+    return (Array.isArray(items) ? items : []).filter((it) => {
+      const owner = norm(it?.agentId ?? it?.ownerId ?? it?.userId ?? it?.createdBy);
+      return owner && owner === aid;
+    });
+  };
+
+  // ✅ ใกล้ฉัน: ขอ GPS -> คำนวณ -> เปิดลิสต์ (+ ส่งออก callback)
+  const handleNearMe = () => {
+    if (typeof window === "undefined") return;
+
+    if (!navigator.geolocation) {
+      setGeoError("เบราว์เซอร์นี้ไม่รองรับ GPS");
+      return;
+    }
+
+    setNearMeLoading(true);
+    setGeoError("");
+
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        const me = {
+          lat: p.coords.latitude,
+          lng: p.coords.longitude,
+        };
+
+        // ซูมไปตำแหน่งฉันก่อน (ภาพรวมชัด)
+        const map = mapInstanceRef.current;
+        if (map) {
+          const target = restrictToThailand ? clampToBounds(me) : me;
+          map.setView([target.lat, target.lng], Math.max(15, zoom), { animate: true });
+        }
+
+        // คำนวณระยะกับทรัพย์สินทั้งหมด (กรอง agent-only ได้)
+        const itemsRaw = Array.isArray(nearbyItems) ? nearbyItems : [];
+        const items = filterAgentOnly(itemsRaw);
+
+        const computed = items
+          .map((it) => {
+            const latN = Number(it?.lat);
+            const lngN = Number(it?.lng);
+            if (!Number.isFinite(latN) || !Number.isFinite(lngN)) return null;
+
+            const d = haversineKm(me, { lat: latN, lng: lngN });
+            return {
+              ...it,
+              lat: latN,
+              lng: lngN,
+              distanceKm: d,
+            };
+          })
+          .filter(Boolean)
+          .filter((it) => it.distanceKm <= Number(nearMeRadiusKm || 5))
+          .sort((a, b) => a.distanceKm - b.distanceKm)
+          .slice(0, Number(nearMeLimit || 10));
+
+        setNearMeList(computed);
+        setNearMeOpen(true);
+
+        // ✅ ส่งออกไปให้หน้า map-v1 ทำ UI ฝั่งซ้าย/ไฮไลต์
+        onNearMeResults?.(computed);
+        onNearMeLocation?.(me);
+
+        setNearMeLoading(false);
+      },
+      (err) => {
+        setNearMeLoading(false);
+        setGeoError(
+          err.code === 1
+            ? "ไม่ได้รับอนุญาตให้ใช้ตำแหน่ง (กรุณากด Allow Location)"
+            : "ดึงตำแหน่งไม่สำเร็จ ลองใหม่อีกครั้ง"
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
   const clearResults = () => setResults([]);
 
   const searchPlace = async () => {
@@ -531,23 +729,14 @@ export default function LeafletMapClient({
     }
   };
 
-  const toggleFullscreen = () => setIsFullscreen((v) => !v);
-
-  useEffect(() => {
-    if (!isFullscreen) return;
-    const onKeyDown = (e) => {
-      if (e.key === "Escape") setIsFullscreen(false);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isFullscreen]);
-
   return (
     <div className={className}>
       <div
         ref={mapWrapRef}
         className={`lx-map-wrap ${isFullscreen ? "is-fullscreen" : ""}`}
-        style={{ height: isFullscreen ? "100vh" : height }}
+        style={{
+          height: isFullscreen ? "100vh" : height,
+        }}
       >
         {_showOverlay && (
           <div className="lx-map-overlay">
@@ -579,11 +768,7 @@ export default function LeafletMapClient({
               )}
 
               <div className="lx-map-actions">
-                <button
-                  type="button"
-                  className="ud-btn btn-light"
-                  onClick={handleReset}
-                >
+                <button type="button" className="ud-btn btn-light" onClick={handleReset}>
                   รีเซ็ตตำแหน่ง
                 </button>
               </div>
@@ -605,11 +790,7 @@ export default function LeafletMapClient({
                   </button>
                 ))}
                 <div className="lx-map-results-footer">
-                  <button
-                    type="button"
-                    className="ud-btn btn-light"
-                    onClick={clearResults}
-                  >
+                  <button type="button" className="ud-btn btn-light" onClick={clearResults}>
                     ปิดผลลัพธ์
                   </button>
                 </div>
@@ -625,16 +806,14 @@ export default function LeafletMapClient({
           maxZoom={maxZoom}
           style={{ height: "100%", width: "100%" }}
           zoomControl={false}
-          // ✅ ปิด wheel zoom ไว้ก่อน แล้วให้ Guard เปิดชั่วคราวเอง
           scrollWheelZoom={false}
           whenCreated={(map) => {
+            mapInstanceRef.current = map;
             setTimeout(() => map.invalidateSize(), 0);
             setTimeout(() => map.invalidateSize(), 180);
           }}
-          // ✅ แก้: ใช้ SAFE_TH_BOUNDS แทน TH_BOUNDS (กัน autoPan ตันแล้ว popup ถูกตัด)
           maxBounds={restrictToThailand ? SAFE_TH_BOUNDS : undefined}
           maxBoundsViscosity={restrictToThailand ? 1.0 : undefined}
-          // ✅ เพิ่ม: เผื่อพื้นที่ด้านบนให้ popup (กันโดน header ทับ/โดนตัด)
           popupOptions={{
             autoPanPaddingTopLeft: [16, 120],
             autoPanPaddingBottomRight: [16, 16],
@@ -659,10 +838,15 @@ export default function LeafletMapClient({
           <BottomRightZoomControl />
 
           {enableFullscreen && (
-            <BottomRightFullscreenControl
+            <BottomRightFullscreenControl enabled={true} isOn={isFullscreen} onToggle={toggleFullscreen} />
+          )}
+
+          {enableNearMe && (
+            <BottomRightNearMeControl
               enabled={true}
-              isOn={isFullscreen}
-              onToggle={toggleFullscreen}
+              loading={nearMeLoading}
+              title={nearMeLoading ? "กำลังค้นหาใกล้ฉัน..." : "ใกล้ฉัน"}
+              onClick={handleNearMe}
             />
           )}
 
@@ -692,6 +876,68 @@ export default function LeafletMapClient({
             />
           )}
         </MapContainer>
+
+        {/* ✅ sheet ใกล้ฉัน (ปิดได้ด้วย nearMeShowSheet) */}
+        {nearMeShowSheet && nearMeOpen && (
+          <div
+            className="lx-map-sheet is-bottom"
+            style={{
+              left: "50%",
+              ["--lx-arrow-x"]: "50%",
+            }}
+          >
+            <div className="lx-map-sheet-head">
+              <div className="lx-map-sheet-title">
+                ทรัพย์สินใกล้ฉัน ({nearMeList.length})
+                <div style={{ fontSize: 12, opacity: 0.7, marginTop: 2 }}>
+                  รัศมี {nearMeRadiusKm} km · เรียงใกล้ → ไกล
+                </div>
+              </div>
+              <button
+                className="lx-map-sheet-close"
+                type="button"
+                onClick={() => setNearMeOpen(false)}
+                aria-label="ปิด"
+                title="ปิด"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="lx-map-sheet-body">
+              {nearMeList.length === 0 ? (
+                <div style={{ fontSize: 13, opacity: 0.75 }}>
+                  ไม่พบทรัพย์สินในรัศมีนี้
+                </div>
+              ) : (
+                <div className="lx-nearme-list">
+                  {nearMeList.map((it) => (
+                    <button
+                      key={String(it.id ?? `${it.lat},${it.lng}`)}
+                      type="button"
+                      className="lx-nearme-item"
+                      onClick={() => {
+                        const map = mapInstanceRef.current;
+                        if (map) {
+                          map.setView([it.lat, it.lng], Math.max(16, map.getZoom()), {
+                            animate: true,
+                          });
+                        }
+                      }}
+                    >
+                      <div className="lx-nearme-item-title">
+                        {it.title ?? `ทรัพย์สิน #${it.id ?? "-"}`}
+                      </div>
+                      <div className="lx-nearme-item-sub">
+                        ระยะประมาณ {it.distanceKm.toFixed(2)} km
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {_showOverlay && (onAddressChange || geoError) && (
           <div className="lx-map-infobox">

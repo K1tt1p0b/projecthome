@@ -3,8 +3,10 @@
    - Count badge markers
    - Ctrl + wheel zoom guard hint (Ctrl+Scroll)
    - Fullscreen (CSS-based)
-   - Locate / Fullscreen buttons styling
-   - Overlay/search/results/infobox (basic)
+   - Locate / Fullscreen / NearMe buttons styling
+   - Overlay/search/results/infobox
+   - Map sheet (near me)
+   - Map V1 layout fix (height)
    ========================================================= */
 
 /* ---------- Base: map wrapper ---------- */
@@ -14,6 +16,9 @@
   border-radius: 0;
   overflow: hidden; /* กัน control/overlay ล้น */
   background: #fff;
+
+  isolation: isolate;
+  z-index: 0;
 }
 
 /* Leaflet container should fill wrapper */
@@ -59,8 +64,6 @@
 }
 
 /* ---------- 2) Ctrl + Wheel hint ---------- */
-/* ในโค้ด JS จะ add class "lx-wheel-hint" ให้ที่ .leaflet-container
-   และ setAttribute("data-wheel-hint", "...") ไว้ */
 .leaflet-container.lx-wheel-hint::after {
   content: attr(data-wheel-hint);
   position: absolute;
@@ -80,7 +83,7 @@
   backdrop-filter: blur(6px);
 }
 
-/* ---------- 3) Fullscreen wrapper (ขยายเต็มหน้าจอ) ---------- */
+/* ---------- 3) Fullscreen wrapper (fallback CSS) ---------- */
 .lx-map-wrap.is-fullscreen {
   position: fixed;
   inset: 0;
@@ -95,7 +98,15 @@
   z-index: 10000;
 }
 
+/* Fullscreen API: ทำให้ element fullscreen เต็มและพื้นหลังขาว */
+.lx-map-wrap:fullscreen {
+  width: 100% !important;
+  height: 100% !important;
+  background: #fff;
+}
+
 /* ---------- 4) Leaflet Control UI (Zoom / Locate / Fullscreen) ---------- */
+/* ✅ ทำให้ทุก control bar ใช้ rule เดียวกัน */
 .leaflet-bar {
   border: none;
   box-shadow: 0 10px 18px rgba(0, 0, 0, 0.12);
@@ -104,15 +115,28 @@
   background: #fff;
 }
 
+/* ✅ normalize ปุ่มทุกตัวที่อยู่ใน leaflet-bar (รวม + - ด้วย) */
 .leaflet-bar a {
   width: 36px;
   height: 36px;
+  min-width: 36px;
+  min-height: 36px;
   line-height: 36px;
+
   text-align: center;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   color: #111;
   text-decoration: none;
   user-select: none;
+
+  /* ✅ กันธีมบางตัวใส่ padding/margin แปลก ๆ */
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .leaflet-bar a:hover {
@@ -131,12 +155,20 @@
 .lx-locate-control .lx-locate-btn {
   width: 36px;
   height: 36px;
-  display: grid;
-  place-items: center;
+  min-width: 36px;
+  min-height: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   text-decoration: none;
   background: #fff;
   cursor: pointer;
   position: relative;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
 }
 
 .lx-locate-control .lx-locate-btn::before {
@@ -155,12 +187,21 @@
 .lx-fullscreen-control .lx-fullscreen-btn {
   width: 36px;
   height: 36px;
-  display: grid;
-  place-items: center;
+  min-width: 36px;
+  min-height: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   text-decoration: none;
   background: #fff;
   cursor: pointer;
   position: relative;
+
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
 }
 
 .lx-fullscreen-control .lx-fullscreen-btn::before {
@@ -170,12 +211,16 @@
   opacity: 0.9;
 }
 
+/* ✅ ระยะห่างของกลุ่ม control */
 .lx-fullscreen-control,
 .lx-locate-control {
   margin-bottom: 8px;
 }
 
-/* ---------- 5) Overlay ---------- */
+/* =========================================================
+   5) Overlay
+   ========================================================= */
+
 .lx-map-overlay {
   position: absolute;
   top: 14px;
@@ -334,8 +379,6 @@
 /* =========================================================
    8) Map Popup (Listing cards) — Home v10
    - ลดขนาด popup และทำให้แสดงการ์ดแบบย่อ
-   - แสดงได้สูงสุด 3 ใบ (logic อยู่ใน JS)
-   - ถ้ามีเยอะก็ scroll ใน popup (ไม่ต้องมี ดูทั้งหมด)
    ========================================================= */
 
 .leaflet-popup-content {
@@ -365,7 +408,7 @@
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.18);
 }
 
-/* ===== ย่อการ์ดเฉพาะใน map (ไม่กระทบหน้าอื่น) ===== */
+/* ===== ย่อการ์เพิ่มเติมเฉพาะใน map (ไม่กระทบหน้าอื่น) ===== */
 .listing-style1.map-card {
   border-radius: 12px;
   overflow: hidden;
@@ -431,7 +474,7 @@
 }
 
 /* =========================================================
-   Map Selection Sheet + Pointer (ชี้เหมือน popup เดิม)
+   Map Selection Sheet + Pointer
    ========================================================= */
 
 .lx-map-sheet {
@@ -450,7 +493,6 @@
   --lx-arrow-x: 50%;
 }
 
-/* ตำแหน่ง panel */
 .lx-map-sheet.is-bottom {
   bottom: 14px;
 }
@@ -459,7 +501,6 @@
   top: 70px; /* เผื่อ header */
 }
 
-/* ✅ ลูกศร: ทำเป็น 2 ชั้น (ขอบ + fill) ให้ดูเหมือน popup จริง */
 .lx-map-sheet::after,
 .lx-map-sheet::before {
   content: "";
@@ -471,21 +512,19 @@
   pointer-events: none;
 }
 
-/* bottom: ลูกศรชี้ลงไปหา marker */
 .lx-map-sheet.is-bottom::before {
   top: -10px;
   border-left: 12px solid transparent;
   border-right: 12px solid transparent;
-  border-bottom: 12px solid rgba(0, 0, 0, 0.12); /* border */
+  border-bottom: 12px solid rgba(0, 0, 0, 0.12);
 }
 .lx-map-sheet.is-bottom::after {
   top: -9px;
   border-left: 11px solid transparent;
   border-right: 11px solid transparent;
-  border-bottom: 11px solid rgba(255, 255, 255, 0.97); /* fill */
+  border-bottom: 11px solid rgba(255, 255, 255, 0.97);
 }
 
-/* top: ลูกศรชี้ขึ้นไปหา marker */
 .lx-map-sheet.is-top::before {
   bottom: -10px;
   border-left: 12px solid transparent;
@@ -499,7 +538,6 @@
   border-top: 11px solid rgba(255, 255, 255, 0.97);
 }
 
-/* header/body */
 .lx-map-sheet-head {
   display: flex;
   align-items: center;
@@ -531,7 +569,7 @@
 .lx-map-sheet-body {
   padding: 10px 12px;
   max-height: 360px;
-  overflow: auto; /* ✅ ถ้ามีเยอะให้ scroll */
+  overflow: auto;
 }
 
 .lx-map-sheet-more {
@@ -539,3 +577,233 @@
   font-size: 12px;
   opacity: 0.75;
 }
+
+/* =========================================================
+   ✅ FIX: Right-Bottom Controls Layout
+   - ทำให้ fullscreen ไม่แยกเป็นอีกก้อน
+   - เรียงเป็นคอลัมน์เดียวกับ +/- 
+   - ขนาดปุ่มเท่ากันกับ zoom
+   ========================================================= */
+
+/* ให้มุมขวาล่างเป็น flex column */
+.lx-map-wrap .leaflet-bottom.leaflet-right {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  gap: 10px !important;
+
+  margin-right: 14px !important;
+  margin-bottom: 14px !important;
+}
+
+/* ตัด margin ของ leaflet-control ในมุมนี้ */
+.lx-map-wrap .leaflet-bottom.leaflet-right .leaflet-control {
+  margin: 0 !important;
+}
+
+/* บังคับปุ่มในมุมขวาล่างให้เป็นขนาดเดียวกัน (44px) */
+.lx-map-wrap .leaflet-bottom.leaflet-right .leaflet-bar a,
+.lx-map-wrap .leaflet-control.lx-fullscreen-control a.lx-fullscreen-btn,
+.lx-map-wrap .leaflet-control.lx-locate-control a.lx-locate-btn {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  line-height: 44px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  border: none !important;
+  text-decoration: none !important;
+
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* hover ให้เหมือนกัน */
+.lx-map-wrap .leaflet-bottom.leaflet-right .leaflet-bar a:hover,
+.lx-map-wrap .leaflet-control.lx-fullscreen-control a.lx-fullscreen-btn:hover,
+.lx-map-wrap .leaflet-control.lx-locate-control a.lx-locate-btn:hover {
+  background: #f97316 !important;
+  color: #ffffff !important;
+}
+
+/* กัน margin-bottom เดิม */
+.lx-map-wrap .lx-fullscreen-control,
+.lx-map-wrap .lx-locate-control {
+  margin-bottom: 0 !important;
+}
+
+/* icon fullscreen */
+.lx-map-wrap .leaflet-control.lx-fullscreen-control a.lx-fullscreen-btn::before {
+  font-size: 16px !important;
+  line-height: 1 !important;
+}
+
+/* Mobile: 40px */
+@media (max-width: 768px) {
+  .lx-map-wrap .leaflet-bottom.leaflet-right {
+    margin-right: 14px !important;
+    margin-bottom: 12px !important;
+    gap: 8px !important;
+  }
+
+  .lx-map-wrap .leaflet-bottom.leaflet-right .leaflet-bar a,
+  .lx-map-wrap .leaflet-control.lx-fullscreen-control a.lx-fullscreen-btn,
+  .lx-map-wrap .leaflet-control.lx-locate-control a.lx-locate-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    line-height: 40px !important;
+  }
+}
+
+/* =========================
+   Near Me control (bottom-right)
+   ========================= */
+
+.lx-nearme-control .lx-nearme-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text-decoration: none;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+/* ไอคอนใกล้ฉัน */
+.lx-nearme-control .lx-nearme-btn::before {
+  content: "";
+  width: 18px;
+  height: 18px;
+  display: block;
+
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 18px 18px;
+
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M12 22s7-5.2 7-12a7 7 0 10-14 0c0 6.8 7 12 7 12z' stroke='%23111' stroke-width='2' stroke-linejoin='round'/%3E%3Ccircle cx='12' cy='10' r='2.5' stroke='%23111' stroke-width='2'/%3E%3Cpath d='M4.5 21.5c1.8-1.2 4.4-2 7.5-2s5.7.8 7.5 2' stroke='%23111' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.lx-nearme-control .lx-nearme-btn.is-loading {
+  pointer-events: none;
+  opacity: 0.75;
+}
+
+/* list ใน sheet */
+.lx-nearme-list {
+  display: grid;
+  gap: 10px;
+}
+
+.lx-nearme-item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.lx-nearme-item:hover {
+  background: #f6f7fb;
+}
+
+.lx-nearme-item-title {
+  font-weight: 800;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.lx-nearme-item-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+/* มือถือ: ถ้าคุณใช้ 40px กับ zoom ให้ตามนั้น */
+@media (max-width: 768px) {
+  .lx-nearme-control .lx-nearme-btn {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
+
+/* =========================================================
+   ✅ ADDED: Make NearMe match 44px / 40px (override)
+   ========================================================= */
+.lx-map-wrap .leaflet-bottom.leaflet-right
+  .leaflet-control.lx-nearme-control
+  a.lx-nearme-btn {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  line-height: 44px !important;
+
+  border-radius: 12px !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+@media (max-width: 768px) {
+  .lx-map-wrap .leaflet-bottom.leaflet-right
+    .leaflet-control.lx-nearme-control
+    a.lx-nearme-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    line-height: 40px !important;
+  }
+}
+
+/* =========================================================
+   ✅ ADDED: Prevent scroll chaining to page
+   ========================================================= */
+.map-v1-mapwrap,
+.lx-map-wrap {
+  overscroll-behavior: contain;
+}
+.lx-map-wrap .leaflet-container {
+  overscroll-behavior: contain;
+}
+
+/* ===== Map V1: force right panel height chain ===== */
+.map-v1-mapwrap {
+  height: calc(100vh - 140px);
+  min-height: 650px;
+}
+
+.map-v1-mapwrap,
+.map-v1-mapwrap > * {
+  height: 100%;
+}
+
+.map-v1-mapwrap .half_map_area,
+.map-v1-mapwrap .lx-map-wrap,
+.map-v1-mapwrap .leaflet-container {
+  height: 100% !important;
+}
+
