@@ -2,7 +2,7 @@
 
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation"; // ✅ เพิ่ม usePathname
 import { toast } from "react-toastify";
 import { addBanner } from "./storage";
 import s from "./banner-create.module.css";
@@ -23,7 +23,12 @@ const fileToBase64 = (file) =>
 export default function BannerCreateClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname(); // ✅ ดึง URL ปัจจุบันมาเช็ค
   const fileRef = useRef(null);
+
+  // ✅ แก้ Logic: เช็คว่าคำว่า "edit" อยู่ใน URL หรือไม่
+  // ถ้าอยู่ที่หน้า /new แม้จะมี ?id=... ก็ถือว่าไม่ใช่โหมดแก้ไข
+  const isEditMode = pathname.includes("/edit");
 
   const [saving, setSaving] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -31,7 +36,7 @@ export default function BannerCreateClient() {
   const [form, setForm] = useState({
     title: "",
     position: "หน้าแรก",
-    status: "active",
+    status: "pending", // ค่า Default สำหรับสร้างใหม่
     linkUrl: "/",
     startAt: "",
     endAt: "",
@@ -40,7 +45,7 @@ export default function BannerCreateClient() {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
-  // Logic ดึงข้อมูลอัตโนมัติ (รวมถึงรูปภาพ)
+  // Logic ดึงข้อมูลอัตโนมัติ
   useEffect(() => {
     const id = searchParams.get("id");
     const type = searchParams.get("type");
@@ -65,16 +70,18 @@ export default function BannerCreateClient() {
           ...prev,
           title: foundItem.title,
           linkUrl: generateLink,
+          // ✅ ถ้าเป็น Create Mode (มาจาก Unactive) ให้บังคับ status = 'pending' เสมอ ไม่ต้องสนใจ status เดิมของอสังหาฯ
+          // ✅ ถ้าเป็น Edit Mode ค่อยดึง status เดิมมาโชว์
+          status: isEditMode ? (foundItem.status || 'active') : 'pending',
         }));
 
-        // ✅ เพิ่มส่วนนี้: ดึงรูปภาพมาแสดงทันที
         const existingImage = foundItem.imageSrc || foundItem.image || (foundItem.gallery && foundItem.gallery[0]);
         if (existingImage) {
             setImagePreview(existingImage);
         }
       }
     }
-  }, [searchParams]);
+  }, [searchParams, isEditMode]); // เพิ่ม dependency isEditMode
 
   const onChange = (e) =>
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
@@ -130,7 +137,6 @@ export default function BannerCreateClient() {
 
   useMemo(() => {
     return () => {
-      // revoke เฉพาะถ้าเป็น blob url ที่สร้างใหม่ (รูปจากระบบไม่ต้อง revoke)
       if (imagePreview && imagePreview.startsWith("blob:")) {
         URL.revokeObjectURL(imagePreview);
       }
@@ -141,38 +147,45 @@ export default function BannerCreateClient() {
     if (!form.title.trim()) return "กรุณากรอกชื่อแบนเนอร์";
     if (!form.position.trim()) return "กรุณาเลือกตำแหน่ง";
     if (!form.linkUrl.trim()) return "กรุณากรอกลิงก์ปลายทาง";
-    // ✅ แก้เงื่อนไข: ถ้ามี imagePreview (รูปจากระบบ) ถือว่าผ่าน แม้จะไม่มี imageFile (ไฟล์ใหม่)
     if (!imageFile && !imagePreview) return "กรุณาเลือกรูปแบนเนอร์";
     return "";
   };
 
-  // เปลี่ยนชื่อจาก onSave เป็น handlePaymentClick
   const handlePaymentClick = async () => {
-    // ✅ 1. คำนวณจำนวนวันจริง (สูตรคำนวณวัน)
+    const error = validate();
+    if (error) {
+      toast.error(error);
+      return;
+    }
+
+    if (!form.startAt || !form.endAt) {
+       toast.error("กรุณาระบุวันเริ่มต้นและสิ้นสุด");
+       return;
+    }
+
     const startDate = new Date(form.startAt);
     const endDate = new Date(form.endAt);
 
-    // แปลงผลต่างเวลา (milli) ให้เป็นวัน
-    const diffTime = Math.abs(endDate - startDate);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 คือนับวันแรกด้วย (เช่น 1-1 คือ 1 วัน)
+    if (startDate > endDate) {
+        toast.error("วันที่เริ่มต้น ต้องมาก่อน วันที่สิ้นสุด");
+        return;
+    }
 
-    // ✅ 2. คำนวณราคาตามจริง (สมมติวันละ 100 บาท)
-    // ถ้าคุณขายเหมา ก็ใช้ราคาคงที่ได้เลย แต่ถ้าขายตามวันต้องคูณครับ
+    const diffTime = Math.abs(endDate - startDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+
     const pricePerDay = 100;
     const totalPrice = diffDays * pricePerDay;
 
     try {
       setSaving(true);
-      toast.loading("กำลังบันทึกแบนเนอร์...", { toastId: "saving-banner" });
-
-      // 2. แปลงรูปภาพเหมือนเดิม
+      toast.loading("กำลังบันทึกข้อมูล...", { toastId: "saving-banner" });
+      
       let imageData = null;
       if (imageFile) {
         imageData = await fileToBase64(imageFile);
       }
 
-      // 3. บันทึกลง Database (สำคัญ! ต้องบันทึกก่อนถึงจะมี ID ไปอ้างอิง)
-      // แต่สถานะใน DB ควรเป็น 'pending' หรือ 'waiting_payment'
       const result = await addBanner({
         ...form,
         image: {
@@ -183,33 +196,28 @@ export default function BannerCreateClient() {
         },
       });
 
-      // 4. เตรียมข้อมูลสำหรับหน้าจ่ายเงิน
-      // สมมติว่า result ที่ได้กลับมามี id ของ banner (เช่น result.id)
-      // ถ้าไม่มี ให้สุ่มเลขไปก่อน (แต่ทางที่ดี Backend ควรส่ง ID กลับมา)
       const refId = result?.id || 'BN-' + Math.floor(Math.random() * 100000);
-      const price = 500; // ตั้งราคาค่าโฆษณา
 
       toast.update("saving-banner", {
-        render: "บันทึกแบนเนอร์เรียบร้อยแล้ว",
+        render: "บันทึกแล้ว! กำลังไปหน้าชำระเงิน...",
         type: "success",
         isLoading: false,
         autoClose: 2000,
       });
 
-      // 5. 🚀 เปลี่ยนตรงนี้! พาไปหน้าจ่ายเงิน แทนหน้า List
       setTimeout(() => {
         router.push(
           `/dashboard-points/buy?` +
-          `package=ค่าโฆษณา Banner` +
-          `&price=${totalPrice}` +    // ส่งราคาที่คำนวณแล้ว
-          `&cycle=${diffDays} วัน` +  // ส่งจำนวนวันจริง (เช่น 5 วัน)
+          `package=ค่าโฆษณา Banner (${diffDays} วัน)` + 
+          `&price=${totalPrice}` +
+          `&cycle=${diffDays} วัน` +
           `&ref_id=${refId}` +
           `&type=banner`
         );
       }, 1000);
 
     } catch (error) {
-      console.error(error); // ดู Error ใน Console
+      console.error(error);
       toast.update("saving-banner", {
         render: "เกิดข้อผิดพลาดในการบันทึก",
         type: "error",
@@ -229,8 +237,8 @@ export default function BannerCreateClient() {
             <i className="flaticon-photo" />
           </span>
           <div>
-            <div className={s.h1}>เพิ่มแบนเนอร์</div>
-            <div className={s.sub}>สร้างแบนเนอร์ใหม่ แล้วกลับไปหน้ารายการ</div>
+            <div className={s.h1}>{isEditMode ? "แก้ไขแบนเนอร์" : "เพิ่มแบนเนอร์"}</div>
+            <div className={s.sub}>{isEditMode ? "ปรับปรุงข้อมูลแบนเนอร์ของคุณ" : "สร้างแบนเนอร์ใหม่ แล้วกลับไปหน้ารายการ"}</div>
           </div>
         </div>
 
@@ -266,8 +274,6 @@ export default function BannerCreateClient() {
           >
             <div className={s.preview}>
               {imagePreview !== null ? (
-                // ✅ ใช้ Image component (ต้อง allow domain ใน next.config.js หรือใช้ img ธรรมดาถ้าเป็น external url)
-                // เพื่อความง่าย ผมใช้ <img> ธรรมดาที่นี่เพราะ URL รูปอาจมาจากหลายที่
                 <img
                   src={imagePreview}
                   alt="Preview"
@@ -306,7 +312,9 @@ export default function BannerCreateClient() {
 
         <div className={s.formPad}>
           <div className="row g-3">
-            <div className="col-12 col-lg-7">
+            
+            {/* ✅ Logic การแบ่ง Column */}
+            <div className={`col-12 ${isEditMode ? 'col-lg-6' : 'col-lg-8'}`}>
               <label className={s.label}>ชื่อแบนเนอร์</label>
               <input
                 className="form-control"
@@ -318,7 +326,7 @@ export default function BannerCreateClient() {
               />
             </div>
 
-            <div className="col-12 col-lg-3">
+            <div className={`col-12 ${isEditMode ? 'col-lg-3' : 'col-lg-4'}`}>
               <label className={s.label}>ตำแหน่ง</label>
               <select
                 className="form-control"
@@ -334,19 +342,28 @@ export default function BannerCreateClient() {
               </select>
             </div>
 
-            <div className="col-12 col-lg-2">
-              <label className={s.label}>สถานะ</label>
-              <select
-                className="form-control"
-                name="status"
-                value={form.status}
-                onChange={onChange}
-                disabled={saving}
-              >
-                <option value="active">ใช้งาน</option>
-                <option value="paused">พักไว้</option>
-              </select>
-            </div>
+            {/* ✅ แสดงช่องสถานะ "เฉพาะตอนแก้ไข (isEditMode)" เท่านั้น */}
+            {isEditMode && (
+                <div className="col-12 col-lg-3">
+                    <label className={s.label}>สถานะ</label>
+                    <select
+                        className="form-control"
+                        name="status"
+                        value={form.status}
+                        onChange={onChange}
+                        disabled={saving}
+                        style={{ 
+                            color: form.status === 'active' ? 'green' : (form.status === 'hidden' ? 'gray' : 'black'),
+                            fontWeight: 'bold'
+                        }}
+                    >
+                        <option value="active">เปิดใช้งาน (Active)</option>
+                        <option value="hidden">ซ่อน / พัก (Hidden)</option>
+                        {form.status === 'pending' && <option value="pending" disabled>รอตรวจสอบ</option>}
+                        {form.status === 'rejected' && <option value="rejected" disabled>ไม่อนุมัติ</option>}
+                    </select>
+                </div>
+            )}
 
             <div className="col-12">
               <label className={s.label}>ลิงก์ปลายทาง (อัตโนมัติ)</label>
@@ -398,10 +415,7 @@ export default function BannerCreateClient() {
           <button
             className="ud-btn btn-thm"
             type="button"
-
-            // 👇 1. แก้ตรงนี้: เรียกใช้ฟังก์ชันพาไปจ่ายเงิน (แทน onSave เดิม)
             onClick={handlePaymentClick}
-
             disabled={saving}
           >
             {saving ? (
@@ -410,9 +424,8 @@ export default function BannerCreateClient() {
                 <span style={{ marginLeft: 8 }}>กำลังบันทึก</span>
               </>
             ) : (
-              // 👇 2. แก้ข้อความตรงนี้ ให้รู้ว่าต้องจ่ายเงิน
               <>
-                ชำระเงิน <i className="fal fa-arrow-right-long ms-2"></i>
+                {isEditMode ? "บันทึกการแก้ไข" : "ชำระเงิน"} <i className="fal fa-arrow-right-long ms-2"></i>
               </>
             )}
           </button>

@@ -121,12 +121,6 @@ const DashboardHeader = () => {
               <div className="col-6 col-lg-auto">
                 <div className="text-center text-lg-end header_right_widgets">
                   <ul className="mb0 d-flex justify-content-center justify-content-sm-end p-0">
-                    <li className="d-none d-sm-block">
-                      <Link className="text-center mr15" href="/login">
-                        <span className="flaticon-email" />
-                      </Link>
-                    </li>
-                    {/* End email box */}
 
                     {/* 🎯 กระดิ่งแจ้งเตือน — คงไว้เหมือนเดิมทุกอย่าง */}
                     <li className="d-none d-sm-block">
