@@ -1,11 +1,12 @@
-"use client";
+
+
 
 import React, { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
 
-import { propertyData } from "@/data/propertyData";
+import { propertyData } from "@/data/propertyData"; // ✅ ใช้ข้อมูลใหม่
 
+import listings from "@/data/listings";
+import React, { useState,useEffect } from 'react'
 import TopFilterBar from "./TopFilterBar";
 import TopFilterBar2 from "./TopFilterBar2"; 
 import AdvanceFilterModal from "@/components/common/advance-filter-two";
@@ -13,114 +14,6 @@ import PaginationTwo from "../../PaginationTwo";
 
 // ✅ ใช้ dynamic กัน SSR พัง
 import MapV1LeafletDynamic from "./MapV1Leaflet.dynamic";
-
-const FALLBACK_IMAGE = "/images/listings/list-1.jpg";
-
-function safeNumber(v, fallback = 0) {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : fallback;
-}
-
-function getImageSrc(it) {
-  const src =
-    it?.imageSrc ||
-    (Array.isArray(it?.gallery) ? it.gallery[0] : null) ||
-    it?.image; // รองรับของเก่าถ้ามี
-  if (!src || String(src).trim() === "") return FALLBACK_IMAGE;
-  return src;
-}
-
-function getLocationText(it) {
-  const loc = it?.location;
-  if (typeof loc === "string") return loc || "—";
-  const full = loc?.fullText;
-  if (typeof full === "string" && full.trim()) return full;
-  const composed = [loc?.address, loc?.district, loc?.province].filter(Boolean).join(" ");
-  return composed || "—";
-}
-
-function isForRent(it) {
-  const types = Array.isArray(it?.listingTypes) ? it.listingTypes : [];
-  return types.includes("rent");
-}
-
-function priceLabel(it) {
-  if (it?.priceText) return `฿${it.priceText}`;
-  const n = safeNumber(it?.price, 0);
-  return `฿${n.toLocaleString()}`;
-}
-
-function forWhatLabel(it) {
-  return isForRent(it) ? "ให้เช่า" : "ขาย";
-}
-
-// ✅ การ์ดรายการแบบง่าย (ไม่มีป้าย FEATURED)
-function ListingCard({ item }) {
-  const imgSrc = getImageSrc(item);
-  const locText = getLocationText(item);
-
-  const bed = safeNumber(item?.details?.bedrooms, 0);
-  const bath = safeNumber(item?.details?.bathrooms, 0);
-  const area = safeNumber(item?.details?.usableArea, 0);
-
-  return (
-    <div className="col-sm-12">
-      <div className="listing-style1 listCustom listing-type">
-        <div className="list-thumb">
-          <Image
-            width={382}
-            height={248}
-            className="w-100 cover"
-            src={imgSrc}
-            style={{ height: "240px", objectFit: "cover" }}
-            alt={item?.title || "listing"}
-          />
-
-          <div className="list-price">
-            {priceLabel(item)} {isForRent(item) ? <span>/ เดือน</span> : null}
-          </div>
-        </div>
-
-        <div className="list-content">
-          <h6 className="list-title">
-            <Link href={`/single-v5/${item?.id ?? ""}`}>{item?.title || "—"}</Link>
-          </h6>
-
-          <p className="list-text">{locText}</p>
-
-          <div className="list-meta d-flex align-items-center">
-            <a href="#">
-              <span className="flaticon-bed" /> {bed} ห้อง
-            </a>
-            <a href="#">
-              <span className="flaticon-shower" /> {bath} ห้อง
-            </a>
-            <a href="#">
-              <span className="flaticon-expand" /> {area} ตร.ม.
-            </a>
-          </div>
-
-          <hr className="mt-2 mb-2" />
-
-          <div className="list-meta2 d-flex justify-content-between align-items-center">
-            <span className="for-what">{forWhatLabel(item)}</span>
-            <div className="icons d-flex align-items-center">
-              <a href="#">
-                <span className="flaticon-fullscreen" />
-              </a>
-              <a href="#">
-                <span className="flaticon-new-tab" />
-              </a>
-              <a href="#">
-                <span className="flaticon-like" />
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function PropertyFilteringTwo({ agentOnly = true }) {
   // ✅ agent-only mock: กรองจาก announcerStatus
@@ -135,26 +28,26 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
   const [sortedFilteredData, setSortedFilteredData] = useState([]);
 
   const [pageNumber, setPageNumber] = useState(1);
-  const [colstyle, setColstyle] = useState(true); // ยังให้ toggle ได้ แต่ตอนนี้เราจะ render แบบ list เป็นหลัก
+  const [colstyle, setColstyle] = useState(true);
   const [pageItems, setPageItems] = useState([]);
-  const [pageContentTrac, setPageContentTrac] = useState([0, 0, 0]);
+  const [pageContentTrac, setPageContentTrac] = useState([]);
 
   useEffect(() => {
-    const pageSize = 4;
-    const start = (pageNumber - 1) * pageSize;
-    const end = pageNumber * pageSize;
-
-    setPageItems(sortedFilteredData.slice(start, end));
-    setPageContentTrac([start + 1, end, sortedFilteredData.length]);
+    setPageItems(sortedFilteredData.slice((pageNumber - 1) * 4, pageNumber * 4));
+    setPageContentTrac([
+      (pageNumber - 1) * 4 + 1,
+      pageNumber * 4,
+      sortedFilteredData.length,
+    ]);
   }, [pageNumber, sortedFilteredData]);
 
-  // ===== Filters =====
+  // ===== Filters (ปรับให้เข้ากับ propertyData) =====
   const [listingStatus, setListingStatus] = useState("All"); // Buy/Rent
   const [propertyTypes, setPropertyTypes] = useState([]);
-  const [priceRange, setPriceRange] = useState([0, 100000000]);
+  const [priceRange, setPriceRange] = useState([0, 100000000]); // ✅ propertyData เป็น number
   const [bedrooms, setBedrooms] = useState(0);
   const [bathroms, setBathroms] = useState(0);
-  const [location, setLocation] = useState("All Provinces");
+  const [location, setLocation] = useState("All Provinces"); // ✅ แทน Cities
   const [yearBuild, setyearBuild] = useState([0, 2050]);
   const [categories, setCategories] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -171,24 +64,19 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
     setCurrentSortingOption("Newest");
     setSearchQuery("");
 
-    if (typeof document !== "undefined") {
-      document.querySelectorAll(".filterInput").forEach((el) => (el.value = null));
-      document
-        .querySelectorAll(".filterSelect")
-        .forEach((el) => (el.value = "All Provinces"));
-    }
+    // กันพัง: บางหน้ามันไม่มี element พวกนี้
+    document.querySelectorAll(".filterInput").forEach((el) => (el.value = null));
+    document.querySelectorAll(".filterSelect").forEach((el) => (el.value = "All Provinces"));
   };
 
-  const handlelistingStatus = (elm) =>
-    setListingStatus((pre) => (pre === elm ? "All" : elm));
+  const handlelistingStatus = (elm) => setListingStatus((pre) => (pre === elm ? "All" : elm));
 
   const handlepropertyTypes = (elm) => {
     if (elm === "All") setPropertyTypes([]);
-    else {
+    else
       setPropertyTypes((pre) =>
         pre.includes(elm) ? pre.filter((x) => x !== elm) : [...pre, elm]
       );
-    }
   };
 
   const handlepriceRange = (elm) => setPriceRange(elm);
@@ -199,11 +87,10 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
 
   const handlecategories = (elm) => {
     if (elm === "All") setCategories([]);
-    else {
+    else
       setCategories((pre) =>
         pre.includes(elm) ? pre.filter((x) => x !== elm) : [...pre, elm]
       );
-    }
   };
 
   const filterFunctions = {
@@ -214,8 +101,7 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
     handlebathroms,
     handlelocation,
     handleyearBuild,
-    handlecategories,
-
+        handlecategories,
     priceRange,
     listingStatus,
     propertyTypes,
@@ -234,6 +120,7 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
   // ✅ filter หลัก (ให้เข้ากับ propertyData)
   useEffect(() => {
     const refItems = baseData.filter((elm) => {
+      // listingTypes: ["sell"] / ["rent"]
       const types = Array.isArray(elm?.listingTypes) ? elm.listingTypes : [];
 
       if (listingStatus === "All") return true;
@@ -242,24 +129,23 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
       return true;
     });
 
-    const filteredArrays = [];
+    let filteredArrays = [];
 
     // propertyType
     if (propertyTypes.length > 0) {
-      filteredArrays.push(
-        refItems.filter((elm) => propertyTypes.includes(elm?.propertyType))
-      );
+      const filtered = refItems.filter((elm) => propertyTypes.includes(elm?.propertyType));
+      filteredArrays.push(filtered);
     }
 
     // bedrooms / bathrooms
     filteredArrays.push(
-      refItems.filter((el) => safeNumber(el?.details?.bedrooms, 0) >= Number(bedrooms))
+      refItems.filter((el) => Number(el?.details?.bedrooms ?? 0) >= Number(bedrooms))
     );
     filteredArrays.push(
-      refItems.filter((el) => safeNumber(el?.details?.bathrooms, 0) >= Number(bathroms))
+      refItems.filter((el) => Number(el?.details?.bathrooms ?? 0) >= Number(bathroms))
     );
 
-    // search
+    // search: title / location.fullText / province / district
     const q = String(searchQuery || "").toLowerCase().trim();
     filteredArrays.push(
       refItems.filter((el) => {
@@ -272,7 +158,7 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
       })
     );
 
-    // categories: details.amenities
+    // categories: ใช้ details.amenities แทน features เดิม
     filteredArrays.push(
       !categories.length
         ? [...refItems]
@@ -281,26 +167,22 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
           )
     );
 
-    // location filter: province
+    // location filter: ใช้ province
     if (location !== "All Provinces") {
-      filteredArrays.push(
-        refItems.filter(
-          (el) => String(el?.location?.province) === String(location)
-        )
-      );
+      filteredArrays.push(refItems.filter((el) => String(el?.location?.province) === String(location)));
     }
 
-    // price range
-    if (Array.isArray(priceRange) && priceRange.length === 2) {
+    // price range: propertyData.price เป็น number
+    if (priceRange?.length === 2) {
       filteredArrays.push(
         refItems.filter((elm) => {
-          const p = safeNumber(elm?.price, 0);
+          const p = Number(elm?.price ?? 0);
           return p >= Number(priceRange[0]) && p <= Number(priceRange[1]);
         })
       );
     }
 
-    // yearBuild: ยังไม่มีจริงใน data → ผ่าน
+    // yearBuild: ไม่มีจริงใน data -> ปล่อยผ่าน (ถ้าจะใช้จริงค่อยเพิ่ม field)
     filteredArrays.push([...refItems]);
 
     const commonItems = refItems.filter((item) =>
@@ -326,13 +208,14 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
     setPageNumber(1);
 
     if (currentSortingOption === "Newest") {
+      // ไม่มี createdAt → ใช้ id มาก่อน
       const sorted = [...filteredData].sort((a, b) => Number(b.id) - Number(a.id));
       setSortedFilteredData(sorted);
     } else if (currentSortingOption.trim() === "Price Low") {
-      const sorted = [...filteredData].sort((a, b) => safeNumber(a.price) - safeNumber(b.price));
+      const sorted = [...filteredData].sort((a, b) => Number(a.price) - Number(b.price));
       setSortedFilteredData(sorted);
     } else if (currentSortingOption.trim() === "Price High") {
-      const sorted = [...filteredData].sort((a, b) => safeNumber(b.price) - safeNumber(a.price));
+      const sorted = [...filteredData].sort((a, b) => Number(b.price) - Number(a.price));
       setSortedFilteredData(sorted);
     } else {
       setSortedFilteredData(filteredData);
@@ -353,12 +236,12 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
         </div>
       </div>
 
-      {/* ✅ ใส่ class เต็มจอ (ไปใช้คู่กับ CSS ที่ทำไว้) */}
-      <section className="p-0 bgc-f7 map-v1-page">
-        <div className="container-fluid map-v1-container">
-          <div className="row map-v1-row">
-            <div className="col-xl-5 map-v1-left">
-              <div className="half_map_area_content mt30 map-v1-left-scroll">
+      <section className="p-0 bgc-f7">
+        <div className="container-fluid">
+          {/* ✅ ตัด data-aos ออกกัน hydration พัง */}
+          <div className="row">
+            <div className="col-xl-5">
+              <div className="half_map_area_content mt30">
                 <div className="col-lg-12">
                   <div className="advance-search-list d-flex justify-content-between">
                     <div className="dropdown-lists">
@@ -372,12 +255,7 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
                 <h4 className="mb-1">ทรัพย์สินของฉัน (เฉพาะนายหน้า)</h4>
 
                 <div className="row align-items-center mb10">
-                  <TopFilterBar
-                    pageContentTrac={pageContentTrac}
-                    colstyle={colstyle}
-                    setColstyle={setColstyle}
-                    setCurrentSortingOption={setCurrentSortingOption}
-                  />
+                  <TopFilterBar  pageContentTrac={pageContentTrac}  colstyle ={colstyle} setColstyle={setColstyle}  setCurrentSortingOption={setCurrentSortingOption}/>
                 </div>
 
                 <div className="row">
@@ -393,17 +271,14 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
                 </div>
 
                 <div className="row text-center">
-                  <PaginationTwo
-                    pageCapacity={4}
-                    data={sortedFilteredData}
-                    pageNumber={pageNumber}
-                    setPageNumber={setPageNumber}
-                  />
+                <PaginationTwo pageCapacity={4} data={sortedFilteredData} pageNumber={pageNumber} setPageNumber={setPageNumber}/>
+          
                 </div>
               </div>
             </div>
 
-            <div className="col-xl-7 overflow-hidden position-relative map-v1-right">
+            {/* ✅ ฝั่งขวา map ใหม่ */}
+            <div className="col-xl-7 overflow-hidden position-relative">
               <div className="half_map_area map-canvas half_style map-v1-mapwrap">
                 <MapV1LeafletDynamic items={sortedFilteredData} />
               </div>
