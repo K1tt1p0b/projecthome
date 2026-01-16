@@ -1,36 +1,30 @@
-'use client'
+"use client";
 
 import React from "react";
 
-const ListingStatus = ({filterFunctions}) => {
+const ListingStatus = ({ filterFunctions }) => {
   const options = [
-    { id: "flexRadioDefault3", label: "All" , defaultChecked: true },
-    { id: "flexRadioDefault1", label: "Buy" },
-    { id: "flexRadioDefault2", label: "Rent", },
-
+    { id: "lx-status-all", label: "All", text: "ทั้งหมด" },
+    { id: "lx-status-buy", label: "Buy", text: "ขาย" },
+    { id: "lx-status-rent", label: "Rent", text: "เช่า" },
   ];
+
+  const current = filterFunctions?.listingStatus ?? "All";
 
   return (
     <>
       {options.map((option) => (
-        <div
-          className="form-check d-flex align-items-center mb10"
-          key={option.id}
-         
-        >
+        <div className="form-check d-flex align-items-center mb10" key={option.id}>
           <input
+            id={option.id}
             className="form-check-input"
             type="radio"
-            checked={filterFunctions?.listingStatus == option.label}
-            
-            onChange={()=>filterFunctions.handlelistingStatus(option.label)}
-           
-            
-   
-            
+            name="lx-listing-status"
+            checked={String(current) === option.label}
+            onChange={() => filterFunctions?.handlelistingStatus?.(option.label)}
           />
           <label className="form-check-label" htmlFor={option.id}>
-            {option.label}
+            {option.text}
           </label>
         </div>
       ))}

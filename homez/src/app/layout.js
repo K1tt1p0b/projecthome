@@ -14,7 +14,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "leaflet/dist/leaflet.css";
 
 
-//  Thai font (Prompt) - ผูกกับ variable ของธีมเดิม
+// Thai font (Prompt)
 const promptBody = Prompt({
   subsets: ["thai", "latin"],
   weight: ["300", "400", "500", "600", "700"],
@@ -30,7 +30,6 @@ const promptTitle = Prompt({
 });
 
 export default function RootLayout({ children }) {
-  
   useEffect(() => {
     if (typeof window !== "undefined") import("bootstrap");
   }, []);
@@ -45,10 +44,33 @@ export default function RootLayout({ children }) {
         className={`body ${promptBody.variable} ${promptTitle.variable}`}
         cz-shortcut-listen="false"
       >
+        {/* ✅ Fix: ธีมบางตัวให้ wrapper/section padding แปลก ๆ */}
+        <style jsx global>{`
+          /* Toastify root เป็น <section class="Toastify"> */
+          section.Toastify {
+            padding: 0 !important;
+            margin: 0 !important;
+            height: 0 !important; /* กันมันดันความสูงหน้า */
+            min-height: 0 !important;
+          }
+
+          /* container ของ toast จริง ๆ */
+          .Toastify__toast-container {
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+
+          /* กัน rule global ของธีมที่เล่นกับ section ทั่วไป */
+          section.Toastify * {
+            box-sizing: border-box;
+          }
+        `}</style>
+
         <div className="wrapper ovh">{children}</div>
 
         <ScrollToTop />
 
+        {/* ✅ ใช้ ToastContainer ตามปกติ ไม่ต้องไป override position เอง */}
         <ToastContainer
           position="top-center"
           autoClose={3000}

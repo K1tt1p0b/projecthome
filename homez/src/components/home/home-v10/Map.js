@@ -1,12 +1,10 @@
-import ListingMap1 from "@/components/listing/map-style/ListingMap1";
 import React from "react";
+import HomeV10MapClientOnly from "./MapClientOnly";
 
-const Map = () => {
+export default function Map() {
   return (
     <div style={{ height: "700px" }}>
-      <ListingMap1 />
+      <HomeV10MapClientOnly />
     </div>
   );
-};
-
-export default Map;
+}
