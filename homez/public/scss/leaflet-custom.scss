@@ -807,3 +807,80 @@
   height: 100% !important;
 }
 
+/* ===== Map V1: make it full viewport ===== */
+
+/* กัน container-fluid ของ bootstrap ใส่ padding 12/15px ทำให้ไม่เต็ม */
+.map-v1-container {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* row ใน bootstrap มักมี gutter ทำให้มีช่องว่าง */
+.map-v1-row {
+  --bs-gutter-x: 0 !important;
+  --bs-gutter-y: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* ✅ ความสูงหน้า: หัก header ออก */
+.map-v1-page {
+  /* ปรับเลขนี้ตาม header ของคุณ (ลอง 92 / 96 / 100) */
+  --mapv1-header-h: 92px;
+  min-height: calc(100vh - var(--mapv1-header-h));
+}
+
+/* ให้คอลัมน์ซ้าย-ขวายืดเต็ม */
+.map-v1-left,
+.map-v1-right {
+  min-height: calc(100vh - var(--mapv1-header-h));
+}
+
+/* ฝั่งขวา: map ต้องเต็ม */
+.map-v1-mapwrap {
+  height: calc(100vh - var(--mapv1-header-h)) !important;
+  min-height: 650px;
+}
+
+.map-v1-mapwrap,
+.map-v1-mapwrap > * {
+  height: 100% !important;
+}
+
+/* chain height ของ leaflet ให้เต็มจริง */
+.map-v1-mapwrap .half_map_area,
+.map-v1-mapwrap .lx-map-wrap,
+.map-v1-mapwrap .leaflet-container {
+  height: 100% !important;
+}
+
+/* ===== Left panel scroll + scrollbar ===== */
+.map-v1-left-scroll {
+  height: calc(100vh - var(--mapv1-header-h)) !important;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+/* scrollbar ให้เห็นชัด */
+.map-v1-left-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.map-v1-left-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+.map-v1-left-scroll::-webkit-scrollbar-thumb {
+  background: #ff6a3d;
+  border-radius: 10px;
+}
+.map-v1-left-scroll::-webkit-scrollbar-thumb:hover {
+  background: #e65a2f;
+}
+
+/* firefox */
+.map-v1-left-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #ff6a3d #f1f1f1;
+}
+
+
