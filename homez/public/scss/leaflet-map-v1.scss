@@ -1,8 +1,6 @@
 body.page-map-v1 {
-  /* 🔥 เอา scrollbar ขวาของเว็บออก */
   overflow: hidden;
-
-  --mapv1-header-h: 92px; // ปรับตาม header จริง
+  --mapv1-header-h: 92px;
 }
 
 /* bootstrap fix */
@@ -10,7 +8,6 @@ body.page-map-v1 .map-v1-container {
   padding-left: 0 !important;
   padding-right: 0 !important;
 }
-
 body.page-map-v1 .map-v1-row {
   --bs-gutter-x: 0 !important;
   --bs-gutter-y: 0 !important;
@@ -41,4 +38,78 @@ body.page-map-v1 .map-v1-left-scroll {
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 8px;
+}
+
+/* ปุ่ม icon ในการ์ด (กัน <a href="#"> เด้ง) */
+.lx-icon-btn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+/* ราคา + ป้ายขาย/เช่า */
+.lx-pricewrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.lx-forwhat {
+  background: #111827;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.lx-rent-unit {
+  opacity: 0.9;
+  font-size: 12px;
+}
+
+/* highlight ตอนถูกเลือกจาก map (ถ้าจะใช้) */
+.lx-card-active {
+  outline: 2px solid rgba(249, 115, 22, 0.5);
+  border-radius: 12px;
+}
+
+/* legend */
+.lx-type-legend {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 1500;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 18px 36px rgba(0,0,0,0.12);
+  pointer-events: auto;
+  width: 240px;
+}
+
+.lx-type-legend-title {
+  font-weight: 900;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.lx-type-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.lx-type-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.lx-type-label {
+  font-size: 12px;
+  opacity: 0.9;
 }
