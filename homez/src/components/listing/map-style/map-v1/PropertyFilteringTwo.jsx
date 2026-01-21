@@ -14,52 +14,23 @@ import MapV1LeafletDynamic from "./MapV1Leaflet.dynamic";
 // =====================
 // ✅ MOCK SETTINGS
 // =====================
-const MOCK_CURRENT_USER = "user_a";
+const MOCK_CURRENT_USER = "owner_a"; // สมมติคนที่ล็อกอิน (owner_a หรือ agent_a ก็ได้)
 const PAGE_SIZE = 6;
 
-// ทำ mock ให้มีเยอะขึ้น แต่ “อิงจาก propertyData เดิม” และ “พิกัด/ประเภทตรง”
-function buildMockAll(base, total = 24) {
-  const src = Array.isArray(base) ? base : [];
-  const out = [];
-  if (!src.length) return out;
-
-  for (let i = 0; i < total; i++) {
-    const s = src[i % src.length];
-
-    // สลับเจ้าของ: ให้ user_a เยอะหน่อยเพื่อ map-v1 เห็นชัด
-    const ownerId = i % 10 < 7 ? "user_a" : "user_b";
-
-    out.push({
-      ...s,
-      id: `${s.id}-${i + 1}`, // unique
-      ownerId,
-      agentId: ownerId,
-      title: s.title ? `${s.title} (${i + 1})` : `ทรัพย์ตัวอย่าง (${i + 1})`,
-      // คุมให้ประเภท “วนตามของจริง + เพิ่มกระจาย”
-      propertyType: s.propertyType || ["house-and-land", "condo", "land", "room-rent"][i % 4],
-      // คุมพิกัดให้ “ไม่หลุด” แต่กระจายเบา ๆ เพื่อไม่ทับกันเยอะเกิน
-      location: {
-        ...(s.location || {}),
-        latitude: Number(s?.location?.latitude) + (i % 3) * 0.0012,
-        longitude: Number(s?.location?.longitude) + (i % 4) * 0.0012,
-      },
-    });
-  }
-
-  return out;
-}
-
 export default function PropertyFilteringTwo({ agentOnly = true }) {
-  // ✅ ทำ mock all (ใช้กับหน้า home ได้ด้วยถ้าอยาก reuse)
-  const mockAll = useMemo(() => buildMockAll(propertyData, 24), []);
-
-  // ✅ map-v1: โชว์เฉพาะของ “คนที่ล็อกอิน” (mock)
+  // ✅ map-v1: เอาเฉพาะ owner/agent คนนี้เท่านั้น
   const baseData = useMemo(() => {
-    if (!agentOnly) return mockAll;
-    return mockAll.filter((x) => String(x?.ownerId ?? x?.agentId) === MOCK_CURRENT_USER);
-  }, [agentOnly, mockAll]);
+    const arr = Array.isArray(propertyData) ? propertyData : [];
+    if (!agentOnly) return arr;
 
-  // ===== state =====
+    // ✅ ให้ owner/agent เข้าดูหน้า map-v1 ได้
+    return arr.filter(
+      (x) =>
+        String(x?.ownerId) === MOCK_CURRENT_USER ||
+        String(x?.agentId) === MOCK_CURRENT_USER
+    );
+  }, [agentOnly]);
+
   const [filteredData, setFilteredData] = useState([]);
   const [sortedFilteredData, setSortedFilteredData] = useState([]);
 
@@ -68,15 +39,14 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
   const [pageItems, setPageItems] = useState([]);
   const [pageContentTrac, setPageContentTrac] = useState([]);
 
-  // ✅ selection from map
+  // ✅ selection from map (คลิก marker แล้วฝั่งซ้าย filter)
   const [pickedIds, setPickedIds] = useState([]);
   const [pickedTitle, setPickedTitle] = useState("");
 
-  // ✅ map should NOT disappear when picked
-  const [mapData, setMapData] = useState(baseData);
-
   useEffect(() => {
-    setPageItems(sortedFilteredData.slice((pageNumber - 1) * PAGE_SIZE, pageNumber * PAGE_SIZE));
+    setPageItems(
+      sortedFilteredData.slice((pageNumber - 1) * PAGE_SIZE, pageNumber * PAGE_SIZE)
+    );
     setPageContentTrac([
       (pageNumber - 1) * PAGE_SIZE + 1,
       pageNumber * PAGE_SIZE,
@@ -110,13 +80,20 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
     setPickedTitle("");
 
     document.querySelectorAll(".filterInput").forEach((el) => (el.value = null));
-    document.querySelectorAll(".filterSelect").forEach((el) => (el.value = "All Provinces"));
+    document
+      .querySelectorAll(".filterSelect")
+      .forEach((el) => (el.value = "All Provinces"));
   };
 
-  const handlelistingStatus = (elm) => setListingStatus((pre) => (pre === elm ? "All" : elm));
+  const handlelistingStatus = (elm) =>
+    setListingStatus((pre) => (pre === elm ? "All" : elm));
+
   const handlepropertyTypes = (elm) => {
     if (elm === "All") setPropertyTypes([]);
-    else setPropertyTypes((pre) => (pre.includes(elm) ? pre.filter((x) => x !== elm) : [...pre, elm]));
+    else
+      setPropertyTypes((pre) =>
+        pre.includes(elm) ? pre.filter((x) => x !== elm) : [...pre, elm]
+      );
   };
 
   const handlepriceRange = (elm) => setPriceRange(elm);
@@ -124,9 +101,13 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
   const handlebathroms = (elm) => setBathroms(elm);
   const handlelocation = (elm) => setLocation(elm);
   const handleyearBuild = (elm) => setyearBuild(elm);
+
   const handlecategories = (elm) => {
     if (elm === "All") setCategories([]);
-    else setCategories((pre) => (pre.includes(elm) ? pre.filter((x) => x !== elm) : [...pre, elm]));
+    else
+      setCategories((pre) =>
+        pre.includes(elm) ? pre.filter((x) => x !== elm) : [...pre, elm]
+      );
   };
 
   const filterFunctions = {
@@ -154,7 +135,7 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
     setSearchQuery,
   };
 
-  // ✅ filter หลัก + แยก mapData (ไม่โดน pickedIds)
+  // ✅ filter หลัก
   useEffect(() => {
     const refItems = baseData.filter((elm) => {
       const types = Array.isArray(elm?.listingTypes) ? elm.listingTypes : [];
@@ -164,17 +145,17 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
       return true;
     });
 
-    const arrays = [];
+    const filteredArrays = [];
 
     if (propertyTypes.length > 0) {
-      arrays.push(refItems.filter((elm) => propertyTypes.includes(elm?.propertyType)));
+      filteredArrays.push(refItems.filter((elm) => propertyTypes.includes(elm?.propertyType)));
     }
 
-    arrays.push(refItems.filter((el) => Number(el?.details?.bedrooms ?? 0) >= Number(bedrooms)));
-    arrays.push(refItems.filter((el) => Number(el?.details?.bathrooms ?? 0) >= Number(bathroms)));
+    filteredArrays.push(refItems.filter((el) => Number(el?.details?.bedrooms ?? 0) >= Number(bedrooms)));
+    filteredArrays.push(refItems.filter((el) => Number(el?.details?.bathrooms ?? 0) >= Number(bathroms)));
 
     const q = String(searchQuery || "").toLowerCase().trim();
-    arrays.push(
+    filteredArrays.push(
       refItems.filter((el) => {
         if (!q) return true;
         const t = String(el?.title || "").toLowerCase();
@@ -185,18 +166,20 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
       })
     );
 
-    arrays.push(
+    filteredArrays.push(
       !categories.length
         ? [...refItems]
-        : refItems.filter((elm) => categories.every((c) => (elm?.details?.amenities || []).includes(c)))
+        : refItems.filter((elm) =>
+            categories.every((c) => (elm?.details?.amenities || []).includes(c))
+          )
     );
 
     if (location !== "All Provinces") {
-      arrays.push(refItems.filter((el) => String(el?.location?.province) === String(location)));
+      filteredArrays.push(refItems.filter((el) => String(el?.location?.province) === String(location)));
     }
 
     if (priceRange?.length === 2) {
-      arrays.push(
+      filteredArrays.push(
         refItems.filter((elm) => {
           const p = Number(elm?.price ?? 0);
           return p >= Number(priceRange[0]) && p <= Number(priceRange[1]);
@@ -204,22 +187,19 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
       );
     }
 
-    // yearBuild ไม่มีจริง -> ผ่าน
-    arrays.push([...refItems]);
+    filteredArrays.push([...refItems]);
 
-    const common = refItems.filter((item) => arrays.every((arr) => arr.includes(item)));
+    let commonItems = refItems.filter((item) =>
+      filteredArrays.every((array) => array.includes(item))
+    );
 
-    // ✅ mapData = common (ไม่โดน picked)
-    setMapData(common);
-
-    // ✅ listData = common + pickedIds
-    let listCommon = common;
+    // ✅ apply pickedIds filter (จากการคลิก marker) -> กระทบแค่ list ฝั่งซ้าย
     if (pickedIds.length > 0) {
       const s = new Set(pickedIds.map(String));
-      listCommon = listCommon.filter((x) => s.has(String(x?.id)));
+      commonItems = commonItems.filter((x) => s.has(String(x?.id)));
     }
 
-    setFilteredData(listCommon);
+    setFilteredData(commonItems);
   }, [
     baseData,
     listingStatus,
@@ -234,7 +214,7 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
     pickedIds,
   ]);
 
-  // sort: ไม่ทำ (ตามข้อมูล)
+  // sort: ไม่ทำ (ตามที่ขอเอา sort ออก)
   useEffect(() => {
     setPageNumber(1);
     setSortedFilteredData(filteredData);
@@ -272,8 +252,9 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
                   </div>
                 </div>
 
-                <h4 className="mb-1">ทรัพย์สินของฉัน (เฉพาะนายหน้า)</h4>
+                <h4 className="mb-1">ทรัพย์สินของฉัน</h4>
 
+                {/* ✅ ถ้าเลือกจาก map แล้ว ให้มีแถบแจ้ง + ปุ่มล้าง */}
                 {pickedIds.length > 0 && (
                   <div className="lx-picked-bar">
                     <div className="lx-picked-title">
@@ -314,9 +295,9 @@ export default function PropertyFilteringTwo({ agentOnly = true }) {
             {/* RIGHT */}
             <div className="col-xl-7 overflow-hidden position-relative map-v1-right">
               <div className="half_map_area map-canvas half_style map-v1-mapwrap">
+                {/* ✅ map ต้องใช้ baseData เสมอ เพื่อไม่ให้จุดอื่นหาย */}
                 <MapV1LeafletDynamic
-                  // ✅ สำคัญ: map ใช้ mapData (ไม่โดน pickedIds)
-                  items={mapData}
+                  items={baseData}
                   onSelectItems={(picked, payload) => {
                     const ids = (picked || []).map((x) => String(x?.id)).filter(Boolean);
                     setPickedIds(ids);

@@ -8,6 +8,7 @@ body.page-map-v1 .map-v1-container {
   padding-left: 0 !important;
   padding-right: 0 !important;
 }
+
 body.page-map-v1 .map-v1-row {
   --bs-gutter-x: 0 !important;
   --bs-gutter-y: 0 !important;
@@ -40,53 +41,63 @@ body.page-map-v1 .map-v1-left-scroll {
   padding-right: 8px;
 }
 
-/* ปุ่ม icon ในการ์ด (กัน <a href="#"> เด้ง) */
-.lx-icon-btn {
-  border: 0;
-  background: transparent;
-  padding: 0;
-  margin-left: 10px;
-  cursor: pointer;
+/* ===== แถบที่เลือกจาก map ===== */
+body.page-map-v1 .lx-picked-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 10px 0 6px;
 }
 
-/* ราคา + ป้ายขาย/เช่า */
-.lx-pricewrap {
+body.page-map-v1 .lx-picked-title {
+  font-size: 13px;
+  opacity: .92;
+}
+
+/* ===== highlight card ===== */
+body.page-map-v1 .lx-card-active {
+  outline: 2px solid rgba(249, 115, 22, 0.35);
+  box-shadow: 0 18px 36px rgba(249, 115, 22, 0.18);
+}
+
+/* ===== price row: ราคา + ป้ายขาย/ให้เช่า ===== */
+body.page-map-v1 .lx-price-row {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
-.lx-forwhat {
-  background: #111827;
-  color: #fff;
-  font-weight: 700;
-  font-size: 12px;
+
+body.page-map-v1 .lx-for-what-badge {
+  display: inline-flex;
+  align-items: center;
   padding: 4px 10px;
   border-radius: 999px;
-}
-.lx-rent-unit {
-  opacity: 0.9;
   font-size: 12px;
+  font-weight: 700;
+  background: rgba(0,0,0,.06);
 }
 
-/* highlight ตอนถูกเลือกจาก map (ถ้าจะใช้) */
-.lx-card-active {
-  outline: 2px solid rgba(249, 115, 22, 0.5);
-  border-radius: 12px;
-}
-
-/* legend */
+/* ===== Legend (map) ===== */
 .lx-type-legend {
   position: absolute;
   top: 14px;
   left: 14px;
   z-index: 1500;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(0,0,0,0.08);
+
+  background: rgba(255,255,255,.96);
+  border: 1px solid rgba(0,0,0,.12);
   border-radius: 14px;
   padding: 10px 12px;
-  box-shadow: 0 18px 36px rgba(0,0,0,0.12);
+  box-shadow: 0 18px 36px rgba(0,0,0,.16);
+
+  width: 260px;
   pointer-events: auto;
-  width: 240px;
 }
 
 .lx-type-legend-title {
@@ -98,7 +109,7 @@ body.page-map-v1 .map-v1-left-scroll {
 .lx-type-legend-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 4px 0;
 }
 
@@ -106,10 +117,42 @@ body.page-map-v1 .map-v1-left-scroll {
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  display: inline-block;
+  border: 2px solid #fff;
+  box-shadow: 0 6px 14px rgba(0,0,0,.12);
 }
 
 .lx-type-label {
   font-size: 12px;
-  opacity: 0.9;
+  opacity: .9;
+}
+
+/* dot icon */
+.lx-dot-icon {
+  background: transparent;
+  border: none;
+}
+
+.lx-dot {
+  display: inline-block;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  box-shadow: 0 8px 18px rgba(0,0,0,.18);
+}
+
+/* badge icon */
+.lx-count-icon {
+  background: transparent;
+  border: none;
+}
+
+.lx-count-badge {
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  font-weight: 900;
+  font-size: 14px;
+  border: 3px solid #ffffff;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.18);
+  user-select: none;
 }

@@ -16,8 +16,8 @@ export default function MapV1Leaflet({ items = [], onSelectItems, onClearSelect 
         return {
           lat,
           lng,
-          province: raw?.location?.province,
-          district: raw?.location?.district,
+          province: (raw?.location?.province || "").trim(),
+          district: (raw?.location?.district || "").trim(),
           raw,
         };
       })
@@ -35,19 +35,21 @@ export default function MapV1Leaflet({ items = [], onSelectItems, onClearSelect 
       enableSearch={false}
       enableGPS={false}
       enableNearMe={false}
+      enableFullscreen={true}
       scrollWheelZoom={true}
       requireCtrlToZoom={true}
       showOverlay={false}
       showPickerMarker={false}
+      wheelHintText="กด Ctrl + Scroll เพื่อซูมแผนที่"
     >
       <MapMarkersLayerClient
         points={points}
-        showLegend={true}
         onSelect={(payload) => {
           const picked = Array.isArray(payload?.items) ? payload.items : [];
           onSelectItems?.(picked, payload);
         }}
         onClear={() => onClearSelect?.()}
+        showLegend={true}
       />
     </LeafletMapClient>
   );

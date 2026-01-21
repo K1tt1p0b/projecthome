@@ -1,25 +1,69 @@
 "use client";
 
 import React, { useMemo } from "react";
-import PropertyType from "../../sidebar/PropertyType";
-import PriceRange from "../../sidebar/PriceRange";
-import Bedroom from "../../sidebar/Bedroom";
-import Bathroom from "../../sidebar/Bathroom";
-import ListingStatus from "../../sidebar/ListingStatus";
 
 const statusLabel = (listingStatus) => {
-  // listingStatus เดิมใน template: "All" | "Buy" | "Rent"
   const v = String(listingStatus || "All");
   if (v === "Buy") return "ขาย";
   if (v === "Rent") return "เช่า";
   return "ทั้งหมด";
 };
 
+const TYPE_OPTIONS = [
+  { key: "house-and-land", label: "บ้าน / บ้านพร้อมที่ดิน" },
+  { key: "condo", label: "คอนโด" },
+  { key: "land", label: "ที่ดิน" },
+  { key: "room-rent", label: "ห้องเช่า / หอพัก" },
+  { key: "shop", label: "ร้านค้า / พาณิชย์" },
+  { key: "office", label: "ออฟฟิศ" },
+  { key: "warehouse", label: "โกดัง" },
+];
+
+function clamp(n, min, max) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return min;
+  return Math.max(min, Math.min(max, x));
+}
+
 const TopFilterBar2 = ({ filterFunctions }) => {
-  const label = useMemo(
-    () => statusLabel(filterFunctions?.listingStatus),
-    [filterFunctions?.listingStatus]
-  );
+  const listingStatus = filterFunctions?.listingStatus ?? "All";
+  const propertyTypes = Array.isArray(filterFunctions?.propertyTypes)
+    ? filterFunctions.propertyTypes
+    : [];
+  const priceRange = Array.isArray(filterFunctions?.priceRange)
+    ? filterFunctions.priceRange
+    : [0, 100000000];
+  const bedrooms = Number(filterFunctions?.bedrooms ?? 0);
+  const bathroms = Number(filterFunctions?.bathroms ?? 0);
+
+  const label = useMemo(() => statusLabel(listingStatus), [listingStatus]);
+
+  const typeSummary = useMemo(() => {
+    if (!propertyTypes?.length) return "ทั้งหมด";
+    if (propertyTypes.length === 1) {
+      const found = TYPE_OPTIONS.find((x) => x.key === propertyTypes[0]);
+      return found?.label || "เลือกแล้ว 1";
+    }
+    return `เลือกแล้ว ${propertyTypes.length}`;
+  }, [propertyTypes]);
+
+  const priceSummary = useMemo(() => {
+    const [min, max] = priceRange;
+    const mn = Number(min ?? 0);
+    const mx = Number(max ?? 0);
+    if (!Number.isFinite(mn) || !Number.isFinite(mx)) return "ไม่จำกัด";
+    if (mn <= 0 && mx >= 100000000) return "ไม่จำกัด";
+    return `฿${mn.toLocaleString()} - ฿${mx.toLocaleString()}`;
+  }, [priceRange]);
+
+  const bedBathSummary = useMemo(() => {
+    const b = bedrooms || 0;
+    const ba = bathroms || 0;
+    if (!b && !ba) return "ไม่จำกัด";
+    if (b && !ba) return `ห้องนอน ${b}+`;
+    if (!b && ba) return `ห้องน้ำ ${ba}+`;
+    return `นอน ${b}+ · น้ำ ${ba}+`;
+  }, [bedrooms, bathroms]);
 
   return (
     <>
@@ -35,10 +79,42 @@ const TopFilterBar2 = ({ filterFunctions }) => {
         </button>
 
         <div className="dropdown-menu">
-          <div className="widget-wrapper bdrb1 pb25 mb0 pl20">
+          <div className="widget-wrapper bdrb1 pb25 mb0 pl20 pr20">
             <h6 className="list-title">ประเภทประกาศ</h6>
+
             <div className="radio-element">
-              <ListingStatus filterFunctions={filterFunctions} />
+              <label className="radio mb10">
+                <input
+                  type="radio"
+                  name="lx_listingStatus"
+                  checked={String(listingStatus) === "All"}
+                  onChange={() => filterFunctions?.handlelistingStatus?.("All")}
+                />
+                <span className="checkmark" />
+                ทั้งหมด
+              </label>
+
+              <label className="radio mb10">
+                <input
+                  type="radio"
+                  name="lx_listingStatus"
+                  checked={String(listingStatus) === "Buy"}
+                  onChange={() => filterFunctions?.handlelistingStatus?.("Buy")}
+                />
+                <span className="checkmark" />
+                ขาย
+              </label>
+
+              <label className="radio">
+                <input
+                  type="radio"
+                  name="lx_listingStatus"
+                  checked={String(listingStatus) === "Rent"}
+                  onChange={() => filterFunctions?.handlelistingStatus?.("Rent")}
+                />
+                <span className="checkmark" />
+                เช่า
+              </label>
             </div>
           </div>
 
@@ -61,15 +137,37 @@ const TopFilterBar2 = ({ filterFunctions }) => {
           className="open-btn mb15 dropdown-toggle"
           data-bs-toggle="dropdown"
           data-bs-auto-close="outside"
+          title={typeSummary}
         >
-          ประเภททรัพย์ <i className="fa fa-angle-down ms-2" />
+          ประเภททรัพย์: {typeSummary} <i className="fa fa-angle-down ms-2" />
         </button>
 
         <div className="dropdown-menu">
-          <div className="widget-wrapper bdrb1 pb25 mb0 pl20">
-            <h6 className="list-title">Property Type</h6>
+          <div className="widget-wrapper bdrb1 pb25 mb0 pl20 pr20">
+            <h6 className="list-title">ประเภททรัพย์</h6>
+
             <div className="checkbox-style1">
-              <PropertyType filterFunctions={filterFunctions} />
+              <label className="custom_checkbox mb10">
+                <input
+                  type="checkbox"
+                  checked={!propertyTypes.length}
+                  onChange={() => filterFunctions?.handlepropertyTypes?.("All")}
+                />
+                <span className="checkmark" />
+                ทั้งหมด
+              </label>
+
+              {TYPE_OPTIONS.map((t) => (
+                <label className="custom_checkbox mb10" key={t.key}>
+                  <input
+                    type="checkbox"
+                    checked={propertyTypes.includes(t.key)}
+                    onChange={() => filterFunctions?.handlepropertyTypes?.(t.key)}
+                  />
+                  <span className="checkmark" />
+                  {t.label}
+                </label>
+              ))}
             </div>
           </div>
 
@@ -92,15 +190,54 @@ const TopFilterBar2 = ({ filterFunctions }) => {
           className="open-btn mb15 dropdown-toggle"
           data-bs-toggle="dropdown"
           data-bs-auto-close="outside"
+          title={priceSummary}
         >
-          ราคา <i className="fa fa-angle-down ms-2" />
+          ราคา: {priceSummary} <i className="fa fa-angle-down ms-2" />
         </button>
 
         <div className="dropdown-menu dd3">
           <div className="widget-wrapper bdrb1 pb25 mb0 pl20 pr20">
             <h6 className="list-title">Price Range</h6>
+
             <div className="range-slider-style1">
-              <PriceRange filterFunctions={filterFunctions} />
+              <div className="row g-2">
+                <div className="col-6">
+                  <label className="form-label mb5">ต่ำสุด</label>
+                  <input
+                    className="form-control"
+                    type="number"
+                    value={Number(priceRange?.[0] ?? 0)}
+                    onChange={(e) => {
+                      const min = clamp(e.target.value, 0, 100000000);
+                      const max = clamp(priceRange?.[1] ?? 100000000, 0, 100000000);
+                      filterFunctions?.handlepriceRange?.([min, Math.max(min, max)]);
+                    }}
+                  />
+                </div>
+                <div className="col-6">
+                  <label className="form-label mb5">สูงสุด</label>
+                  <input
+                    className="form-control"
+                    type="number"
+                    value={Number(priceRange?.[1] ?? 100000000)}
+                    onChange={(e) => {
+                      const max = clamp(e.target.value, 0, 100000000);
+                      const min = clamp(priceRange?.[0] ?? 0, 0, 100000000);
+                      filterFunctions?.handlepriceRange?.([Math.min(min, max), max]);
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="mt10">
+                <button
+                  type="button"
+                  className="ud-btn btn-light"
+                  onClick={() => filterFunctions?.handlepriceRange?.([0, 100000000])}
+                >
+                  ไม่จำกัด
+                </button>
+              </div>
             </div>
           </div>
 
@@ -123,22 +260,42 @@ const TopFilterBar2 = ({ filterFunctions }) => {
           className="open-btn mb15 dropdown-toggle"
           data-bs-toggle="dropdown"
           data-bs-auto-close="outside"
+          title={bedBathSummary}
         >
-          ห้องนอน / ห้องน้ำ <i className="fa fa-angle-down ms-2" />
+          ห้องนอน / ห้องน้ำ: {bedBathSummary}{" "}
+          <i className="fa fa-angle-down ms-2" />
         </button>
 
         <div className="dropdown-menu dd4 pb20">
           <div className="widget-wrapper pl20 pr20">
             <h6 className="list-title">Bedrooms</h6>
-            <div className="d-flex">
-              <Bedroom filterFunctions={filterFunctions} />
+            <div className="d-flex gap-2 flex-wrap">
+              {[0, 1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={`bed-${n}`}
+                  type="button"
+                  className={`ud-btn btn-light ${bedrooms === n ? "active" : ""}`}
+                  onClick={() => filterFunctions?.handlebedrooms?.(n)}
+                >
+                  {n === 0 ? "ไม่จำกัด" : `${n}+`}
+                </button>
+              ))}
             </div>
           </div>
 
           <div className="widget-wrapper bdrb1 pb25 mb0 pl20 pr20">
             <h6 className="list-title">Bathrooms</h6>
-            <div className="d-flex">
-              <Bathroom filterFunctions={filterFunctions} />
+            <div className="d-flex gap-2 flex-wrap">
+              {[0, 1, 2, 3, 4].map((n) => (
+                <button
+                  key={`bath-${n}`}
+                  type="button"
+                  className={`ud-btn btn-light ${bathroms === n ? "active" : ""}`}
+                  onClick={() => filterFunctions?.handlebathroms?.(n)}
+                >
+                  {n === 0 ? "ไม่จำกัด" : `${n}+`}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -163,6 +320,18 @@ const TopFilterBar2 = ({ filterFunctions }) => {
           data-bs-target="#advanceSeachModal"
         >
           <i className="flaticon-settings me-2" /> More Filter
+        </button>
+      </li>
+
+      {/* Reset */}
+      <li className="list-inline-item">
+        <button
+          type="button"
+          className="open-btn mb15"
+          onClick={() => filterFunctions?.resetFilter?.()}
+          title="ล้างตัวกรองทั้งหมด"
+        >
+          ล้างตัวกรอง
         </button>
       </li>
     </>

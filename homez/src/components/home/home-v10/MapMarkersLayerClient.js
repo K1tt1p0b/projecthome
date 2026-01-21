@@ -4,13 +4,6 @@ import React, { useMemo, useState, useEffect } from "react";
 import { Marker, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 
-const roundTo = (n, digits = 6) => {
-  const num = Number(n);
-  if (!Number.isFinite(num)) return num;
-  const p = Math.pow(10, digits);
-  return Math.round(num * p) / p;
-};
-
 // =====================
 // Type / Colors / Labels
 // =====================
@@ -34,10 +27,17 @@ const TYPE_LABEL = TYPE_META.reduce((acc, x) => {
   return acc;
 }, {});
 
-const MIXED_COLOR = "#111827"; // ดำเทา
+const MIXED_COLOR = "#111827"; // ดำเทา (หลายประเภท/ผสม)
 const DEFAULT_COLOR = "#111827";
 
-// ===== Badge icon =====
+const roundTo = (n, digits = 6) => {
+  const num = Number(n);
+  if (!Number.isFinite(num)) return num;
+  const p = Math.pow(10, digits);
+  return Math.round(num * p) / p;
+};
+
+// ====== Badge icon (เลข) ======
 const countIcon = (count, color) => {
   const size = count >= 20 ? 46 : count >= 10 ? 42 : count >= 5 ? 38 : 34;
 
@@ -49,7 +49,7 @@ const countIcon = (count, color) => {
   });
 };
 
-// ===== Dot icon =====
+// ====== Dot icon (จุดสี) ======
 const dotIcon = (propertyType) => {
   const color = TYPE_COLOR[propertyType] || DEFAULT_COLOR;
   const size = 12;
@@ -64,8 +64,8 @@ const dotIcon = (propertyType) => {
 
 // ===== Zoom thresholds =====
 const ZOOM_TO_LEVEL = {
-  PROVINCE_MAX: 7,
-  DISTRICT_MAX: 10,
+  PROVINCE_MAX: 7,  // <= 7 : province groups
+  DISTRICT_MAX: 10, // <= 10 : district groups
 };
 
 function getLevel(zoom) {
@@ -74,8 +74,8 @@ function getLevel(zoom) {
   return "dots";
 }
 
-// ===== groupPoints (province/district) =====
-function groupPoints(points, level) {
+// ===== groupPoints (province/district only) =====
+function groupByRegion(points, level) {
   const m = new Map();
 
   for (const pt of points) {
@@ -138,43 +138,49 @@ function groupPoints(points, level) {
   });
 }
 
-/**
- * ✅ jitter จุดที่ lat/lng ซ้ำกัน (stable)
- * - group by rounded lat/lng
- * - กระจายออกเป็นวงเล็ก ๆ ตาม index
- */
-function spreadDuplicateDots(items) {
-  const keyOf = (lat, lng) => `${roundTo(lat, 6)},${roundTo(lng, 6)}`;
-  const groups = new Map();
+// ===== dots: "ห้ามทำให้หาย" -> ถ้าพิกัดซ้ำ ให้อยู่จุดเดียวแล้ว items หลายอัน =====
+function groupByLatLng(points) {
+  const m = new Map();
 
-  for (const d of items) {
-    const k = keyOf(d.lat, d.lng);
-    if (!groups.has(k)) groups.set(k, []);
-    groups.get(k).push(d);
-  }
+  for (const p of points) {
+    const lat = roundTo(p.lat, 6);
+    const lng = roundTo(p.lng, 6);
+    const key = `ll:${lat},${lng}`;
 
-  const out = [];
-  for (const arr of groups.values()) {
-    if (arr.length === 1) {
-      out.push(arr[0]);
-      continue;
-    }
+    const type = String(p?.raw?.propertyType || "").trim();
 
-    // รัศมีเล็ก ๆ (องศา) — ประมาณไม่กี่เมตร
-    const R = 0.00018;
-
-    arr.forEach((d, i) => {
-      const angle = (2 * Math.PI * i) / arr.length;
-      out.push({
-        ...d,
-        lat: d.lat + Math.cos(angle) * R,
-        lng: d.lng + Math.sin(angle) * R,
-        _jittered: true,
+    if (!m.has(key)) {
+      m.set(key, {
+        key,
+        lat,
+        lng,
+        items: [p.raw],
+        _types: new Set(type ? [type] : []),
       });
-    });
+    } else {
+      const g = m.get(key);
+      g.items.push(p.raw);
+      if (type) g._types.add(type);
+    }
   }
 
-  return out;
+  return Array.from(m.values()).map((g) => {
+    const types = Array.from(g._types || []);
+    const isMixed = types.length !== 1;
+    const mainType = types.length === 1 ? types[0] : null;
+
+    return {
+      key: g.key,
+      lat: g.lat,
+      lng: g.lng,
+      items: g.items,
+      count: g.items.length,
+      isMixed,
+      mainType,
+      color: isMixed ? MIXED_COLOR : (TYPE_COLOR[mainType] || DEFAULT_COLOR),
+      typeLabel: isMixed ? "หลายประเภท / ไม่ระบุ" : (TYPE_LABEL[mainType] || "ไม่ระบุ"),
+    };
+  });
 }
 
 export default function MapMarkersLayerClient({
@@ -197,28 +203,16 @@ export default function MapMarkersLayerClient({
 
   const level = getLevel(zoom);
 
-  const grouped = useMemo(() => {
+  const groupedRegion = useMemo(() => {
     const safe = Array.isArray(points) ? points : [];
     if (level === "dots") return [];
-    return groupPoints(safe, level);
+    return groupByRegion(safe, level);
   }, [points, level]);
 
-  const dotItems = useMemo(() => {
+  const groupedDots = useMemo(() => {
     const safe = Array.isArray(points) ? points : [];
     if (level !== "dots") return [];
-
-    const rawDots = safe.map((p) => {
-      const id = p.raw?.id ?? `${roundTo(p.lat)},${roundTo(p.lng)}`;
-      return {
-        key: `dot:${id}`,
-        lat: p.lat,
-        lng: p.lng,
-        raw: p.raw,
-        propertyType: String(p.raw?.propertyType || "").trim(),
-      };
-    });
-
-    return spreadDuplicateDots(rawDots);
+    return groupByLatLng(safe);
   }, [points, level]);
 
   const buildSelectionPayload = (items, lat, lng, titleFallback, meta = {}) => {
@@ -239,17 +233,14 @@ export default function MapMarkersLayerClient({
     };
   };
 
-  if (level !== "dots" && !grouped.length) return null;
-  if (level === "dots" && !dotItems.length) return null;
-
   return (
     <>
-      {/* ===== Legend ===== */}
+      {/* ===== Legend (top-left) ===== */}
       {showLegend && (
         <div className="lx-type-legend" role="note" aria-label="ประเภททรัพย์">
           <div className="lx-type-legend-title">ประเภททรัพย์ (สีจุด)</div>
 
-          {TYPE_META.slice(0, 4).map((t) => (
+          {TYPE_META.slice(0, 6).map((t) => (
             <div key={t.key} className="lx-type-legend-item" title={t.label}>
               <span className="lx-type-dot" style={{ background: t.color }} />
               <span className="lx-type-label">{t.label}</span>
@@ -263,9 +254,9 @@ export default function MapMarkersLayerClient({
         </div>
       )}
 
-      {/* ===== province/district ===== */}
+      {/* province/district -> badge count */}
       {level !== "dots" &&
-        grouped.map((g) => (
+        groupedRegion.map((g) => (
           <Marker
             key={g.key}
             position={[g.lat, g.lng]}
@@ -277,12 +268,13 @@ export default function MapMarkersLayerClient({
                   buildSelectionPayload(g.items, g.lat, g.lng, title, {
                     groupTypeLabel: g.typeLabel,
                     groupIsMixed: g.isMixed,
+                    groupCount: g.count,
                   })
                 );
               },
             }}
           >
-            <Tooltip direction="top" offset={[0, -8]} opacity={0.95} permanent={false} sticky>
+            <Tooltip direction="top" offset={[0, -8]} opacity={0.95} sticky>
               <div style={{ fontWeight: 800, marginBottom: 2 }}>{g.title}</div>
               <div style={{ fontSize: 12, opacity: 0.9 }}>
                 {g.count} รายการ · {g.typeLabel}
@@ -292,30 +284,41 @@ export default function MapMarkersLayerClient({
           </Marker>
         ))}
 
-      {/* ===== dots ===== */}
+      {/* dots -> ถ้าพิกัดซ้ำ "อยู่จุดเดียว" แล้ว count เป็น badge ถ้า > 1 */}
       {level === "dots" &&
-        dotItems.map((d) => {
-          const it = d.raw;
-          const typeKey = d.propertyType;
-          const typeLabel = TYPE_LABEL[typeKey] || "หลายประเภท / ไม่ระบุ";
+        groupedDots.map((g) => {
+          const icon =
+            g.count > 1
+              ? countIcon(g.count, g.color) // ✅ พิกัดซ้ำ: เป็นเลข
+              : dotIcon(g.mainType); // ✅ พิกัดเดี่ยว: เป็นจุดสี
+
+          const title =
+            g.count > 1
+              ? `ตำแหน่งนี้มี ${g.count} รายการ`
+              : (g.items?.[0]?.title || "รายการทรัพย์");
 
           return (
             <Marker
-              key={d.key}
-              position={[d.lat, d.lng]}
-              icon={dotIcon(typeKey)}
+              key={g.key}
+              position={[g.lat, g.lng]}
+              icon={icon}
               eventHandlers={{
                 click: () => {
-                  const title = it?.title || "รายการทรัพย์";
-                  onSelect?.(buildSelectionPayload([it], d.lat, d.lng, title));
+                  onSelect?.(
+                    buildSelectionPayload(g.items, g.lat, g.lng, title, {
+                      groupTypeLabel: g.typeLabel,
+                      groupIsMixed: g.isMixed,
+                      groupCount: g.count,
+                    })
+                  );
                 },
               }}
             >
-              <Tooltip direction="top" offset={[0, -8]} opacity={0.95} permanent={false} sticky>
+              <Tooltip direction="top" offset={[0, -8]} opacity={0.95} sticky>
                 <div style={{ fontWeight: 800, marginBottom: 2 }}>
-                  {it?.title || "รายการทรัพย์"}
+                  {g.count > 1 ? `จุดนี้มี ${g.count} รายการ` : (g.items?.[0]?.title || "รายการทรัพย์")}
                 </div>
-                <div style={{ fontSize: 12, opacity: 0.9 }}>{typeLabel}</div>
+                <div style={{ fontSize: 12, opacity: 0.9 }}>{g.typeLabel}</div>
               </Tooltip>
             </Marker>
           );
