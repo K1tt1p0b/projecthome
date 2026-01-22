@@ -1,12 +1,18 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 
-// ✅ ใช้ไฟล์ config เดียวกับ auto
 import { PACKAGES, getPackage } from "./boost/config/boostPackages";
 import { LS_MANUAL } from "./boost/config/boostStorage";
 import { readLS, writeLS, formatCountdown } from "./boost/utils/boostUtils";
+
+// ✅ (fallback) ถ้าหน้านี้ไม่ได้รับ props รายการทรัพย์มา ให้ดึงจาก mock ได้
+import { propertyData as mockData } from "@/data/propertyData";
+
+// ✅ ให้หน้า "ทรัพย์สินของฉัน" อ่านออก (manual legacy store)
+const BOOST_STORE_KEY = "landx_boost_state_v1";
 
 // ===== Utils =====
 const canBoost = (p) => String(p?.status || "") === "เผยแพร่แล้ว";
@@ -20,23 +26,62 @@ const pickLocationText = (p) => {
   return [sub, district, province].filter(Boolean).join(" · ") || "-";
 };
 
-function clampStep(s) {
-  const n = Number(s) || 1;
-  if (n < 1) return 1;
-  if (n > 2) return 2;
-  return n;
+const pickImage = (p) => {
+  return (
+    p?.cover ||
+    p?.image ||
+    p?.imageSrc ||
+    (Array.isArray(p?.images) ? p.images[0] : null) ||
+    (Array.isArray(p?.gallery) ? p.gallery[0] : null) ||
+    ""
+  );
+};
+
+const safeText = (v, fallback = "-") => {
+  const s = String(v ?? "").trim();
+  return s ? s : fallback;
+};
+
+const pickListingType = (p) =>
+  p?.listingTypeLabel ||
+  p?.listingTypeName ||
+  p?.listingType ||
+  p?.for ||
+  p?.listingStatus ||
+  p?.listing_status ||
+  "-";
+
+const pickPropertyType = (p) =>
+  p?.propertyTypeLabel ||
+  p?.propertyTypeName ||
+  p?.propertyType ||
+  p?.type ||
+  p?.category ||
+  "-";
+
+// ===== boost_state_v1 helpers =====
+function safeParse(json) {
+  try {
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+function readBoostStateV1() {
+  if (typeof window === "undefined") return {};
+  const raw = window.localStorage.getItem(BOOST_STORE_KEY);
+  const parsed = raw ? safeParse(raw) : null;
+  return parsed && typeof parsed === "object" ? parsed : {};
+}
+function writeBoostStateV1(store) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(BOOST_STORE_KEY, JSON.stringify(store ?? {}));
 }
 
 // ===== Toast helpers =====
 const tLoading = (msg) => toast.loading(msg);
 const tUpdate = (id, type, msg) =>
-  toast.update(id, {
-    render: msg,
-    type,
-    isLoading: false,
-    autoClose: 1600,
-    closeButton: true,
-  });
+  toast.update(id, { render: msg, type, isLoading: false, autoClose: 1600, closeButton: true });
 
 // ===== UI Bits =====
 const ToneBadge = ({ tone = "gray", children }) => {
@@ -48,7 +93,6 @@ const ToneBadge = ({ tone = "gray", children }) => {
     purple: { bg: "#F3EEFF", text: "#5B21B6", border: "#DDD6FE" },
   };
   const c = map[tone] || map.gray;
-
   return (
     <span
       style={{
@@ -57,7 +101,7 @@ const ToneBadge = ({ tone = "gray", children }) => {
         background: c.bg,
         color: c.text,
         border: `1px solid ${c.border}`,
-        padding: "5px 10px",
+        padding: "6px 10px",
         borderRadius: 999,
         fontSize: 12,
         lineHeight: 1,
@@ -86,46 +130,6 @@ const Card = ({ title, desc, right, children }) => (
   </div>
 );
 
-const StepPill = ({ active, done, children, onClick, disabled }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    disabled={disabled}
-    className="btn"
-    style={{
-      borderRadius: 999,
-      padding: "8px 12px",
-      fontSize: 13,
-      border: active ? "2px solid #0d6efd" : "1px solid #e9ecef",
-      background: active ? "#F5F9FF" : "#fff",
-      color: disabled ? "#9CA3AF" : "#111827",
-      opacity: disabled ? 0.7 : 1,
-      display: "inline-flex",
-      alignItems: "center",
-      gap: 8,
-    }}
-  >
-    <span
-      style={{
-        width: 18,
-        height: 18,
-        borderRadius: 999,
-        border: "1px solid #e5e7eb",
-        background: done ? "#E9FBF0" : "#F3F4F6",
-        color: done ? "#0A7A3B" : "#6B7280",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 12,
-        lineHeight: 1,
-      }}
-    >
-      {done ? "✓" : "•"}
-    </span>
-    {children}
-  </button>
-);
-
 const StickyBar = ({ children }) => (
   <div style={{ position: "sticky", bottom: 14, zIndex: 20, marginTop: 14 }}>
     <div
@@ -142,487 +146,321 @@ const StickyBar = ({ children }) => (
   </div>
 );
 
-const PropertyPickRow = ({
-  p,
-  checked,
-  onPick,
-  noteRight,
-  disabledAll,
-  disabledReason,
-  badgeText,
-  badgeTone,
-}) => {
-  const boostable = canBoost(p);
-  const disabled = disabledAll || !boostable || !!disabledReason;
+const InfoRow = ({ label, value }) => (
+  <div className="d-flex justify-content-between gap-3 py-2" style={{ borderBottom: "1px dashed #eee" }}>
+    <div className="text-muted" style={{ fontSize: 13 }}>
+      {label}
+    </div>
+    <div className="fw600" style={{ fontSize: 13, textAlign: "right" }}>
+      {value}
+    </div>
+  </div>
+);
 
-  const finalBadgeText =
-    badgeText || (!boostable ? "ดันไม่ได้" : checked ? "เลือกแล้ว" : "ดันได้");
-  const finalBadgeTone =
-    badgeTone || (!boostable ? "red" : checked ? "purple" : disabled ? "gray" : "green");
+function formatThaiDateTime(ts) {
+  if (!ts) return "-";
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return "-";
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yy = String((d.getFullYear() + 543) % 100).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  return `${dd}/${mm}/${yy} ${hh}:${min} น.`;
+}
 
-  return (
-    <button
-      type="button"
-      className="btn text-start"
-      onClick={!disabled ? onPick : undefined}
-      style={{
-        width: "100%",
-        borderRadius: 14,
-        padding: 12,
-        border: checked ? "2px solid #0d6efd" : "1px solid #eee",
-        background: checked ? "#F5F9FF" : "#fff",
-        opacity: disabled ? 0.6 : 1,
-        cursor: disabled ? "not-allowed" : "pointer",
-      }}
-      title={
-        !boostable
-          ? "ดันไม่ได้ (ต้องเป็นสถานะเผยแพร่แล้ว)"
-          : disabledReason
-          ? disabledReason
-          : "กดเพื่อเลือก"
-      }
-    >
-      <div className="d-flex align-items-center justify-content-between gap-2">
-        <div style={{ minWidth: 0 }}>
-          <div className="fw700">{p.title}</div>
-          <div className="text-muted" style={{ fontSize: 12 }}>
-            รหัส: {p.id} · {pickLocationText(p)}
-          </div>
-        </div>
-
-        <div className="d-flex align-items-center gap-2">
-          {noteRight}
-          <ToneBadge tone={finalBadgeTone}>{finalBadgeText}</ToneBadge>
-        </div>
-      </div>
-    </button>
-  );
-};
-
+/**
+ * ✅ BootManual (Confirm-only)
+ *
+ * แก้ปัญหา “กดดันแล้วไม่ดึงข้อมูล”:
+ * - หน้านี้จะอ่าน propertyId จาก querystring (propertyId / id)
+ * - ถ้า props ไม่ถูกส่งมา ก็ยังหา property จาก mockData ได้
+ *
+ * รองรับการเรียกแบบ:
+ * /dashboard-boost-property?propertyId=123&mode=manual
+ */
 export default function BootManual({
+  // optional จากหน้าอื่น (ถ้ามี)
+  property, // ✅ ถ้าหน้าแม่ส่งมาให้โดยตรง ก็ใช้ตัวนี้
   properties,
-  selectedMap,
   selectedIds,
   selectedList,
-  toggleOne,
+
   clearSelected,
-  goAuto,
-  initialStep = 1,
-  packageKey = "business", // ✅ แนะนำให้ใช้แพ็กเดียวกับ auto
+
+  packageKey = "pro",
+  backTo = "/dashboard-my-properties",
 }) {
-  const pkg = getPackage?.(packageKey) || PACKAGES?.[packageKey] || PACKAGES.business;
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // ✅ manual ใช้คูลดาวน์ = interval ของแพ็ก (หรือถ้าคุณอยากแยก ก็ใส่ cooldownMs ใน package ได้)
-  const COOLDOWN_MS = Number(pkg.cooldownMs || pkg.intervalMs || 0) || 0;
-
-  const [step, setStep] = useState(() => clampStep(initialStep));
-  const [q, setQ] = useState("");
+  // ===== time tick =====
   const [now, setNow] = useState(Date.now());
   const [isBusy, setIsBusy] = useState(false);
-
-  // ✅ เก็บ store ไว้ใน state แล้ว sync เป็นระยะ (ไม่ต้อง readLS ทุกวินาทีใน useMemo)
-  const [manualStore, setManualStore] = useState(() => readLS(LS_MANUAL, {}));
-
-  const syncManualStore = useCallback(() => {
-    const s = readLS(LS_MANUAL, {});
-    setManualStore(s && typeof s === "object" ? s : {});
-  }, []);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  useEffect(() => {
-    syncManualStore();
-  }, [syncManualStore]);
+  // ===== package =====
+  const pkg = useMemo(
+    () => getPackage?.(packageKey) || PACKAGES?.[packageKey] || PACKAGES.pro,
+    [packageKey]
+  );
 
-  // step sync
-  useEffect(() => {
-    const next = clampStep(initialStep);
-    setStep(next);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialStep]);
+  const COOLDOWN_MS = Number(pkg.intervalMs || 0) || 0;
+  const COOLDOWN_HOURS = COOLDOWN_MS ? COOLDOWN_MS / 3600000 : 0;
 
-  // ✅ เลือกได้ทีละ 1 อันเสมอ
-  const pickedBoostable = useMemo(() => selectedList.filter(canBoost)[0] || null, [selectedList]);
-  const pickedCount = pickedBoostable ? 1 : 0;
+  // ===== get propertyId from URL first =====
+  const queryId = useMemo(() => {
+    const a = searchParams?.get("propertyId");
+    const b = searchParams?.get("id");
+    const c = searchParams?.get("pid");
+    return String(a || b || c || "").trim();
+  }, [searchParams]);
 
-  const pickedSummary = useMemo(() => {
-    if (!pickedBoostable) return null;
+  // ===== resolve pickedId =====
+  const pickedId = useMemo(() => {
+    // priority: prop.property -> query -> selectedIds
+    if (property?.id != null) return String(property.id);
+    if (queryId) return queryId;
+    const sid = String(selectedIds?.[0] || "").trim();
+    return sid;
+  }, [property, queryId, selectedIds]);
+
+  // ===== resolve picked property =====
+  const picked = useMemo(() => {
+    // 1) if property prop given
+    if (property && String(property?.id ?? "") === String(pickedId || "")) return property;
+
+    // 2) from selectedList
+    const fromSelected =
+      (selectedList || []).find((p) => String(p?.id) === String(pickedId)) || selectedList?.[0] || null;
+    if (fromSelected) return fromSelected;
+
+    // 3) from properties prop
+    const fromProps = (properties || []).find((p) => String(p?.id) === String(pickedId)) || null;
+    if (fromProps) return fromProps;
+
+    // 4) fallback mock
+    const list = Array.isArray(mockData) ? mockData : [];
+    return list.find((p) => String(p?.id) === String(pickedId)) || null;
+  }, [property, selectedList, properties, pickedId]);
+
+  // ===== summary =====
+  const summary = useMemo(() => {
+    if (!picked) return null;
     return {
-      id: String(pickedBoostable.id),
-      title: pickedBoostable.title || `ประกาศ #${pickedBoostable.id}`,
-      location: pickLocationText(pickedBoostable),
+      id: String(picked.id),
+      title: safeText(picked.title, `ประกาศ #${picked.id}`),
+      location: pickLocationText(picked),
+      img: pickImage(picked),
+      listingType: pickListingType(picked),
+      propertyType: pickPropertyType(picked),
+      status: safeText(picked.status),
     };
-  }, [pickedBoostable]);
+  }, [picked]);
 
-  // ถ้า step 2 แต่ไม่มีที่เลือก -> เด้งกลับ
-  useEffect(() => {
-    if (step === 2 && !pickedBoostable) setStep(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pickedBoostable]);
+  const boostable = useMemo(() => !!picked && canBoost(picked), [picked]);
 
-  // ===== สถานะคูลดาวน์ของแต่ละโพส =====
-  const cooldownInfoById = useMemo(() => {
-    const m = {};
-    (properties || []).forEach((p) => {
-      const id = String(p.id);
-      const last = manualStore?.[id]?.lastBoostAt || 0;
-      const nextAt = last ? last + COOLDOWN_MS : 0;
-      const remain = nextAt ? Math.max(0, nextAt - now) : 0;
-      m[id] = { lastBoostAt: last, nextAt, remain };
-    });
-    return m;
-  }, [properties, manualStore, COOLDOWN_MS, now]);
+  // ===== cooldown check =====
+  const cooldown = useMemo(() => {
+    if (!pickedId) return { lastBoostAt: 0, remain: 0, ready: false, nextAt: 0 };
+    const store = readLS(LS_MANUAL, {});
+    const last = Number(store?.[pickedId]?.lastBoostAt || 0);
+    const nextAt = last ? last + COOLDOWN_MS : 0;
+    const remain = nextAt ? Math.max(0, nextAt - now) : 0;
+    return { lastBoostAt: last, nextAt, remain, ready: boostable && remain === 0 };
+  }, [pickedId, COOLDOWN_MS, now, boostable]);
 
-  const manualRunningList = useMemo(() => {
-    const arr = (properties || [])
-      .map((p) => {
-        const id = String(p.id);
-        const info = cooldownInfoById[id] || {};
-        return {
-          id,
-          title: p.title,
-          lastBoostAt: info.lastBoostAt || 0,
-          remain: info.remain || 0,
-        };
-      })
-      .filter((x) => x.lastBoostAt > 0 && x.remain > 0)
-      .sort((a, b) => (a.remain || 0) - (b.remain || 0))
-      .slice(0, 10);
-
-    return arr;
-  }, [properties, cooldownInfoById]);
-
-  // ===== list filter =====
-  const filtered = useMemo(() => {
-    const keyword = q.trim().toLowerCase();
-    let arr = [...(properties || [])];
-
-    if (keyword) {
-      arr = arr.filter((p) => {
-        const hay = `${p.title} ${p.id} ${pickLocationText(p)} ${p.location?.province || ""}`.toLowerCase();
-        return hay.includes(keyword);
-      });
-    }
-
-    arr.sort((a, b) => Number(canBoost(b)) - Number(canBoost(a)));
-    return arr;
-  }, [properties, q]);
-
-  // ===== pick behavior =====
-  const handlePickOne = (id, p) => {
-    if (isBusy) return;
-    if (!canBoost(p)) return;
-
-    const sid = String(id);
-    const already = selectedIds.includes(sid);
-
-    if (already) {
-      clearSelected();
-      return;
-    }
-
-    clearSelected();
-    toggleOne(sid);
-  };
-
-  // ===== picked cooldown =====
-  const pickedCooldown = useMemo(() => {
-    if (!pickedBoostable) return { remain: 0, ready: false };
-    const id = String(pickedBoostable.id);
-    const info = cooldownInfoById[id] || { remain: 0 };
-    const remain = Number(info.remain || 0);
-    const ready = canBoost(pickedBoostable) && remain === 0;
-    return { remain, ready };
-  }, [pickedBoostable, cooldownInfoById]);
-
-  // ===== step nav =====
-  const goNext = () => {
-    if (step !== 1) return;
-    if (!pickedBoostable) return toast.warn("กรุณาเลือกประกาศที่เผยแพร่แล้ว 1 รายการ");
-    if (!pickedCooldown.ready) return toast.warn(`ยังดันซ้ำไม่ได้ ต้องรออีก ${formatCountdown(pickedCooldown.remain)}`);
-    setStep(2);
-  };
-
-  const goBack = () => setStep(1);
+  const descText = useMemo(
+    () => `${pkg.label}: Manual: ${pkg.manualFreeText} · คูลดาวน์ ${pkg.intervalLabel || "ตามแพ็ก"}`,
+    [pkg]
+  );
 
   // ===== submit =====
   const submit = async () => {
     if (isBusy) return;
-    if (!pickedBoostable) return toast.warn("กรุณาเลือกประกาศที่เผยแพร่แล้ว 1 รายการ");
-    if (!pickedCooldown.ready) return toast.warn(`ยังดันซ้ำไม่ได้ ต้องรออีก ${formatCountdown(pickedCooldown.remain)}`);
+
+    if (!pickedId) return toast.warn("ไม่พบ ID ของประกาศ");
+    if (!picked) return toast.warn("ไม่พบประกาศที่เลือก");
+    if (!boostable) return toast.warn("ดันไม่ได้ (ต้องเป็นสถานะเผยแพร่แล้ว)");
+    if (!cooldown.ready) return toast.warn(`ยังดันซ้ำไม่ได้ ต้องรออีก ${formatCountdown(cooldown.remain)}`);
 
     setIsBusy(true);
     const tid = tLoading("กำลังดันแมนนวล...");
 
     try {
-      await new Promise((r) => setTimeout(r, 250));
+      await new Promise((r) => setTimeout(r, 200));
+      const ts = Date.now();
 
-      const id = String(pickedBoostable.id);
-      const store = readLS(LS_MANUAL, {});
-      const nextStore = store && typeof store === "object" ? store : {};
-      nextStore[id] = { lastBoostAt: Date.now() };
+      // 1) ✅ store ของหน้า boost (manual)
+      const manual = readLS(LS_MANUAL, {});
+      const nextManual = manual && typeof manual === "object" ? manual : {};
+      nextManual[pickedId] = { lastBoostAt: ts };
+      writeLS(LS_MANUAL, nextManual);
 
-      writeLS(LS_MANUAL, nextStore);
-      setManualStore(nextStore);
+      // 2) ✅ store ของหน้า "ทรัพย์สินของฉัน" (legacy/manual tag)
+      const boostV1 = readBoostStateV1();
+      boostV1[pickedId] = {
+        ...(boostV1?.[pickedId] || {}),
+        mode: "manual",
+        lastBoostAt: ts,
+        cooldownHours: COOLDOWN_HOURS || 0,
+      };
+      writeBoostStateV1(boostV1);
 
-      clearSelected();
-      setStep(1);
-      tUpdate(tid, "success", `ดันแมนนวลสำเร็จ: ${pickedBoostable.title}`);
+      tUpdate(tid, "success", `ดันแมนนวลสำเร็จ: ${summary?.title || `#${pickedId}`}`);
+
+      clearSelected?.();
+      router.push(backTo);
     } catch (e) {
+      console.error(e);
       tUpdate(tid, "error", "ดันแมนนวลไม่สำเร็จ");
     } finally {
       setIsBusy(false);
     }
   };
 
-  // ===== Header =====
-  const descText =
-    `${pkg.label}: ` +
-    `Auto ได้ ${pkg.autoMaxPosts} โพส · ` +
-    `ออโต้ดัน ${pkg.intervalLabel} · ` +
-    `Manual: ${pkg.manualFreeText}`;
+  // ===== UI badges =====
+  const rightBadges = (
+    <div className="d-flex gap-2 flex-wrap justify-content-end">
+      <ToneBadge tone="purple">{pkg.label}</ToneBadge>
+
+      {!picked ? (
+        <ToneBadge tone="gray">ไม่พบประกาศ</ToneBadge>
+      ) : boostable ? (
+        cooldown.ready ? (
+          <ToneBadge tone="green">พร้อมดัน</ToneBadge>
+        ) : (
+          <ToneBadge tone="red">รออีก {formatCountdown(cooldown.remain)}</ToneBadge>
+        )
+      ) : (
+        <ToneBadge tone="red">ดันไม่ได้</ToneBadge>
+      )}
+    </div>
+  );
 
   return (
-    <Card
-      title="ดันขึ้นฟีด (แมนนวล)"
-      desc={descText}
-      right={
-        <div className="d-flex gap-2 flex-wrap justify-content-end">
-          <ToneBadge tone="gray">เลือกแล้ว {pickedCount}/1</ToneBadge>
-          <button
-            type="button"
-            className="ud-btn btn-white2"
-            style={{ height: 44, padding: "0 14px", borderRadius: 12 }}
-            onClick={goAuto}
-            disabled={isBusy}
-          >
-            ไปแท็บออโต้
-          </button>
+    <Card title="ยืนยันการดันขึ้นฟีด (แมนนวล)" desc={descText} right={rightBadges}>
+      {/* ===== Package info ===== */}
+      <div
+        style={{ border: "1px solid #eee", borderRadius: 14, padding: 14, background: "#fafafa" }}
+        className="mb20"
+      >
+        <div className="fw700 mb10">สิทธิ์แพ็กเกจของคุณ</div>
+        <InfoRow label="แพ็กเกจ" value={safeText(pkg.label)} />
+        <InfoRow label="Manual" value={safeText(pkg.manualFreeText)} />
+        <InfoRow label="คูลดาวน์" value={safeText(pkg.intervalLabel || "-")} />
+        <div className="text-muted mt10" style={{ fontSize: 12 }}>
+          * หลังจากกดดัน จะติดคูลดาวน์ตามแพ็ก แล้วถึงจะดันซ้ำได้
         </div>
-      }
-    >
-      <div className="d-flex gap-2 flex-wrap mb20">
-        <StepPill active={step === 1} done={!!pickedBoostable} onClick={() => setStep(1)} disabled={false}>
-          1) เลือกประกาศ
-        </StepPill>
-        <StepPill active={step === 2} done={false} onClick={() => setStep(2)} disabled={!pickedBoostable}>
-          2) ยืนยัน
-        </StepPill>
       </div>
 
-      {/* ===== กล่องรายการติดคูลดาวน์ ===== */}
-      <div style={{ border: "1px solid #eee", borderRadius: 14, padding: 14, background: "#fafafa" }} className="mb20">
-        <div className="fw700">รายการกำลังดันอยู่ (แมนนวล)</div>
+      {/* ===== Property info ===== */}
+      <div style={{ border: "1px solid #eee", borderRadius: 14, padding: 14, background: "#fafafa" }}>
+        <div className="fw700 mb10">รายละเอียดทรัพย์ที่จะดัน</div>
 
-        {manualRunningList.length === 0 ? (
-          <div className="text-muted mt10" style={{ fontSize: 13 }}>
-            ยังไม่มีรายการที่ติดคูลดาวน์
-          </div>
-        ) : (
-          <div className="mt10" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {manualRunningList.map((x) => (
+        <div style={{ border: "1px solid #eee", borderRadius: 14, padding: 12, background: "#fff" }}>
+          <div className="d-flex gap-3 align-items-center flex-wrap">
+            <div
+              style={{
+                width: 86,
+                height: 64,
+                borderRadius: 12,
+                border: "1px solid #eee",
+                background: "#f3f4f6",
+                overflow: "hidden",
+                flex: "0 0 auto",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 12,
+                color: "#6b7280",
+              }}
+            >
+              {summary?.img ? (
+                <img src={summary.img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                "ไม่มีรูป"
+              )}
+            </div>
+
+            <div style={{ minWidth: 0, flex: "1 1 260px" }}>
               <div
-                key={x.id}
+                className="fw700"
                 style={{
-                  background: "#fff",
-                  border: "1px solid #eee",
-                  borderRadius: 12,
-                  padding: "10px 12px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 10,
+                  fontSize: 15,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
               >
-                <div style={{ minWidth: 0 }}>
-                  <div className="fw600" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {x.title}
-                  </div>
-                  <div className="text-muted" style={{ fontSize: 12 }}>
-                    รหัส: {x.id} · ดันล่าสุด: {new Date(x.lastBoostAt).toLocaleString()}
-                  </div>
-                </div>
-
-                <ToneBadge tone="red">ดันได้อีกใน {formatCountdown(x.remain)}</ToneBadge>
+                {summary?.title || "-"}
               </div>
-            ))}
-          </div>
-        )}
+              <div className="text-muted mt-1" style={{ fontSize: 12, lineHeight: 1.6 }}>
+                รหัส: <b>{summary?.id || pickedId || "-"}</b> <br />
+                ทำเล: <b>{summary?.location || "-"}</b>
+              </div>
+            </div>
 
-        <div className="text-muted mt10" style={{ fontSize: 12 }}>
-          * Manual: หลังจากกดดัน จะติดคูลดาวน์ตามแพ็กเกจ แล้วนับถอยหลังจนกดซ้ำได้
+            <div className="d-flex gap-2 flex-wrap justify-content-end" style={{ flex: "0 0 auto" }}>
+              <ToneBadge tone={boostable ? "green" : "red"}>
+                {picked ? (boostable ? "เผยแพร่แล้ว" : "ยังไม่เผยแพร่") : "ไม่พบประกาศ"}
+              </ToneBadge>
+
+              {cooldown.lastBoostAt ? (
+                <ToneBadge tone="gray">ดันล่าสุด: {formatThaiDateTime(cooldown.lastBoostAt)}</ToneBadge>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="mt12">
+            <InfoRow label="ประเภทประกาศ" value={safeText(summary?.listingType)} />
+            <InfoRow label="ประเภททรัพย์" value={safeText(summary?.propertyType)} />
+            <InfoRow label="สถานะ" value={safeText(summary?.status)} />
+            <InfoRow label="ID (อ้างอิง)" value={summary?.id || pickedId || "-"} />
+          </div>
         </div>
       </div>
 
-      {/* ===== Step 1 ===== */}
-      {step === 1 ? (
-        <>
-          <div className="row g-3 align-items-end mb20">
-            <div className="col-lg-8">
-              <label className="form-label fw600">ค้นหา</label>
-              <input
-                className="form-control"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="ชื่อประกาศ / รหัส / ทำเล"
-                style={{ height: 48, borderRadius: 12 }}
-                disabled={isBusy}
-              />
-            </div>
-
-            <div className="col-lg-4 d-flex gap-2 justify-content-end">
-              <button
-                type="button"
-                className="ud-btn btn-white2"
-                style={{ height: 48, borderRadius: 12, padding: "0 14px" }}
-                onClick={clearSelected}
-                disabled={isBusy}
-              >
-                ล้างที่เลือก {pickedCount ? "(1)" : ""}
-              </button>
-            </div>
+      <StickyBar>
+        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div className="text-muted" style={{ fontSize: 13 }}>
+            {!picked
+              ? "ไม่พบประกาศ (เช็คว่ามี propertyId ใน URL หรือไม่)"
+              : cooldown.ready
+              ? "กด “ยืนยันดัน” เพื่อดันขึ้นฟีดทันที"
+              : cooldown.remain > 0
+              ? `ยังดันซ้ำไม่ได้ ต้องรออีก ${formatCountdown(cooldown.remain)}`
+              : "ไม่สามารถดันได้"}
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {filtered.length === 0 ? (
-              <div className="text-center text-muted py-4">ไม่พบประกาศตามเงื่อนไข</div>
-            ) : (
-              filtered.map((p) => {
-                const id = String(p.id);
+          <div className="d-flex gap-2">
+            <button
+              type="button"
+              className="ud-btn btn-white2"
+              style={{ height: 46, padding: "0 16px", borderRadius: 12 }}
+              onClick={() => router.push(backTo)}
+              disabled={isBusy}
+            >
+              ย้อนกลับ
+            </button>
 
-                const info = cooldownInfoById[id] || {};
-                const remain = Number(info.remain || 0);
-
-                const isCoolingDown = canBoost(p) && remain > 0;
-
-                const disabledReason = !canBoost(p)
-                  ? "ดันไม่ได้ (ต้องเป็นสถานะเผยแพร่แล้ว)"
-                  : isCoolingDown
-                  ? `กำลังดันอยู่ — ดันได้อีกใน ${formatCountdown(remain)}`
-                  : "";
-
-                return (
-                  <PropertyPickRow
-                    key={id}
-                    p={p}
-                    checked={!!selectedMap?.[id]}
-                    disabledAll={isBusy || isCoolingDown}
-                    disabledReason={disabledReason}
-                    noteRight={isCoolingDown ? <ToneBadge tone="red">{formatCountdown(remain)}</ToneBadge> : null}
-                    badgeText={isCoolingDown ? "กำลังดัน" : undefined}
-                    badgeTone={isCoolingDown ? "blue" : undefined}
-                    onPick={() => handlePickOne(id, p)}
-                  />
-                );
-              })
-            )}
+            <button
+              type="button"
+              className="ud-btn btn-thme"
+              style={{ height: 46, padding: "0 18px", borderRadius: 12 }}
+              onClick={submit}
+              disabled={isBusy || !picked || !cooldown.ready}
+              title={!picked ? "ไม่พบทรัพย์" : !cooldown.ready ? "ยังติดคูลดาวน์/ดันไม่ได้" : ""}
+            >
+              {isBusy ? "กำลังดัน..." : "ยืนยันดัน"}
+            </button>
           </div>
-
-          <StickyBar>
-            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
-              <div className="text-muted" style={{ fontSize: 13 }}>
-                {pickedBoostable ? (
-                  pickedCooldown.ready ? (
-                    <>
-                      พร้อมดัน: <b>{pickedSummary?.title}</b> · <span>{pickedSummary?.location}</span>
-                    </>
-                  ) : (
-                    <>
-                      โพสนี้ดันได้อีกใน <b>{formatCountdown(pickedCooldown.remain)}</b>
-                    </>
-                  )
-                ) : (
-                  "เลือกประกาศที่ “เผยแพร่แล้ว” เพื่อดันขึ้นฟีด"
-                )}
-              </div>
-
-              <button
-                type="button"
-                className="ud-btn btn-thme"
-                style={{ height: 46, padding: "0 18px", borderRadius: 12 }}
-                onClick={goNext}
-                disabled={isBusy || !pickedBoostable || !pickedCooldown.ready}
-                title={!pickedBoostable ? "กรุณาเลือกประกาศ" : !pickedCooldown.ready ? "ยังติดคูลดาวน์" : ""}
-              >
-                {isBusy ? "กำลังทำ..." : "ถัดไป"}
-              </button>
-            </div>
-          </StickyBar>
-        </>
-      ) : null}
-
-      {/* ===== Step 2 ===== */}
-      {step === 2 ? (
-        <>
-          <div style={{ border: "1px solid #eee", borderRadius: 14, padding: 14, background: "#fafafa" }}>
-            <div className="fw700 mb10">ยืนยันการดัน (แมนนวล)</div>
-
-            <div style={{ border: "1px solid #eee", borderRadius: 14, padding: 12, background: "#fff" }}>
-              <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                <div className="fw700">สรุป</div>
-                <ToneBadge tone="purple">{pkg.label}</ToneBadge>
-              </div>
-
-              <div className="mt10" style={{ background: "#fafafa", border: "1px solid #eee", borderRadius: 12, padding: 12 }}>
-                <div className="fw700" style={{ marginBottom: 6 }}>
-                  {pickedSummary?.title || "-"}
-                </div>
-                <div className="text-muted" style={{ fontSize: 12, lineHeight: 1.6 }}>
-                  รหัส: <b>{pickedSummary?.id || "-"}</b>
-                  <br />
-                  ทำเล: <b>{pickedSummary?.location || "-"}</b>
-                </div>
-              </div>
-
-              <div className="text-muted mt10" style={{ fontSize: 13, lineHeight: 1.7 }}>
-                - Manual: <b>{pkg.manualFreeText}</b>
-                <br />
-                - สถานะตอนนี้:{" "}
-                {pickedCooldown.ready ? (
-                  <b style={{ color: "#0A7A3B" }}>พร้อมดัน</b>
-                ) : (
-                  <b style={{ color: "#374151" }}>รออีก {formatCountdown(pickedCooldown.remain)}</b>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <StickyBar>
-            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
-              <div className="text-muted" style={{ fontSize: 13 }}>
-                {pickedCooldown.ready
-                  ? "กด “ยืนยันดัน” เพื่อดันขึ้นฟีดทันที"
-                  : `ยังดันซ้ำไม่ได้ ต้องรออีก ${formatCountdown(pickedCooldown.remain)}`}
-              </div>
-
-              <div className="d-flex gap-2">
-                <button
-                  type="button"
-                  className="ud-btn btn-white2"
-                  style={{ height: 46, padding: "0 16px", borderRadius: 12 }}
-                  onClick={goBack}
-                  disabled={isBusy}
-                >
-                  ย้อนกลับ
-                </button>
-
-                <button
-                  type="button"
-                  className="ud-btn btn-thme"
-                  style={{ height: 46, padding: "0 18px", borderRadius: 12 }}
-                  onClick={submit}
-                  disabled={isBusy || !pickedBoostable || !pickedCooldown.ready}
-                >
-                  {isBusy ? "กำลังดัน..." : "ยืนยันดัน"}
-                </button>
-              </div>
-            </div>
-          </StickyBar>
-        </>
-      ) : null}
+        </div>
+      </StickyBar>
     </Card>
   );
 }

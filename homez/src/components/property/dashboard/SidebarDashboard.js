@@ -115,11 +115,6 @@ const SidebarDashboard = () => {
           icon: "fas fa-book",
           text: "คอร์สเรียนของฉัน",
         },
-        {
-          href: "/dashboard-boost-property",
-          icon: "fas fa-rocket",
-          text: "โปรโมตทรัพย์สิน",
-        }
       ],
     },
 
