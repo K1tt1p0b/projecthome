@@ -164,16 +164,25 @@ const PropertySummary = ({
       "-";
     announcerStatusLabel = String(announcerStatusLabel || "-");
 
+    // ✅ price fields (ใหม่)
+    // - เราเลิกใช้ xxxx แล้ว
+    // - showPrice=false => ใช้ price_text เป็น masked (xx,xxx,xxx)
+    const showPrice = b.showPrice !== undefined ? Boolean(b.showPrice) : true;
+
     return {
       title: String(b.title || "-"),
       description: String(b.description || "-"),
-      price: b.price ?? b.price_text ?? undefined,
-      price_text: b.price_text, // ✅ สำหรับเช็ค "xxxx"
+
+      showPrice,
+      price: b.price ?? undefined,
+      price_text: b.price_text ?? undefined, // จะเป็นเลขเต็ม หรือ masked ก็ได้
+
       approxPrice: b.approxPrice_label
         ? String(b.approxPrice_label)
         : b.approxPrice
         ? String(b.approxPrice)
         : null,
+
       listingType: listingTypeLabel,
       propertyType: propertyTypeLabel,
       condition: conditionLabel,
@@ -181,17 +190,32 @@ const PropertySummary = ({
     };
   }, [safeBasic]);
 
-  const formatPrice = (p, priceText) => {
-    if (priceText === "xxxx" || String(priceText || "").trim() === "xxxx") {
-      return "ไม่ระบุราคา";
+  // ✅ format ราคาแบบใหม่
+  // - ถ้า showPrice=false => แสดง price_text (masked)
+  // - ถ้า showPrice=true  => แสดงเลขจริงจาก price (บาท)
+  // - fallback ใช้ price_text ถ้ามี
+  const formatPrice = (priceValue, priceText, showPrice) => {
+    // โหมดปกปิด: แสดง text เลย (xx,xxx,xxx)
+    if (showPrice === false) {
+      const t = String(priceText ?? "").trim();
+      if (t) return `${t} บาท`;
+      // fallback: ถ้าไม่มี text ก็ทำจากเลข
+      const n = Number(String(priceValue ?? "").replace(/,/g, ""));
+      if (Number.isFinite(n) && n > 0) {
+        return n.toLocaleString("en-US").replace(/\d/g, "x") + " บาท";
+      }
+      return "-";
     }
-    if (p === undefined || p === null || p === "") return "-";
-    if (typeof p === "number") {
-      if (p <= 0) return "ไม่ระบุราคา";
-      return p.toLocaleString() + " บาท";
-    }
-    const n = Number(String(p).replace(/,/g, ""));
-    return Number.isFinite(n) && n > 0 ? n.toLocaleString() + " บาท" : "ไม่ระบุราคา";
+
+    // โหมดแสดงราคาเต็ม
+    const n = Number(String(priceValue ?? "").replace(/,/g, ""));
+    if (Number.isFinite(n) && n > 0) return n.toLocaleString("en-US") + " บาท";
+
+    // fallback: ถ้า price เป็นค่าว่าง แต่มี price_text เป็นตัวเลข
+    const n2 = Number(String(priceText ?? "").replace(/,/g, ""));
+    if (Number.isFinite(n2) && n2 > 0) return n2.toLocaleString("en-US") + " บาท";
+
+    return "-";
   };
 
   // ✅ Details: props เป็นหลัก / กัน hydration
@@ -509,7 +533,11 @@ const PropertySummary = ({
               </p>
               <p>
                 <strong>ราคา:</strong>{" "}
-                {formatPrice(resolvedBasicInfo.price, resolvedBasicInfo.price_text)}
+                {formatPrice(
+                  resolvedBasicInfo.price,
+                  resolvedBasicInfo.price_text,
+                  resolvedBasicInfo.showPrice
+                )}
               </p>
               {resolvedBasicInfo.approxPrice && (
                 <p>

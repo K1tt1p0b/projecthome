@@ -35,19 +35,28 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     []
   );
 
-  // ✅ เพิ่ม "ร้านค้า" ในประเภททรัพย์
+  // ✅ เพิ่ม "ร้านค้า" + "หอพัก" ในประเภททรัพย์
   const propertyTypeOptions = useMemo(() => {
     const existsShop = (propertyTypeOptionsRaw || []).some(
       (o) => String(o?.value) === "shop" || String(o?.label) === "ร้านค้า"
     );
-    if (existsShop) return propertyTypeOptionsRaw;
-    return [...(propertyTypeOptionsRaw || []), { value: "shop", label: "ร้านค้า" }];
+
+    const existsDormitory = (propertyTypeOptionsRaw || []).some(
+      (o) => String(o?.value) === "dormitory" || String(o?.label) === "หอพัก"
+    );
+
+    let next = propertyTypeOptionsRaw || [];
+
+    if (!existsShop) next = [...next, { value: "shop", label: "ร้านค้า" }];
+    if (!existsDormitory) next = [...next, { value: "dormitory", label: "หอพัก" }];
+
+    return next;
   }, []);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
-  // ✅ ราคา + แสดงราคา
+  // ✅ ราคา + แสดงราคา (ติ๊ก = แสดงเต็ม / ไม่ติ๊ก = โชว์แบบ xxx)
   const [showPrice, setShowPrice] = useState(true);
   const [price, setPrice] = useState("");
 
@@ -90,6 +99,14 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     const num = Number(n);
     if (!Number.isFinite(num) || num <= 0) return "";
     return num.toLocaleString("en-US");
+  };
+
+  // ✅ แบบที่ 1: แทนทุกเลขด้วย x แต่คง comma ไว้ (12,345,678 -> xx,xxx,xxx)
+  const maskPriceDigits = (priceNumber) => {
+    const n = Number(priceNumber);
+    if (!Number.isFinite(n) || n <= 0) return "";
+    const formatted = n.toLocaleString("en-US");
+    return formatted.replace(/\d/g, "x");
   };
 
   // ✅ ตรวจว่าประเภทการขาย = "เซ้ง" ไหม (กันพลาดทั้ง value/label)
@@ -155,18 +172,21 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     setTitle(initialValue.title ?? "");
     setDescription(initialValue.description ?? "");
 
-    // ✅ showPrice
-    const show =
-      initialValue.showPrice ??
-      (Number(initialValue.price ?? 0) > 0 || !!(initialValue.price_text ?? initialValue.priceText));
-    setShowPrice(Boolean(show));
-
     // ✅ price
     const initialPriceText =
       initialValue.price_text ??
       initialValue.priceText ??
       (initialValue.price != null ? formatNumberWithComma(initialValue.price) : "");
     setPrice(String(initialPriceText ?? ""));
+
+    // ✅ showPrice (ติ๊กแสดงราคา)
+    // ถ้า price_text เป็นรูปแบบ x (เช่น xx,xxx,xxx) ให้ถือว่า "ไม่แสดงราคา" => showPrice=false
+    const pt = String(initialPriceText ?? "").trim();
+    const looksMasked = pt.includes("x") || pt.includes("X");
+    const show =
+      initialValue.showPrice ??
+      (!looksMasked && (Number(initialValue.price ?? 0) > 0 || !!pt));
+    setShowPrice(Boolean(show));
 
     // ✅ approxPrice
     const ap =
@@ -197,11 +217,11 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     setListingType(lt);
 
     // propertyType (ตั้งค่าตาม initial ไว้ก่อน)
-    const pt =
+    const ptOpt =
       toOption(initialValue.propertyType, propertyTypeOptions) ||
       toOption(initialValue.propertyType_label, propertyTypeOptions) ||
       toOption(initialValue.propertyType_value, propertyTypeOptions);
-    setPropertyType(pt);
+    setPropertyType(ptOpt);
 
     // condition
     const cd =
@@ -222,10 +242,13 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     title: title.trim(),
     description: description.trim(),
 
-    // ✅ ราคา: ถ้าไม่แสดงราคา ให้เป็น xxxx
+    // ✅ ราคา (บังคับกรอกเสมอ)
+    // - showPrice=true  => แสดงราคาเต็ม (price_text = ที่กรอก)
+    // - showPrice=false => แสดงแบบ x (price_text = xx,xxx,xxx)
+    // ✅ แต่ price เก็บเลขจริงไว้เสมอ เพื่อ filter/sort
     showPrice,
-    price_text: showPrice ? price : "xxxx",
-    price: showPrice ? priceNumber : 0,
+    price_text: showPrice ? price : maskPriceDigits(priceNumber),
+    price: priceNumber,
 
     // ✅ ราคาประมาณ (dropdown)
     approxPrice: approxPrice?.value ?? null,
@@ -254,7 +277,10 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     if (!listingType) return "ประเภทการขาย";
     if (!propertyType) return "ประเภททรัพย์";
     if (!condition) return "สภาพทรัพย์";
-    if (showPrice && (!price.trim() || priceNumber <= 0)) return "ราคา";
+
+    // ✅ ราคา: บังคับเสมอ (ติ๊กหรือไม่ติ๊กก็ต้องมีเลขจริง)
+    if (!price.trim() || priceNumber <= 0) return "ราคา";
+
     return null;
   };
 
@@ -265,7 +291,7 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     const noListing = !listingType;
     const noPropertyType = !propertyType;
     const noCondition = !condition;
-    const noPrice = showPrice ? (!price.trim() || priceNumber <= 0) : true;
+    const noPrice = !price.trim() || priceNumber <= 0;
 
     return noTitle && noDesc && noAnnouncer && noListing && noPropertyType && noCondition && noPrice;
   };
@@ -289,6 +315,12 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     onSaveDraft?.(buildFormData());
     alert("บันทึกร่างประกาศเรียบร้อย (mock)");
   };
+
+  // ✅ preview ข้อความราคาที่จะแสดงจริง
+  const displayPricePreview = useMemo(() => {
+    if (!priceNumber) return "";
+    return showPrice ? formatNumberWithComma(priceNumber) : maskPriceDigits(priceNumber);
+  }, [showPrice, priceNumber]);
 
   return (
     <form
@@ -396,7 +428,6 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
                 />
               )}
             </div>
-
           </div>
         </div>
 
@@ -430,7 +461,7 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
               <div className="mb30">
                 <div className="d-flex align-items-center justify-content-between mb10">
                   <label className="heading-color ff-heading fw600 mb0">
-                    ราคา {showPrice && <span className="text-danger">*</span>}
+                    ราคา <span className="text-danger">*</span>
                   </label>
 
                   <label className="d-flex align-items-center gap-2 mb-0">
@@ -443,19 +474,20 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
                   </label>
                 </div>
 
+                {/* ✅ ไม่ disable แล้ว เพราะต้องกรอกเสมอ */}
                 <input
                   type="text"
                   inputMode="numeric"
                   className="form-control"
-                  placeholder={showPrice ? "กรอกราคาทรัพย์" : "ไม่แสดงราคา (จะส่งเป็น xxxx)"}
-                  value={showPrice ? price : ""}
-                  disabled={!showPrice}
+                  placeholder="กรอกราคาทรัพย์"
+                  value={price}
                   onChange={(e) => setPrice(e.target.value.replace(/[^\d,]/g, ""))}
                 />
 
-                {!showPrice && (
+                {/* ✅ preview ให้เห็นว่าจะโชว์แบบไหน */}
+                {priceNumber > 0 && (
                   <small className="text-muted d-block mt-1">
-                    ตอนบันทึก/ถัดไป ระบบจะส่ง <b>price_text = "xxxx"</b>
+                    จะแสดงเป็น: <b>{displayPricePreview}</b>
                   </small>
                 )}
               </div>

@@ -17,6 +17,8 @@ const isHouseLand = (t) => norm(t) === "house-and-land";
 const isLandOnly = (t) => norm(t) === "land";
 const isCondo = (t) => norm(t) === "condo";
 const isRoomRent = (t) => norm(t) === "room-rent";
+const isDormitory = (t) => norm(t) === "dormitory"; // ✅ เพิ่ม: หอพัก = ฟอร์มเดียวกับห้องเช่า
+
 // ❌ ร้านค้า/ธุรกิจ ยังไม่ทำตามที่สั่ง
 const isShop = (t) => norm(t) === "shop" || norm(t) === "business";
 
@@ -154,8 +156,8 @@ const DetailsFiled = ({
   );
 
   /* =========================
-     คอนโด (condo) / ห้องเช่า (room-rent)
-     ✅ ตาม requirement ใหม่: เหมือนกัน
+     คอนโด (condo) / ห้องเช่า (room-rent) / หอพัก (dormitory)
+     ✅ requirement: เหมือนกัน
   ========================= */
   // required
   const [unitFloor, setUnitFloor] = useState(initialValue?.unitFloor || "");
@@ -213,7 +215,7 @@ const DetailsFiled = ({
     setLandFillStatus(initialValue.landFillStatus ?? "");
     setZoningColor(initialValue.zoningColor ?? "");
 
-    // condo/room-rent unified
+    // condo/room-rent/dorm unified
     setUnitFloor(initialValue.unitFloor ?? "");
     setRoomArea(initialValue.roomArea ?? "");
     setBuilding(initialValue.building ?? "");
@@ -252,8 +254,8 @@ const DetailsFiled = ({
       setZoningColor("");
     }
 
-    // condo/room-rent (เหมือนกัน)
-    if (!isCondo(propertyType) && !isRoomRent(propertyType)) {
+    // condo/room-rent/dorm (เหมือนกัน)
+    if (!isCondo(propertyType) && !isRoomRent(propertyType) && !isDormitory(propertyType)) {
       setUnitFloor("");
       setRoomArea("");
       setBuilding("");
@@ -301,7 +303,7 @@ const DetailsFiled = ({
     landFillStatus,
     zoningColor,
 
-    // condo + room-rent unified
+    // condo + room-rent + dorm unified
     unitFloor,
     roomArea,
     building,
@@ -416,8 +418,8 @@ const DetailsFiled = ({
       }
     }
 
-    // คอนโด + ห้องเช่า (เหมือนกัน)
-    if (isCondo(propertyType) || isRoomRent(propertyType)) {
+    // ✅ คอนโด + ห้องเช่า + หอพัก (เหมือนกัน)
+    if (isCondo(propertyType) || isRoomRent(propertyType) || isDormitory(propertyType)) {
       if (!String(unitFloor || "").trim()) {
         setError("กรุณาระบุ ชั้น");
         return;
@@ -448,6 +450,7 @@ const DetailsFiled = ({
     if (isLandOnly(propertyType)) return "รายละเอียดที่ดินเปล่า";
     if (isCondo(propertyType)) return "รายละเอียดคอนโด";
     if (isRoomRent(propertyType)) return "รายละเอียดห้องเช่า";
+    if (isDormitory(propertyType)) return "รายละเอียดหอพัก"; // ✅ เพิ่ม
     if (isShop(propertyType)) return "รายละเอียดร้านค้า";
     return "รายละเอียด";
   }, [propertyType]);
@@ -755,9 +758,9 @@ const DetailsFiled = ({
         )}
 
         {/* =======================
-            คอนโด + ห้องเช่า (เหมือนกัน)
+            คอนโด + ห้องเช่า + หอพัก (เหมือนกัน)
         ======================= */}
-        {(isCondo(propertyType) || isRoomRent(propertyType)) && (
+        {(isCondo(propertyType) || isRoomRent(propertyType) || isDormitory(propertyType)) && (
           <>
             <div className="col-sm-6 col-md-3 mb20">
               <label className="fw600 mb10">
