@@ -3,17 +3,49 @@ import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 
-
 const SidebarDashboard = () => {
   const pathname = usePathname();
   const [hovered, setHovered] = useState(null);
 
   // dropdown
   const [openMicrosite, setOpenMicrosite] = useState(false);
+  const [openSupport, setOpenSupport] = useState(false);
 
+  /**
+   * ✅ ให้เมนู "ทรัพย์สินของฉัน" ติดแท็บดำ (active) เวลาผู้ใช้อยู่ใน flow ที่เกี่ยวกับทรัพย์สิน:
+   * - /dashboard-my-properties (หน้ารายการ)
+   * - /dashboard-boost-property (หน้าเลือก/ยืนยันดัน)
+   * - /dashboard-add-property (หน้าเพิ่ม)
+   * - /dashboard-edit-property/[id] (หน้าแก้ไข)
+   * - และเผื่อชื่อ route อื่น ๆ ที่คล้าย ๆ กัน
+   *
+   * usePathname() ไม่รวม query string อยู่แล้ว เลยไม่ต้องเช็ค ?propertyId=...
+   */
   const isActive = (href) => {
     if (!href || href === "#") return false;
-    return pathname === href || pathname.startsWith(href + "/");
+
+    // ✅ alias mapping: ถ้า pathname เป็นพวกนี้ ให้ถือว่า active ที่เมนู href นี้ด้วย
+    const aliasActiveMap = {
+      "/dashboard-my-properties": [
+        "/dashboard-boost-property", // boost manual/auto
+        "/dashboard-add-property", // add property (กรณีใช้ชื่อนี้)
+        "/add-property", // เผื่อ template เดิม
+        "/dashboard-create-property", // เผื่อมึงตั้ง route แบบนี้
+        "/dashboard-edit-property", // ✅ แก้ไขทรัพย์สิน (ทั้ง /dashboard-edit-property/1 หรือ /dashboard-edit-property/abc)
+        "/dashboard-edit-property/", // เผื่อบางเคสมี slash ต่อท้าย
+        "/dashboard-my-properties-edit", // เผื่อบางคนตั้งแบบนี้
+      ],
+    };
+
+    // 1) active ปกติ
+    const direct = pathname === href || pathname.startsWith(href + "/");
+    if (direct) return true;
+
+    // 2) active แบบ alias
+    const aliases = aliasActiveMap[href] || [];
+    if (aliases.some((p) => pathname === p || pathname.startsWith(p))) return true;
+
+    return false;
   };
 
   const micrositeItems = useMemo(
@@ -26,15 +58,6 @@ const SidebarDashboard = () => {
     []
   );
 
-  const isMicrositeActive = useMemo(() => {
-    return micrositeItems.some((it) => isActive(it.href));
-  }, [micrositeItems, pathname]);
-
-  useEffect(() => {
-    if (isMicrositeActive) setOpenMicrosite(true);
-  }, [isMicrositeActive]);
-
-  // --- 1. รายการเมนูในกลุ่ม Support ---
   const supportItems = useMemo(
     () => [
       { href: "/agent-faq", icon: "fas fa-circle-question", text: "คำถามที่พบบ่อย (FAQ)" },
@@ -43,13 +66,12 @@ const SidebarDashboard = () => {
     []
   );
 
-  // --- 2. เช็คว่าเปิดหน้า Support อยู่ไหม ---
-  const isSupportActive = useMemo(() => {
-    return supportItems.some((it) => isActive(it.href));
-  }, [supportItems, pathname]);
+  const isMicrositeActive = useMemo(() => micrositeItems.some((it) => isActive(it.href)), [micrositeItems, pathname]);
+  const isSupportActive = useMemo(() => supportItems.some((it) => isActive(it.href)), [supportItems, pathname]);
 
-  // --- 3. State เปิด/ปิด ---
-  const [openSupport, setOpenSupport] = useState(false);
+  useEffect(() => {
+    if (isMicrositeActive) setOpenMicrosite(true);
+  }, [isMicrositeActive]);
 
   useEffect(() => {
     if (isSupportActive) setOpenSupport(true);
@@ -59,37 +81,13 @@ const SidebarDashboard = () => {
     {
       title: "เมนูหลัก",
       items: [
-        {
-          href: "/dashboard-home",
-          icon: "flaticon-discovery",
-          text: "หน้าแดชบอร์ด",
-        },
-        {
-          href: "/dashboard-my-profile",
-          icon: "flaticon-user",
-          text: "โปรไฟล์ของฉัน",
-        },
-        {
-          href: "/dashboard-message",
-          icon: "flaticon-chat-1",
-          unreadCount: 5,
-          text: "ข้อความ",
-        },
-        {
-          href: "/dashboard-agent-contacts",
-          icon: "flaticon-chat",
-          unreadCount: 2,
-          text: "รายการผู้ติดต่อ",
-        },
+        { href: "/dashboard-home", icon: "flaticon-discovery", text: "หน้าแดชบอร์ด" },
+        { href: "/dashboard-my-profile", icon: "flaticon-user", text: "โปรไฟล์ของฉัน" },
+        { href: "/dashboard-message", icon: "flaticon-chat-1", unreadCount: 5, text: "ข้อความ" },
+        { href: "/dashboard-agent-contacts", icon: "flaticon-chat", unreadCount: 2, text: "รายการผู้ติดต่อ" },
 
-        // ✅ Microsite dropdown อยู่ในเมนูหลัก
-        {
-          type: "dropdown",
-          key: "microsite",
-          icon: "fas fa-layer-group",
-          text: "Microsite",
-          children: micrositeItems,
-        },
+        // ✅ Microsite dropdown
+        { type: "dropdown", key: "microsite", icon: "fas fa-layer-group", text: "Microsite", children: micrositeItems },
       ],
     },
     {
@@ -100,49 +98,21 @@ const SidebarDashboard = () => {
           icon: "flaticon-home",
           text: "ทรัพย์สินของฉัน",
         },
-        {
-          href: "/dashboard-banners",
-          icon: "flaticon-house-price",
-          text: "โฆษณาทรัพย์สิน",
-        },
-        {
-          href: "/dashboard-my-construction",
-          icon: "fas fa-hard-hat",
-          text: "งานบริการของฉัน",
-        },
-        {
-          href: "/dashboard-my-course",
-          icon: "fas fa-book",
-          text: "คอร์สเรียนของฉัน",
-        },
+        { href: "/dashboard-banners", icon: "flaticon-house-price", text: "โฆษณาทรัพย์สิน" },
+        { href: "/dashboard-my-construction", icon: "fas fa-hard-hat", text: "งานบริการของฉัน" },
+        { href: "/dashboard-my-course", icon: "fas fa-book", text: "คอร์สเรียนของฉัน" },
       ],
     },
-
     {
       title: "การตั้งค่าบัญชี",
       items: [
-        {
-          href: "/pricing",
-          icon: "flaticon-protection",
-          text: "แพ็กเกจสมาชิก",
-        },
-        {
-          href: "/dashboard-my-package",
-          icon: "flaticon-review",
-          text: "ประวัติการชำระเงิน",
-        },
-        {
-          type: "dropdown",
-          key: "support",       // Key ห้ามซ้ำกับอันอื่น
-          icon: "fas fa-headset", // ไอคอนรูปหูฟัง/เครื่องหมายคำถาม
-          text: "ช่วยเหลือ",      // ชื่อเมนู
-          children: supportItems, // เอาลูกๆ มาใส่ตรงนี้
-        },
-        {
-          href: "/login",
-          icon: "flaticon-logout",
-          text: "ออกจากระบบ",
-        },
+        { href: "/pricing", icon: "flaticon-protection", text: "แพ็กเกจสมาชิก" },
+        { href: "/dashboard-my-package", icon: "flaticon-review", text: "ประวัติการชำระเงิน" },
+
+        // ✅ Support dropdown
+        { type: "dropdown", key: "support", icon: "fas fa-headset", text: "ช่วยเหลือ", children: supportItems },
+
+        { href: "/login", icon: "flaticon-logout", text: "ออกจากระบบ" },
       ],
     },
   ];
@@ -199,15 +169,13 @@ const SidebarDashboard = () => {
     );
   };
 
-const renderDropdownItem = (item, key) => {
-    // 1. เช็คว่าเป็นเมนูไหน เพื่อเลือกใช้ State ให้ถูกตัว
-    // ถ้าเป็น support ให้ใช้ openSupport, ถ้าไม่ใช่ให้ใช้ openMicrosite
+  const renderDropdownItem = (item, key) => {
     const isOpen = item.key === "support" ? openSupport : openMicrosite;
     const setIsOpen = item.key === "support" ? setOpenSupport : setOpenMicrosite;
 
     const isHover = hovered === key;
-    // เช็ค highlight: ถ้าเมนูย่อยเปิดอยู่ หรือ เมาส์ชี้อยู่
-    const highlight = (item.key === "support" ? isSupportActive : isMicrositeActive) || isHover;
+    const groupActive = item.key === "support" ? isSupportActive : isMicrositeActive;
+    const highlight = groupActive || isHover;
 
     return (
       <div key={key}>
@@ -216,9 +184,8 @@ const renderDropdownItem = (item, key) => {
             type="button"
             onMouseEnter={() => setHovered(key)}
             onMouseLeave={() => setHovered(null)}
-            // ✅ แก้ตรงนี้: ใส่ e.preventDefault() กันหน้าเด้ง และใช้ setIsOpen ตามคีย์
             onClick={(e) => {
-              e.preventDefault(); 
+              e.preventDefault();
               setIsOpen((v) => !v);
             }}
             aria-expanded={isOpen}
@@ -237,7 +204,7 @@ const renderDropdownItem = (item, key) => {
             <i
               className="fas fa-chevron-down"
               style={{
-                transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", // ✅ ใช้ isOpen ที่เช็คมาแล้ว
+                transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
                 transition: "transform .15s ease",
                 color: highlight ? "#fff" : "",
               }}
@@ -247,7 +214,7 @@ const renderDropdownItem = (item, key) => {
 
         <div
           style={{
-            maxHeight: isOpen ? 500 : 0, // ✅ ใช้ isOpen ที่เช็คมาแล้ว
+            maxHeight: isOpen ? 500 : 0,
             overflow: "hidden",
             transition: "max-height .2s ease",
           }}
@@ -292,17 +259,11 @@ const renderDropdownItem = (item, key) => {
       <div className="dashboard_sidebar_list">
         {sidebarItems.map((section, sectionIndex) => (
           <div key={sectionIndex}>
-            <p className={`fz15 fw400 ff-heading ${sectionIndex === 0 ? "mt-0" : "mt30"}`}>
-              {section.title}
-            </p>
+            <p className={`fz15 fw400 ff-heading ${sectionIndex === 0 ? "mt-0" : "mt30"}`}>{section.title}</p>
 
             {section.items.map((item, itemIndex) => {
               const key = `${sectionIndex}-${itemIndex}`;
-
-              if (item.type === "dropdown") {
-                return renderDropdownItem(item, key);
-              }
-
+              if (item.type === "dropdown") return renderDropdownItem(item, key);
               return renderLinkItem(item, key);
             })}
           </div>
