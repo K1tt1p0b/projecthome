@@ -1,8 +1,9 @@
+// PropertyDataTable.js
 "use client";
 
 import Image from "next/image";
 import Link from "next/link";
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Tooltip as ReactTooltip } from "react-tooltip";
 import { useRouter } from "next/navigation";
 import { propertyData as mockData } from "@/data/propertyData";
@@ -146,74 +147,69 @@ function readUserPackageKey() {
 }
 
 // =====================
-// ✅ Auto store helpers
+// ✅ Auto store helpers (single active + single queue + cancelAfterCooldown)
 // =====================
 function normalizeAutoStore(raw, fallbackPkgKey) {
   const s = raw && typeof raw === "object" ? raw : {};
+
   const pkgKey =
     typeof s.packageKey === "string" && s.packageKey
       ? s.packageKey
       : fallbackPkgKey;
 
+  // ---- legacy (เก่า) ----
+  const oldItems = s.items && typeof s.items === "object" ? s.items : {};
+  const oldOrder = Array.isArray(s.order) ? s.order.map(String).filter(Boolean) : [];
+  const oldQueue = Array.isArray(s.queue) ? s.queue.map(String).filter(Boolean) : [];
+
+  const legacyActiveId =
+    typeof s.activePropertyId === "string" && s.activePropertyId
+      ? s.activePropertyId
+      : oldOrder.find((id) => !!oldItems?.[id]) || Object.keys(oldItems)[0] || "";
+
+  const legacyQueuedId =
+    typeof s.queuedPropertyId === "string" && s.queuedPropertyId
+      ? s.queuedPropertyId
+      : oldQueue[0] || "";
+
+  const legacyActiveItem = legacyActiveId ? oldItems?.[legacyActiveId] : null;
+
+  const cooldownEndAt =
+    typeof s.cooldownEndAt === "number" && s.cooldownEndAt
+      ? s.cooldownEndAt
+      : typeof legacyActiveItem?.nextRunAt === "number"
+      ? legacyActiveItem.nextRunAt
+      : 0;
+
+  const activeStartedAt =
+    typeof s.activeStartedAt === "number" && s.activeStartedAt
+      ? s.activeStartedAt
+      : typeof legacyActiveItem?.enabledAt === "number"
+      ? legacyActiveItem.enabledAt
+      : 0;
+
   return {
     enabled: !!s.enabled,
     packageKey: isValidPackageKey(pkgKey) ? pkgKey : fallbackPkgKey,
-    items: s.items && typeof s.items === "object" ? s.items : {},
-    queue: Array.isArray(s.queue) ? s.queue.map((x) => String(x)).filter(Boolean) : [],
-    order: Array.isArray(s.order) ? s.order.map((x) => String(x)).filter(Boolean) : [],
+
+    activePropertyId: String(legacyActiveId || ""),
+    queuedPropertyId: String(legacyQueuedId || ""),
+
+    activeStartedAt: Number(activeStartedAt || 0),
+    cooldownEndAt: Number(cooldownEndAt || 0),
+
+    cancelAfterCooldown: !!s.cancelAfterCooldown,
   };
 }
 
-function getActiveIdsFromStore(store) {
-  const items = store?.items && typeof store.items === "object" ? store.items : {};
-  let order = Array.isArray(store?.order) ? store.order.map(String).filter(Boolean) : [];
-  order = order.filter((id) => !!items?.[id]);
-  if (order.length > 0) return order;
-  return Object.keys(items).map(String);
-}
-
-function dedupeKeepOrder(arr) {
-  const seen = new Set();
-  const out = [];
-  for (const x of arr || []) {
-    const s = String(x || "").trim();
-    if (!s || seen.has(s)) continue;
-    seen.add(s);
-    out.push(s);
-  }
-  return out;
-}
-
-// migrate auto store เมื่อเปลี่ยนแพ็ก
+// migrate auto store เมื่อเปลี่ยนแพ็ก (sync packageKey อย่างเดียว)
 function migrateAutoStoreToPackage(newPkgKey) {
   const raw = readLS(LS_AUTO, AUTO_FALLBACK);
   const store = normalizeAutoStore({ ...AUTO_FALLBACK, ...raw }, newPkgKey);
 
   if (store.packageKey === newPkgKey) return;
 
-  const pkg = getPackage(newPkgKey);
-  const max = Number(pkg?.autoMaxPosts || 1) || 1;
-
-  const activeIds = getActiveIdsFromStore(store);
-  const keep = activeIds.slice(0, max);
-  const moveToQueue = activeIds.slice(max);
-
-  const nextItems = {};
-  for (const id of keep) {
-    if (store.items?.[id]) nextItems[id] = store.items[id];
-  }
-
-  const nextOrder = dedupeKeepOrder(keep);
-  const nextQueue = dedupeKeepOrder([...(store.queue || []), ...moveToQueue]);
-
-  const next = {
-    ...store,
-    packageKey: newPkgKey,
-    items: nextItems,
-    order: nextOrder,
-    queue: nextQueue,
-  };
-
+  const next = { ...store, packageKey: newPkgKey };
   writeLS(LS_AUTO, next);
 }
 
@@ -235,6 +231,32 @@ function formatHMS(totalSec) {
   const mm = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
   const ss = String(s % 60).padStart(2, "0");
   return `${hh}:${mm}:${ss}`;
+}
+
+function formatThaiTimeOnly(ts) {
+  if (!ts) return "-";
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return "-";
+  return d.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+}
+
+// ✅ NEW: block rule — ต้องยกเลิก Active ก่อน + ต้องยกเลิก Queue ก่อน (ถ้ามีคิวอยู่แล้ว)
+function getAutoBlockInfo(userPkgKey) {
+  const raw = readLS(LS_AUTO, AUTO_FALLBACK);
+  const s = normalizeAutoStore({ ...AUTO_FALLBACK, ...raw }, userPkgKey);
+
+  const activeId = String(s.activePropertyId || "");
+  const queuedId = String(s.queuedPropertyId || "");
+
+  const blockedNeedCancelActive = !!activeId && !s.cancelAfterCooldown;
+  const blockedNeedCancelQueue = !!queuedId;
+
+  return {
+    activeId,
+    queuedId,
+    blockedNeedCancelActive,
+    blockedNeedCancelQueue,
+  };
 }
 
 // ===== skeleton row =====
@@ -506,7 +528,57 @@ const PropertyDataTable = () => {
   };
 
   // =========================
-  // ✅ Boost status per property (QUEUE ETA realtime + ไม่ 00:00:00)
+  // ✅ Auto tick (simulate run)
+  // =========================
+  useEffect(() => {
+    const raw = readLS(LS_AUTO, AUTO_FALLBACK);
+    const store = normalizeAutoStore({ ...AUTO_FALLBACK, ...raw }, userPkgKey);
+
+    if (!store.enabled) return;
+    if (!store.activePropertyId) return;
+    if (!AUTO_INTERVAL_MS) return;
+
+    const endAt = Number(store.cooldownEndAt || 0);
+    if (!endAt) return;
+
+    const now = Date.now();
+    if (now < endAt) return;
+
+    const next = { ...store };
+
+    if (next.queuedPropertyId) {
+      next.activePropertyId = next.queuedPropertyId;
+      next.queuedPropertyId = "";
+      next.cancelAfterCooldown = false;
+
+      next.activeStartedAt = now;
+      next.cooldownEndAt = now + AUTO_INTERVAL_MS;
+
+      writeLS(LS_AUTO, next);
+      return;
+    }
+
+    if (next.cancelAfterCooldown) {
+      next.activePropertyId = "";
+      next.queuedPropertyId = "";
+      next.cancelAfterCooldown = false;
+
+      next.activeStartedAt = 0;
+      next.cooldownEndAt = 0;
+      next.enabled = false;
+
+      writeLS(LS_AUTO, next);
+      return;
+    }
+
+    next.activeStartedAt = now;
+    next.cooldownEndAt = now + AUTO_INTERVAL_MS;
+
+    writeLS(LS_AUTO, next);
+  }, [tick, userPkgKey, AUTO_INTERVAL_MS]);
+
+  // =========================
+  // ✅ Boost status per property
   // =========================
   const getBoostUi = (propertyId) => {
     void tick;
@@ -526,77 +598,27 @@ const PropertyDataTable = () => {
     // ---- auto status ----
     const autoRaw = readLS(LS_AUTO, AUTO_FALLBACK);
     const autoStore = normalizeAutoStore({ ...AUTO_FALLBACK, ...autoRaw }, userPkgKey);
-    const activeIds = getActiveIdsFromStore(autoStore);
 
-    const queueArr = Array.isArray(autoStore.queue) ? autoStore.queue.map(String) : [];
-    const qIdx = queueArr.indexOf(sid);
-    const isAutoQueued = qIdx >= 0;
-    const queuePos = isAutoQueued ? qIdx + 1 : 0;
-
-    const isAutoActive = activeIds.includes(sid) && !!autoStore.items?.[sid];
-    const autoItem = autoStore.items?.[sid] || null;
-
-    // ✅ ให้ได้ nextRunAt ที่ใช้งานได้เสมอ
-    const getSafeNextRunAt = (it) => {
-      if (!it || typeof it !== "object") return 0;
-
-      const n = Number(it.nextRunAt || 0);
-      if (n > 0) return n;
-
-      const enabledAt = Number(it.enabledAt || 0);
-      if (enabledAt > 0 && AUTO_INTERVAL_MS > 0) return enabledAt + AUTO_INTERVAL_MS;
-
-      if (AUTO_INTERVAL_MS > 0) return Date.now() + AUTO_INTERVAL_MS;
-
-      return 0;
-    };
-
-    // ✅ รอบถัดไปของ “ระบบออโต้” = min(nextRunAt ของ active ทั้งหมด)
-    const activeNextAt = (() => {
-      const items = autoStore.items || {};
-      const nexts = (activeIds || [])
-        .map((id) => getSafeNextRunAt(items?.[String(id)]))
-        .filter((n) => n > 0);
-      return nexts.length ? Math.min(...nexts) : 0;
-    })();
-
-    // ✅ auto remain ของโพสต์ active ตัวนี้
-    const autoNextAtOfThis = getSafeNextRunAt(autoItem);
-    const autoRemainSec = autoNextAtOfThis
-      ? Math.max(0, Math.floor((autoNextAtOfThis - Date.now()) / 1000))
-      : 0;
-
-    // ✅ queue ETA realtime + แม่นตามจำนวน active จริง
-    let queueRemainSec = 0;
-    let queueEtaAt = 0;
-
-    if (isAutoQueued) {
-      const promotePerRun = Math.max(1, activeIds.length || 1);
-      const runsNeeded = Math.floor((Math.max(1, queuePos) - 1) / promotePerRun);
-
-      const base = activeNextAt || (AUTO_INTERVAL_MS ? Date.now() + AUTO_INTERVAL_MS : 0);
-      queueEtaAt = base ? base + runsNeeded * AUTO_INTERVAL_MS : 0;
-
-      // กันค่า 0 แบบหลุด ๆ
-      if (!queueEtaAt && AUTO_INTERVAL_MS) queueEtaAt = Date.now() + AUTO_INTERVAL_MS;
-
-      queueRemainSec = queueEtaAt
-        ? Math.max(0, Math.floor((queueEtaAt - Date.now()) / 1000))
-        : 0;
-    }
+    const isAutoActive = !!autoStore.activePropertyId && String(autoStore.activePropertyId) === sid;
+    const isAutoQueued = !!autoStore.queuedPropertyId && String(autoStore.queuedPropertyId) === sid;
 
     if (isAutoActive || isAutoQueued) {
+      const nextAt = Number(autoStore.cooldownEndAt || 0);
+      const nextTimeText = nextAt ? formatThaiTimeOnly(nextAt) : "-";
+
       return {
         has: true,
         mode: "auto",
         isAutoActive,
         isAutoQueued,
-        queuePos,
-        queueRemainSec,
-        queueEtaAt,
-        autoRemainSec,
-        lastAt: Number(autoItem?.lastRunAt || autoItem?.enabledAt || 0),
-        nextAt: Number(autoNextAtOfThis || 0),
+        queuePos: isAutoQueued ? 1 : 0,
+
+        nextAt,
+        nextTimeText,
+
+        cancelAfterCooldown: !!autoStore.cancelAfterCooldown,
+        lastAt: Number(autoStore.activeStartedAt || 0),
+
         manualCooling,
       };
     }
@@ -622,7 +644,7 @@ const PropertyDataTable = () => {
 
     const ui = getBoostUi(property.id);
 
-    // ถ้าอยู่ auto อยู่แล้ว ไม่ต้องเปิด (ให้จัดการจากปุ่มอื่น)
+    // ถ้าอยู่ auto อยู่แล้ว ไม่ต้องเปิด (ให้จัดการจากปุ่มยกเลิก/ยกเลิกคิว)
     if (ui?.has && ui?.mode === "auto") return;
 
     // ถ้า manual ยังติด cooldown ก็ไม่ให้เปิด
@@ -659,6 +681,20 @@ const PropertyDataTable = () => {
     const id = boostModalProperty?.id;
     if (!id) return;
 
+    const info = getAutoBlockInfo(userPkgKey);
+
+    // ✅ 1) ยังไม่กดยกเลิก Active -> ห้ามเลือกโพสอื่น
+    if (info.blockedNeedCancelActive && String(info.activeId) !== String(id)) {
+      toast.warn(`ต้องยกเลิกออโต้ของโพส #${info.activeId} ก่อน ถึงจะเลือกโพสอื่นได้`);
+      return;
+    }
+
+    // ✅ 2) มีคิวอยู่แล้ว -> ห้าม replace ต้องไปยกเลิกคิวก่อน
+    if (info.blockedNeedCancelQueue && String(info.queuedId) !== String(id)) {
+      toast.warn(`ตอนนี้มีโพส #${info.queuedId} อยู่ในคิวแล้ว — ต้องยกเลิกคิวก่อน ถึงจะเลือกโพสอื่นได้`);
+      return;
+    }
+
     try {
       setBoostingId(id);
       await new Promise((r) => setTimeout(r, 120));
@@ -672,7 +708,7 @@ const PropertyDataTable = () => {
     }
   };
 
-  // ✅ ยกเลิกคิว (เฉพาะ queued จริง)
+  // ✅ ยกเลิกคิว (queuedPropertyId ตัวเดียว)
   const cancelAutoQueue = async (propertyId) => {
     if (!propertyId) return;
     const ok = window.confirm("ยืนยันยกเลิกคิวออโต้ของประกาศนี้?");
@@ -684,13 +720,48 @@ const PropertyDataTable = () => {
 
       const raw = readLS(LS_AUTO, AUTO_FALLBACK);
       const store = normalizeAutoStore({ ...AUTO_FALLBACK, ...raw }, userPkgKey);
-      store.queue = (store.queue || []).map(String).filter((x) => x !== String(propertyId));
 
-      writeLS(LS_AUTO, store);
+      if (String(store.queuedPropertyId || "") !== String(propertyId)) {
+        toast.info("ประกาศนี้ไม่ได้อยู่ในคิวแล้ว");
+        return;
+      }
+
+      const next = { ...store, queuedPropertyId: "" };
+      writeLS(LS_AUTO, next);
       toast.success("ยกเลิกคิวเรียบร้อย");
     } catch (e) {
       console.error(e);
       toast.error("ยกเลิกคิวไม่สำเร็จ");
+    } finally {
+      setBoostingId(null);
+    }
+  };
+
+  // ✅ ยกเลิกออโต้ (ยกเลิกแล้ว “ยังรอให้ cooldown หมด”)
+  const cancelAutoActive = async (propertyId) => {
+    if (!propertyId) return;
+
+    const ok = window.confirm("ยืนยันยกเลิกออโต้? (จะหยุดหลังครบเวลา)");
+    if (!ok) return;
+
+    try {
+      setBoostingId(propertyId);
+      await new Promise((r) => setTimeout(r, 150));
+
+      const raw = readLS(LS_AUTO, AUTO_FALLBACK);
+      const store = normalizeAutoStore({ ...AUTO_FALLBACK, ...raw }, userPkgKey);
+
+      if (String(store.activePropertyId || "") !== String(propertyId)) {
+        toast.info("ประกาศนี้ไม่ได้เป็น Active แล้ว");
+        return;
+      }
+
+      const next = { ...store, cancelAfterCooldown: true };
+      writeLS(LS_AUTO, next);
+      toast.success("ยกเลิกแล้ว (จะหยุดหลังครบเวลา)");
+    } catch (e) {
+      console.error(e);
+      toast.error("ยกเลิกออโต้ไม่สำเร็จ");
     } finally {
       setBoostingId(null);
     }
@@ -718,7 +789,7 @@ const PropertyDataTable = () => {
   const boostCountdownStyle = () => ({
     height: 34,
     minWidth: 180,
-    maxWidth: 220,
+    maxWidth: 260,
     padding: "0 14px",
     borderRadius: 999,
     border: "1px solid #f3b2a8",
@@ -776,6 +847,23 @@ const PropertyDataTable = () => {
     whiteSpace: "nowrap",
   });
 
+  const cancelActiveBtnStyle = (disabled) => ({
+    height: 30,
+    padding: "0 12px",
+    borderRadius: 999,
+    border: "1px solid #f3b2a8",
+    background: "#fff1ee",
+    color: "#9c2f21",
+    fontSize: 12,
+    fontWeight: 900,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    cursor: disabled ? "not-allowed" : "pointer",
+    opacity: disabled ? 0.7 : 1,
+    whiteSpace: "nowrap",
+  });
+
   const manageRowStyle = {
     display: "flex",
     alignItems: "center",
@@ -811,12 +899,23 @@ const PropertyDataTable = () => {
   const getAutoSlotInfo = () => {
     const raw = readLS(LS_AUTO, AUTO_FALLBACK);
     const store = normalizeAutoStore({ ...AUTO_FALLBACK, ...raw }, userPkgKey);
-    const activeIds = getActiveIdsFromStore(store);
-    const max = Number(pkg?.autoMaxPosts || 1) || 1;
-    return { activeCount: activeIds.length, max, isFull: activeIds.length >= max };
+
+    // active ได้ 1 เสมอ
+    const activeCount = store.activePropertyId ? 1 : 0;
+    const max = 1;
+    return { activeCount, max, isFull: activeCount >= max };
   };
 
-  const autoSlotInfo = useMemo(() => getAutoSlotInfo(), [tick, userPkgKey, pkg]);
+  const autoSlotInfo = useMemo(() => getAutoSlotInfo(), [tick, userPkgKey]);
+
+  // ✅ NEW: ใช้ใน modal เพื่อ disable ปุ่ม Auto ถ้ายังไม่ยกเลิก Active หรือยังไม่ยกเลิก Queue
+  const autoBlockInfo = useMemo(() => getAutoBlockInfo(userPkgKey), [tick, userPkgKey]);
+
+  const autoBlockedForThis =
+    (autoBlockInfo.blockedNeedCancelActive &&
+      String(autoBlockInfo.activeId) !== String(boostModalProperty?.id || "")) ||
+    (autoBlockInfo.blockedNeedCancelQueue &&
+      String(autoBlockInfo.queuedId) !== String(boostModalProperty?.id || ""));
 
   return (
     <>
@@ -1020,14 +1119,15 @@ const PropertyDataTable = () => {
                 <button
                   type="button"
                   onClick={goAutoConfirm}
-                  disabled={!!boostingId}
+                  disabled={!!boostingId || autoBlockedForThis}
                   style={{
                     textAlign: "left",
                     borderRadius: 14,
                     border: "1px solid #e5e5e5",
                     background: "#fff",
                     padding: 14,
-                    cursor: boostingId ? "not-allowed" : "pointer",
+                    cursor: boostingId || autoBlockedForThis ? "not-allowed" : "pointer",
+                    opacity: autoBlockedForThis ? 0.75 : 1,
                   }}
                 >
                   <div className="d-flex align-items-center justify-content-between">
@@ -1037,15 +1137,25 @@ const PropertyDataTable = () => {
                     </div>
 
                     <div style={{ fontSize: 12, opacity: 0.7 }}>
-                      {autoSlotInfo.isFull
-                        ? `เต็มแล้ว → จะ “เข้าคิว” · ${pkg.intervalLabel}`
-                        : `Auto ได้ ${pkg.autoMaxPosts} โพส · ${pkg.intervalLabel}`}
+                      {autoBlockInfo.blockedNeedCancelActive &&
+                      String(autoBlockInfo.activeId) !== String(boostModalProperty?.id || "")
+                        ? `ต้องยกเลิกออโต้โพส #${autoBlockInfo.activeId} ก่อน`
+                        : autoBlockInfo.blockedNeedCancelQueue &&
+                          String(autoBlockInfo.queuedId) !== String(boostModalProperty?.id || "")
+                        ? `ต้องยกเลิกคิวโพส #${autoBlockInfo.queuedId} ก่อน`
+                        : autoSlotInfo.isFull
+                        ? `Auto ทำงานอยู่ · ${pkg.intervalLabel}`
+                        : `Auto ได้ 1 โพส · ${pkg.intervalLabel}`}
                     </div>
                   </div>
 
                   <div style={{ fontSize: 13, opacity: 0.85, marginTop: 6 }}>
-                    {autoSlotInfo.isFull
-                      ? "ไปหน้ายืนยันออโต้ แล้วกด “ยืนยัน” (ระบบจะเข้าคิวรอบถัดไป)"
+                    {autoBlockInfo.blockedNeedCancelActive &&
+                    String(autoBlockInfo.activeId) !== String(boostModalProperty?.id || "")
+                      ? `ตอนนี้กำลังดันโพส #${autoBlockInfo.activeId} อยู่ — กรุณายกเลิกก่อน`
+                      : autoBlockInfo.blockedNeedCancelQueue &&
+                        String(autoBlockInfo.queuedId) !== String(boostModalProperty?.id || "")
+                      ? `ตอนนี้มีโพส #${autoBlockInfo.queuedId} อยู่ในคิว — กรุณายกเลิกคิวก่อน`
                       : "ไปหน้ายืนยันออโต้ แล้วกด “ยืนยัน”"}
                   </div>
                 </button>
@@ -1070,10 +1180,10 @@ const PropertyDataTable = () => {
       <table className="table-style3 table at-savesearch" style={{ tableLayout: "fixed" }}>
         <colgroup>
           <col style={{ width: "45%" }} />
-          <col style={{ width: "15%" }} />
           <col style={{ width: "14%" }} />
-          <col style={{ width: "10%" }} />
           <col style={{ width: "15%" }} />
+          <col style={{ width: "10%" }} />
+          <col style={{ width: "16%" }} />
         </colgroup>
 
         <thead className="t-head">
@@ -1117,10 +1227,6 @@ const PropertyDataTable = () => {
               const isQueued = !!boostUi?.isAutoQueued;
               const isActive = !!boostUi?.isAutoActive;
 
-              // ✅ ปุ่ม “ดัน” ใช้ได้เฉพาะ:
-              // - เผยแพร่แล้ว
-              // - ไม่อยู่ auto (ทั้ง active/queued)
-              // - manual ไม่ติด cooldown
               const canPressBoost =
                 isPublished &&
                 (!boostUi?.has ||
@@ -1131,23 +1237,11 @@ const PropertyDataTable = () => {
                   <th scope="row">
                     <div className="listing-style1 dashboard-style d-xxl-flex align-items-center mb-0">
                       <div className="list-thumb">
-                        <Image
-                          width={110}
-                          height={94}
-                          className="w-100"
-                          src={property.imageSrc}
-                          alt="property"
-                        />
+                        <Image width={110} height={94} className="w-100" src={property.imageSrc} alt="property" />
                       </div>
 
-                      <div
-                        className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4"
-                        style={{ minWidth: 0 }}
-                      >
-                        <div
-                          className="h6 list-title d-flex align-items-center gap-2"
-                          style={{ marginBottom: 6 }}
-                        >
+                      <div className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4" style={{ minWidth: 0 }}>
+                        <div className="h6 list-title d-flex align-items-center gap-2" style={{ marginBottom: 6 }}>
                           <Link href={`/single-v1/${property.id}`}>{property.title}</Link>
 
                           {hasVideo && (
@@ -1174,11 +1268,7 @@ const PropertyDataTable = () => {
                                 <span style={{ fontSize: 12, opacity: 0.85 }}>{count}</span>
                               </button>
 
-                              <ReactTooltip
-                                id={`video-${property.id}`}
-                                place="top"
-                                content={`วิดีโอ (${count})`}
-                              />
+                              <ReactTooltip id={`video-${property.id}`} place="top" content={`วิดีโอ (${count})`} />
                             </>
                           )}
                         </div>
@@ -1189,19 +1279,14 @@ const PropertyDataTable = () => {
                             : property.location || "-"}
                         </p>
 
-                        {/* ✅ โหมดดัน: queued → เอา “เวลารอคิว” มาแทน “ยังไม่เคยรัน” และอยู่บรรทัดเดียวใน pill */}
                         {boostUi?.has && (
-                          <div
-                            style={modePillStyle(boostUi.mode)}
-                            data-tooltip-id={`boost-mode-${property.id}`}
-                          >
+                          <div style={modePillStyle(boostUi.mode)} data-tooltip-id={`boost-mode-${property.id}`}>
                             {boostUi.mode === "auto" ? (
                               <>
                                 <span className="fas fa-robot" />
                                 {isQueued ? (
                                   <>
-                                    <span>{`ดันออโต้ (คิวที่ #${boostUi.queuePos || 1})`}</span>
-
+                                    <span>{`ดันออโต้ (เข้าคิว)`}</span>
                                     <span
                                       style={{
                                         marginLeft: 8,
@@ -1216,11 +1301,13 @@ const PropertyDataTable = () => {
                                         fontWeight: 900,
                                       }}
                                     >
-                                      {`รอคิว ~ ${formatHMS(boostUi.queueRemainSec || 0)}`}
+                                      {`จะเริ่มเวลา ~ ${boostUi.nextTimeText || "-"}`}
                                     </span>
                                   </>
                                 ) : (
-                                  "ดันออโต้ (กำลังทำงาน)"
+                                  <>
+                                    <span>ดันออโต้ (กำลังทำงาน)</span>
+                                  </>
                                 )}
                               </>
                             ) : (
@@ -1236,18 +1323,17 @@ const PropertyDataTable = () => {
                               content={
                                 boostUi.mode === "auto"
                                   ? isQueued
-                                    ? `โพสต์นี้อยู่ในคิว (คิวที่ ${boostUi.queuePos || 1}) · รอ ~ ${formatHMS(
-                                        boostUi.queueRemainSec || 0
-                                      )}`
-                                    : "โพสต์นี้อยู่ในออโต้ (active)"
+                                    ? `โพสต์นี้อยู่ในคิว · จะเริ่มหลังเวลา ${boostUi.nextTimeText || "-"}`
+                                    : boostUi.cancelAfterCooldown
+                                    ? `โพสต์นี้เป็น Active · ถูกยกเลิกแล้ว (จะหยุดหลังเวลา ${boostUi.nextTimeText || "-"})`
+                                    : `โพสต์นี้เป็น Active · ดันได้อีกครั้งเวลา ${boostUi.nextTimeText || "-"}`
                                   : "โพสต์นี้ดันด้วยแมนนวล"
                               }
                             />
                           </div>
                         )}
 
-                        {/* ✅ timeline: ถ้า queued → ไม่ต้องโชว์ “ยังไม่เคยรัน” (เพราะย้ายไปอยู่ใน pill แล้ว) */}
-                        {boostUi?.has && !(boostUi.mode === "auto" && isQueued) && (
+                        {boostUi?.has && (
                           <div style={timeLineStyle}>
                             <span className="far fa-clock" />
                             <span>
@@ -1255,7 +1341,7 @@ const PropertyDataTable = () => {
                                 <>
                                   {boostUi.lastAt ? (
                                     <>
-                                      ดันล่าสุด:{" "}
+                                      รอบล่าสุด:{" "}
                                       <b style={{ color: "#374151", fontWeight: 700 }}>
                                         {formatThaiDateTime(boostUi.lastAt)}
                                       </b>
@@ -1283,9 +1369,7 @@ const PropertyDataTable = () => {
                     </div>
                   </th>
 
-                  <td className="vam">
-                    {property.priceText || property.price?.toLocaleString?.() || "-"}
-                  </td>
+                  <td className="vam">{property.priceText || property.price?.toLocaleString?.() || "-"}</td>
 
                   <td className="vam" style={{ overflow: "hidden" }}>
                     <span
@@ -1305,16 +1389,8 @@ const PropertyDataTable = () => {
 
                   <td className="vam">{property.views ?? "-"}</td>
 
-                  {/* ✅ จัดการ */}
-                  <td
-                    className="vam"
-                    style={{
-                      paddingRight: 18,
-                      verticalAlign: "middle",
-                      textAlign: "right",
-                    }}
-                  >
-                    {/* ✅✅ CASE 1: queued -> แสดงแค่ ... + ยกเลิกคิว (ไม่มี countdown) */}
+                  <td className="vam" style={{ paddingRight: 18, verticalAlign: "middle", textAlign: "right" }}>
+                    {/* queued */}
                     {boostUi?.has && boostUi.mode === "auto" && isQueued ? (
                       <div style={manageStackRightStyle}>
                         <div className="dropdown">
@@ -1396,10 +1472,8 @@ const PropertyDataTable = () => {
                           <ReactTooltip id={`cancel-auto-${property.id}`} place="top" content="ยกเลิกคิวรอบถัดไป" />
                         </button>
                       </div>
-                    ) : boostUi?.has &&
-                      ((boostUi.mode === "manual" && boostUi.manualCooling) ||
-                        (boostUi.mode === "auto" && isActive)) ? (
-                      /* ✅ CASE 2: manual cooling หรือ auto active -> มี countdown */
+                    ) : boostUi?.has && boostUi.mode === "auto" && isActive ? (
+                      /* active -> มีปุ่มยกเลิก */
                       <div style={manageStackRightStyle}>
                         <div className="dropdown">
                           <button
@@ -1453,7 +1527,103 @@ const PropertyDataTable = () => {
                             </li>
 
                             <li>
-                              <button 
+                              <button
+                                type="button"
+                                className="dropdown-item d-flex align-items-center gap-2 text-danger"
+                                disabled={busy}
+                                onClick={() => handleDelete(property.id)}
+                              >
+                                <span className="flaticon-bin" />
+                                ลบ
+                              </button>
+                            </li>
+                          </ul>
+
+                          <ReactTooltip id={`actions-${property.id}`} place="top" content="จัดการ" />
+                        </div>
+
+                        <div style={boostCountdownStyle()} data-tooltip-id={`boost-next-${property.id}`}>
+                          <span className="far fa-clock" />
+                          ดันได้อีกครั้งเวลา {boostUi.nextTimeText || "-"}
+                          <ReactTooltip
+                            id={`boost-next-${property.id}`}
+                            place="top"
+                            content={boostUi.cancelAfterCooldown ? "ถูกยกเลิกแล้ว (จะหยุดหลังครบเวลา)" : "รอบถัดไปของออโต้"}
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          style={cancelActiveBtnStyle(busy || boostingId === property.id || boostUi.cancelAfterCooldown)}
+                          disabled={busy || boostingId === property.id || boostUi.cancelAfterCooldown}
+                          onClick={() => cancelAutoActive(property.id)}
+                          data-tooltip-id={`cancel-active-${property.id}`}
+                        >
+                          <span className="fas fa-ban" />
+                          {boostUi.cancelAfterCooldown ? "ยกเลิกแล้วจะหยุดดันหลังครบเวลา" : "ยกเลิกออโต้"}
+                          <ReactTooltip
+                            id={`cancel-active-${property.id}`}
+                            place="top"
+                            content="ยกเลิกแล้วจะหยุดหลังครบเวลา (ยังต้องรอ cooldown)"
+                          />
+                        </button>
+                      </div>
+                    ) : boostUi?.has && boostUi.mode === "manual" && boostUi.manualCooling ? (
+                      /* manual cooldown */
+                      <div style={manageStackRightStyle}>
+                        <div className="dropdown">
+                          <button
+                            type="button"
+                            disabled={busy}
+                            style={dotsBtnStyle(busy)}
+                            className="icon"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            aria-label="actions"
+                            data-tooltip-id={`actions-${property.id}`}
+                          >
+                            <span className="fas fa-ellipsis-h" />
+                          </button>
+
+                          <ul className="dropdown-menu dropdown-menu-end">
+                            <li>
+                              <button
+                                type="button"
+                                className="dropdown-item d-flex align-items-center gap-2"
+                                disabled={busy}
+                                onClick={() => router.push(`/dashboard-edit-property/${property.id}`)}
+                              >
+                                <span className="fas fa-pen" />
+                                แก้ไข
+                              </button>
+                            </li>
+
+                            <li>
+                              <button
+                                type="button"
+                                className="dropdown-item d-flex align-items-center gap-2"
+                                disabled={busy}
+                                onClick={() => openVideoModal(property)}
+                              >
+                                <span className="fas fa-video" />
+                                {hasVideo ? "แก้ไขวิดีโอ" : "เพิ่มวิดีโอ"}
+                              </button>
+                            </li>
+
+                            <li>
+                              <button
+                                type="button"
+                                className="dropdown-item d-flex align-items-center gap-2"
+                                disabled={busy}
+                                onClick={() => handleVideoPage(property.id)}
+                              >
+                                <span className="fas fa-folder-open" />
+                                จัดการวิดีโอ
+                              </button>
+                            </li>
+
+                            <li>
+                              <button
                                 type="button"
                                 className="dropdown-item d-flex align-items-center gap-2 text-danger"
                                 disabled={busy}
@@ -1470,19 +1640,12 @@ const PropertyDataTable = () => {
 
                         <div style={boostCountdownStyle()} data-tooltip-id={`boost-cd-${property.id}`}>
                           <span className="far fa-clock" />
-                          เหลืออีก{" "}
-                          {boostUi.mode === "auto"
-                            ? formatHMS(boostUi.autoRemainSec)
-                            : formatHMS(boostUi.manualRemainSec)}
-                          <ReactTooltip
-                            id={`boost-cd-${property.id}`}
-                            place="top"
-                            content={boostUi.mode === "auto" ? "รอบถัดไปของออโต้" : "รอคูลดาวน์แมนนวล"}
-                          />
+                          เหลืออีก {formatHMS(boostUi.manualRemainSec)}
+                          <ReactTooltip id={`boost-cd-${property.id}`} place="top" content="รอคูลดาวน์แมนนวล" />
                         </div>
                       </div>
                     ) : (
-                      /* ✅ CASE 3: ปกติ -> มีปุ่มดัน + ... */
+                      /* normal */
                       <div style={manageRowStyle}>
                         <button
                           type="button"
@@ -1496,13 +1659,7 @@ const PropertyDataTable = () => {
                           <ReactTooltip
                             id={`boost-btn-${property.id}`}
                             place="top"
-                            content={
-                              !isPublished
-                                ? "ดันไม่ได้ (ต้องเป็นสถานะเผยแพร่แล้ว)"
-                                : isAuto
-                                ? "โพสต์นี้อยู่ในออโต้แล้ว"
-                                : "ดันโพสต์ (เลือก Manual / Auto)"
-                            }
+                            content={!isPublished ? "ดันไม่ได้ (ต้องเป็นสถานะเผยแพร่แล้ว)" : "ดันโพสต์ (เลือก Manual / Auto)"}
                           />
                         </button>
 

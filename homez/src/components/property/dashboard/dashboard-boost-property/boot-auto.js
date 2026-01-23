@@ -1,3 +1,4 @@
+// boot-auto.js
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -35,39 +36,58 @@ const safeText = (v, fallback = "-") => {
   return s ? s : fallback;
 };
 
-function dedupeKeepOrder(arr) {
-  const seen = new Set();
-  const out = [];
-  for (const x of arr || []) {
-    const s = String(x || "").trim();
-    if (!s || seen.has(s)) continue;
-    seen.add(s);
-    out.push(s);
-  }
-  return out;
-}
-
-// ✅ get ids จาก order ก่อน ถ้าไม่มีค่อย fallback items
-function getActiveIdsFromStore(store) {
-  const items = store?.items && typeof store.items === "object" ? store.items : {};
-  let order = Array.isArray(store?.order) ? store.order.map(String).filter(Boolean) : [];
-  order = order.filter((id) => !!items?.[id]);
-  if (order.length > 0) return order;
-  return Object.keys(items).map(String);
-}
-
-// ✅ normalize store
+// ✅ normalize store (single active + single queue)
 function normalizeAutoStore(raw) {
   const s = raw && typeof raw === "object" ? raw : {};
   const pkgKey = typeof s.packageKey === "string" ? s.packageKey : "";
 
+  // ---- legacy ----
+  const oldItems = s.items && typeof s.items === "object" ? s.items : {};
+  const oldOrder = Array.isArray(s.order) ? s.order.map(String).filter(Boolean) : [];
+  const oldQueue = Array.isArray(s.queue) ? s.queue.map(String).filter(Boolean) : [];
+
+  const legacyActiveId =
+    typeof s.activePropertyId === "string" && s.activePropertyId
+      ? s.activePropertyId
+      : oldOrder.find((id) => !!oldItems?.[id]) || Object.keys(oldItems)[0] || "";
+
+  const legacyQueuedId =
+    typeof s.queuedPropertyId === "string" && s.queuedPropertyId
+      ? s.queuedPropertyId
+      : oldQueue[0] || "";
+
+  const legacyActiveItem = legacyActiveId ? oldItems?.[legacyActiveId] : null;
+
+  const cooldownEndAt =
+    typeof s.cooldownEndAt === "number" && s.cooldownEndAt
+      ? s.cooldownEndAt
+      : typeof legacyActiveItem?.nextRunAt === "number"
+      ? legacyActiveItem.nextRunAt
+      : 0;
+
+  const activeStartedAt =
+    typeof s.activeStartedAt === "number" && s.activeStartedAt
+      ? s.activeStartedAt
+      : typeof legacyActiveItem?.enabledAt === "number"
+      ? legacyActiveItem.enabledAt
+      : 0;
+
   return {
     enabled: !!s.enabled,
     packageKey: pkgKey,
-    items: s.items && typeof s.items === "object" ? s.items : {},
-    queue: Array.isArray(s.queue) ? s.queue.map((x) => String(x)).filter(Boolean) : [],
-    order: Array.isArray(s.order) ? s.order.map((x) => String(x)).filter(Boolean) : [],
+
+    activePropertyId: String(legacyActiveId || ""),
+    queuedPropertyId: String(legacyQueuedId || ""),
+
+    activeStartedAt: Number(activeStartedAt || 0),
+    cooldownEndAt: Number(cooldownEndAt || 0),
+
+    cancelAfterCooldown: !!s.cancelAfterCooldown,
   };
+}
+
+function hasActive(store) {
+  return !!store?.activePropertyId;
 }
 
 // ===== Toast helpers =====
@@ -187,15 +207,15 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
   const locationText = useMemo(() => (p ? pickLocationText(p) : "-"), [p]);
   const imageUrl = useMemo(() => (p ? pickImage(p) : ""), [p]);
 
-  const activeIds = useMemo(() => getActiveIdsFromStore(autoStore), [autoStore]);
-  const hasActive = activeIds.length > 0;
-  const curActiveId = hasActive ? String(activeIds[0]) : "";
+  const hasAct = useMemo(() => hasActive(autoStore), [autoStore]);
+  const curActiveId = useMemo(() => String(autoStore?.activePropertyId || ""), [autoStore]);
+  const queuedId = useMemo(() => String(autoStore?.queuedPropertyId || ""), [autoStore]);
 
   // ✅ effective package (กันกลางคันเพี้ยน)
   const effectivePkgKey = useMemo(() => {
-    if (hasActive && autoStore?.packageKey) return autoStore.packageKey;
+    if (hasAct && autoStore?.packageKey) return autoStore.packageKey;
     return packageKey || autoStore?.packageKey || "pro";
-  }, [hasActive, autoStore?.packageKey, packageKey]);
+  }, [hasAct, autoStore?.packageKey, packageKey]);
 
   const pkg = useMemo(
     () => getPackage?.(effectivePkgKey) || PACKAGES?.[effectivePkgKey] || PACKAGES.pro,
@@ -204,41 +224,58 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
 
   const intervalMs = Number(pkg.intervalMs || 0) || 0;
 
-  const runningList = useMemo(() => {
-    const items = autoStore?.items || {};
-    const order = activeIds.length ? activeIds : Object.keys(items).map(String);
+  const cooldownEndAt = Number(autoStore?.cooldownEndAt || 0);
+  const remainMs = cooldownEndAt ? Math.max(0, cooldownEndAt - now) : 0;
 
-    return order
-      .filter((id) => items?.[id])
-      .map((id) => {
-        const it = items[id];
-        const remain = it?.nextRunAt ? Math.max(0, it.nextRunAt - now) : 0;
-        return { id: String(id), lastRunAt: it?.lastRunAt || 0, nextRunAt: it?.nextRunAt || 0, remain };
-      });
-  }, [autoStore, activeIds, now]);
+  // TODO: countdown (future use)
+  // const countdownText = formatCountdown(remainMs);
 
-  const curRemain = runningList?.[0]?.remain || 0;
-  const maxActive = Number(pkg.autoMaxPosts || 1) || 1;
+  const nextTimeText = useMemo(() => {
+    if (!cooldownEndAt) return "-";
+    const d = new Date(cooldownEndAt);
+    return d.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+  }, [cooldownEndAt]);
 
   const intent = useMemo(() => {
     if (!pId) return { type: "none", label: "ไม่พบโพส" };
     if (!boostable) return { type: "blocked", label: "ดันไม่ได้ (ต้องเผยแพร่แล้ว)" };
 
-    if (!hasActive) return { type: "start", label: "จะเริ่มดันออโต้ด้วยโพสนี้" };
+    if (!hasAct) return { type: "start", label: "จะเริ่มดันออโต้ด้วยโพสนี้" };
     if (pId === curActiveId) return { type: "same", label: "โพสนี้กำลังดันอยู่แล้ว" };
 
-    if (activeIds.length < maxActive) {
-      return { type: "add", label: `จะเพิ่มเข้าออโต้ (active) (${activeIds.length + 1}/${maxActive})` };
+    // ✅ ต้องยกเลิก Active ก่อนถึงจะเลือกโพสอื่นได้
+    if (hasAct && !autoStore?.cancelAfterCooldown) {
+      return {
+        type: "blocked_need_cancel",
+        label: `ต้องยกเลิกออโต้ของโพส #${curActiveId || "-"} ก่อน ถึงจะเลือกโพสอื่นได้`,
+      };
     }
 
-    return { type: "queue", label: `active เต็มแล้ว (${activeIds.length}/${maxActive}) → จะเข้าคิวรอบถัดไป` };
-  }, [pId, boostable, hasActive, curActiveId, activeIds.length, maxActive]);
+    // ✅ NEW: ถ้ามีคิวอยู่แล้ว ห้ามทับ ต้องยกเลิกคิวก่อน
+    if (queuedId && queuedId !== pId) {
+      return {
+        type: "blocked_need_cancel_queue",
+        label: `ตอนนี้มีโพส #${queuedId} อยู่ในคิวแล้ว — ต้องยกเลิกคิวก่อน ถึงจะเลือกโพสอื่นได้`,
+      };
+    }
+
+    // ✅ ถ้าคิวเป็นโพสเดียวกัน ให้แค่บอกว่าอยู่ในคิวแล้ว
+    if (queuedId && queuedId === pId) {
+      return { type: "queued_same", label: "โพสนี้อยู่ในคิวแล้ว" };
+    }
+
+    return { type: "queue", label: "จะเข้าคิวรอบถัดไป" };
+  }, [pId, boostable, hasAct, curActiveId, queuedId, autoStore?.cancelAfterCooldown]);
 
   const confirm = async () => {
     if (isBusy) return;
     if (!pId || !p) return toast.warn("ไม่พบทรัพย์ที่จะดัน");
     if (!boostable) return toast.warn("ดันไม่ได้ (ต้องเป็นสถานะเผยแพร่แล้ว)");
     if (intent.type === "same") return toast.info("โพสนี้กำลังดันอยู่แล้ว");
+
+    if (intent.type === "blocked_need_cancel") return toast.warn(intent.label);
+    if (intent.type === "blocked_need_cancel_queue") return toast.warn(intent.label);
+    if (intent.type === "queued_same") return toast.info("โพสนี้อยู่ในคิวแล้ว");
 
     setIsBusy(true);
     const tid = tLoading("กำลังตั้งค่าออโต้...");
@@ -249,28 +286,28 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
       const raw = readLS(LS_AUTO, AUTO_FALLBACK);
       const store = normalizeAutoStore({ ...AUTO_FALLBACK, ...raw });
 
-      const ids = getActiveIdsFromStore(store);
-      const hasItems = ids.length > 0;
-      const currentActive = hasItems ? String(ids[0]) : "";
-
       const pkgNow = getPackage?.(effectivePkgKey) || PACKAGES?.[effectivePkgKey] || PACKAGES.pro;
-      const maxNow = Number(pkgNow.autoMaxPosts || 1) || 1;
       const intervalNow = Number(pkgNow.intervalMs || 0) || 0;
 
       // 1) start
-      if (!hasItems) {
+      if (!store.activePropertyId) {
         const startAt = Date.now();
-        store.enabled = true;
-        store.packageKey = effectivePkgKey;
 
-        store.items = {
-          [pId]: { enabledAt: startAt, lastRunAt: 0, nextRunAt: startAt + intervalNow },
+        const next = {
+          enabled: true,
+          packageKey: effectivePkgKey,
+
+          activePropertyId: pId,
+          queuedPropertyId: "",
+
+          activeStartedAt: startAt,
+          cooldownEndAt: startAt + intervalNow,
+
+          cancelAfterCooldown: false,
         };
-        store.order = [pId];
-        store.queue = [];
 
-        writeLS(LS_AUTO, store);
-        setAutoStore(store);
+        writeLS(LS_AUTO, next);
+        setAutoStore(next);
 
         tUpdate(tid, "success", `เปิดออโต้แล้ว: ${p.title || `#${pId}`}`);
         if (typeof onDone === "function") onDone();
@@ -278,46 +315,41 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
       }
 
       // 2) already active
-      if (pId === currentActive) {
+      if (pId === store.activePropertyId) {
         tUpdate(tid, "info", "โพสนี้กำลังดันอยู่แล้ว");
         return;
       }
 
-      // 2.1) add to active (ยังไม่เต็ม)
-      if (ids.length < maxNow) {
-        const base = store.items?.[currentActive] || {};
-        const baseEnabledAt = base.enabledAt || Date.now();
-        const baseNextRunAt = base.nextRunAt || Date.now() + intervalNow;
-
-        store.items = store.items || {};
-        store.items[pId] = store.items[pId] || {
-          enabledAt: baseEnabledAt,
-          lastRunAt: 0,
-          nextRunAt: baseNextRunAt,
-        };
-
-        const nextOrder = dedupeKeepOrder([...ids, pId]);
-        store.order = nextOrder;
-
-        store.packageKey = store.packageKey || effectivePkgKey;
-
-        writeLS(LS_AUTO, store);
-        setAutoStore(store);
-
-        tUpdate(tid, "success", "เพิ่มเข้าออโต้ (active) แล้ว");
-        if (typeof onDone === "function") onDone();
+      // ✅ กันซ้ำ เผื่อ state เปลี่ยนระหว่างทาง
+      if (store.activePropertyId && !store.cancelAfterCooldown) {
+        tUpdate(
+          tid,
+          "warning",
+          `ต้องยกเลิกออโต้ของโพส #${store.activePropertyId} ก่อน ถึงจะเลือกโพสอื่นได้`
+        );
         return;
       }
 
-      // 2.2) full -> queue (✅ แก้: ไม่ทับกันแล้ว + เข้าได้หลายตัวทุกแพ็ก)
-      const QUEUE_MAX = 50; // จะให้มาก/น้อยปรับได้
-      const nextQueue = dedupeKeepOrder([...(store.queue || []), pId]).slice(0, QUEUE_MAX);
-      store.queue = nextQueue;
+      // ✅ NEW: ถ้ามีคิวอยู่แล้ว ห้ามทับ
+      if (store.queuedPropertyId && String(store.queuedPropertyId) !== String(pId)) {
+        tUpdate(
+          tid,
+          "warning",
+          `ตอนนี้มีโพส #${store.queuedPropertyId} อยู่ในคิวแล้ว — ต้องยกเลิกคิวก่อน ถึงจะเลือกโพสอื่นได้`
+        );
+        return;
+      }
 
-      store.packageKey = store.packageKey || effectivePkgKey;
+      // 3) set queued (คิวได้ 1 โพส)
+      const next = {
+        ...store,
+        enabled: true,
+        packageKey: store.packageKey || effectivePkgKey,
+        queuedPropertyId: pId,
+      };
 
-      writeLS(LS_AUTO, store);
-      setAutoStore(store);
+      writeLS(LS_AUTO, next);
+      setAutoStore(next);
 
       tUpdate(tid, "success", "เพิ่มเข้าคิวแล้ว");
       if (typeof onDone === "function") onDone();
@@ -343,12 +375,16 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
           <ToneBadge tone="purple">{pkg.label}</ToneBadge>
           {intent.type === "start" ? (
             <ToneBadge tone="green">เริ่มออโต้</ToneBadge>
-          ) : intent.type === "add" ? (
-            <ToneBadge tone="blue">เพิ่มเข้า active</ToneBadge>
           ) : intent.type === "queue" ? (
             <ToneBadge tone="purple">เข้าคิว</ToneBadge>
+          ) : intent.type === "queued_same" ? (
+            <ToneBadge tone="gray">อยู่ในคิวแล้ว</ToneBadge>
           ) : intent.type === "same" ? (
             <ToneBadge tone="gray">กำลังดันอยู่</ToneBadge>
+          ) : intent.type === "blocked_need_cancel" ? (
+            <ToneBadge tone="red">ต้องยกเลิกก่อน</ToneBadge>
+          ) : intent.type === "blocked_need_cancel_queue" ? (
+            <ToneBadge tone="red">ต้องยกเลิกคิวก่อน</ToneBadge>
           ) : (
             <ToneBadge tone="red">ดันไม่ได้</ToneBadge>
           )}
@@ -362,17 +398,32 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
         <InfoRow label="รอบดันออโต้" value={safeText(pkg.intervalLabel)} />
         <InfoRow label="Manual" value={safeText(pkg.manualFreeText)} />
 
-        {hasActive ? (
+        {hasAct ? (
           <div className="text-muted mt10" style={{ fontSize: 12, lineHeight: 1.6 }}>
-            * ตอนนี้มีออโต้กำลังทำงานอยู่ <b>{activeIds.length}</b> โพส
-            {curRemain > 0 ? (
+            * ตอนนี้มีออโต้กำลังทำงานอยู่ <b>1</b> โพส (Active: <b>#{curActiveId || "-"}</b>)
+            {cooldownEndAt ? (
               <>
                 {" "}
-                · รอบถัดไปใน <b>{formatCountdown(curRemain)}</b>
+                · ดันได้อีกครั้งเวลา <b>{nextTimeText}</b>
+                {/* TODO: countdown (future use)
+                    · รอบถัดไปใน <b>{formatCountdown(remainMs)}</b>
+                */}
               </>
             ) : null}
             <br />
-            * เมื่อ active เต็มแล้ว โพสใหม่จะถูกเพิ่มไปที่ <b>คิว</b> และจะสลับเมื่อถึงรอบถัดไป
+            {autoStore?.cancelAfterCooldown ? (
+              <>
+                * คุณกดยกเลิกแล้ว → เลือกโพสอื่นเข้าคิวได้ <b>1</b> โพส (เริ่มหลังครบเวลา)
+                {queuedId ? (
+                  <>
+                    {" "}
+                    · ตอนนี้คิวคือ <b>#{queuedId}</b>
+                  </>
+                ) : null}
+              </>
+            ) : (
+              <>* ต้องกดยกเลิกออโต้ของโพส Active ก่อน ถึงจะเลือกโพสอื่นได้</>
+            )}
           </div>
         ) : (
           <div className="text-muted mt10" style={{ fontSize: 12 }}>
@@ -421,7 +472,8 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
 
             <div className="d-flex gap-2 flex-wrap justify-content-end" style={{ flex: "0 0 auto" }}>
               <ToneBadge tone={boostable ? "green" : "red"}>{boostable ? "เผยแพร่แล้ว" : "ยังไม่เผยแพร่"}</ToneBadge>
-              {hasActive && curActiveId ? <ToneBadge tone="gray">Active ตอนนี้: #{curActiveId}</ToneBadge> : null}
+              {hasAct && curActiveId ? <ToneBadge tone="gray">Active ตอนนี้: #{curActiveId}</ToneBadge> : null}
+              {hasAct && queuedId ? <ToneBadge tone="purple">คิว: #{queuedId}</ToneBadge> : null}
             </div>
           </div>
 
@@ -438,10 +490,14 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
           <div className="text-muted" style={{ fontSize: 13 }}>
             {intent.type === "start"
               ? "กด “ยืนยันออโต้” เพื่อเริ่มดันอัตโนมัติ"
-              : intent.type === "add"
-              ? "กด “ยืนยันออโต้” เพื่อเพิ่มเข้า active (ไม่รีเซ็ตเวลา)"
               : intent.type === "queue"
-              ? "กด “ยืนยันออโต้” เพื่อเพิ่มเข้าคิวรอบถัดไป"
+              ? "กด “ยืนยันออโต้” เพื่อเข้าคิวรอบถัดไป (คิวได้ 1 โพส)"
+              : intent.type === "queued_same"
+              ? "โพสนี้อยู่ในคิวแล้ว"
+              : intent.type === "blocked_need_cancel"
+              ? `ต้องยกเลิกออโต้ของโพส #${curActiveId || "-"} ก่อน`
+              : intent.type === "blocked_need_cancel_queue"
+              ? `ต้องยกเลิกคิวโพส #${queuedId || "-"} ก่อน`
               : intent.type === "same"
               ? "โพสนี้กำลังดันอยู่แล้ว"
               : "ไม่สามารถดันได้"}
@@ -465,8 +521,32 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
               className="ud-btn btn-thme"
               style={{ height: 46, padding: "0 18px", borderRadius: 12 }}
               onClick={confirm}
-              disabled={isBusy || !p || !boostable || intent.type === "same" || intent.type === "none" || intent.type === "blocked"}
-              title={!p ? "ไม่พบทรัพย์" : !boostable ? "ต้องเผยแพร่แล้ว" : intent.type === "same" ? "กำลังดันอยู่แล้ว" : ""}
+              disabled={
+                isBusy ||
+                !p ||
+                !boostable ||
+                intent.type === "same" ||
+                intent.type === "none" ||
+                intent.type === "blocked" ||
+                intent.type === "blocked_need_cancel" ||
+                intent.type === "blocked_need_cancel_queue" ||
+                intent.type === "queued_same"
+              }
+              title={
+                !p
+                  ? "ไม่พบทรัพย์"
+                  : !boostable
+                  ? "ต้องเผยแพร่แล้ว"
+                  : intent.type === "same"
+                  ? "กำลังดันอยู่แล้ว"
+                  : intent.type === "blocked_need_cancel"
+                  ? `ต้องยกเลิกออโต้ของโพส #${curActiveId || "-"} ก่อน`
+                  : intent.type === "blocked_need_cancel_queue"
+                  ? `ต้องยกเลิกคิวโพส #${queuedId || "-"} ก่อน`
+                  : intent.type === "queued_same"
+                  ? "โพสนี้อยู่ในคิวแล้ว"
+                  : ""
+              }
             >
               {isBusy ? "กำลังตั้งค่า..." : "ยืนยันออโต้"}
             </button>
