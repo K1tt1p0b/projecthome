@@ -53,12 +53,12 @@ const TEMPLATES = [
 
 // ✅ Sections (Mock) — ตัด contact + property_map ออก
 const SECTIONS = [
+  { key: "about", title: "เกี่ยวกับฉัน", desc: "แนะนำตัว/ประสบการณ์/บริษัท", icon: "flaticon-user" },
   { key: "properties", title: "ทรัพย์สินของฉัน", desc: "รายการทรัพย์ (ขาย/เช่า/แนะนำ)", icon: "flaticon-home" },
   { key: "services", title: "งานบริการของฉัน", desc: "ฝากขาย/ประเมินราคา/ปรึกษาสินเชื่อ", icon: "fas fa-hard-hat" },
   { key: "courses", title: "คอร์สเรียนของฉัน", desc: "คอร์ส/คอร์สออนไลน์", icon: "fas fa-book" },
-  { key: "about", title: "เกี่ยวกับฉัน", desc: "แนะนำตัว/ประสบการณ์/บริษัท", icon: "flaticon-user" },
-  { key: "video", title: "วิดีโอ", desc: "วิดีโอแนะนำ/พาชมทรัพย์", icon: "flaticon-play" },
   { key: "gallery", title: "แกลเลอรี่", desc: "รูปภาพแกลเลอรี่/ผลงาน/บรรยากาศ", icon: "flaticon-images" },
+  { key: "video", title: "วิดีโอ", desc: "วิดีโอแนะนำ/พาชมทรัพย์", icon: "flaticon-play" },
 ];
 
 export default function TemplateSettingClient() {
