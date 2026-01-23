@@ -323,7 +323,12 @@ const PropertySummary = ({
       keys.includes("deedNumber") ||
       keys.includes("titleDeed") ||
       keys.includes("landSqw") ||
-      keys.includes("usableArea");
+      keys.includes("usableArea") ||
+      // ✅ กันกรณีร้านค้า / เซ้งร้าน
+      keys.includes("shopBusinessType") ||
+      keys.includes("contractDuration") ||
+      keys.includes("shopWaterFee") ||
+      keys.includes("shopElectricFee");
 
     setResolvedDetails(looksValid ? ls : fromProps);
   }, [details]);
@@ -391,7 +396,10 @@ const PropertySummary = ({
     pick("ห้องน้ำ", labelOf(getAny(d, ["bathrooms", "ห้องน้ำ"])));
     pick("พื้นที่ใช้สอย (ตร.ม.)", getAny(d, ["usableArea", "พื้นที่ใช้สอย (ตร.ม.)", "พื้นที่ใช้สอย"]));
     pick("ขนาดที่ดิน (ตร.ว.)", getAny(d, ["landSqw", "ขนาดที่ดิน (ตร.ว.)", "ขนาดที่ดิน"]));
-    pick("เอกสารสิทธิ (เลขโฉนด)", getAny(d, ["deedNumber", "titleDeed", "เอกสารสิทธิ (เลขโฉนด)", "เอกสารสิทธิ"]));
+    pick(
+      "เอกสารสิทธิ (เลขโฉนด)",
+      getAny(d, ["deedNumber", "titleDeed", "เอกสารสิทธิ (เลขโฉนด)", "เอกสารสิทธิ"])
+    );
     pick("จำนวนชั้น", getAny(d, ["floors", "จำนวนชั้น"]));
     pick("ที่จอดรถ", labelOf(getAny(d, ["parking", "ที่จอดรถ"])));
 
@@ -440,7 +448,7 @@ const PropertySummary = ({
     pick("ค่าไฟ", getAny(d, ["electricFee", "electricRate", "ค่าไฟ"]));
     pick("ค่าส่วนกลาง", getAny(d, ["commonFee", "ค่าส่วนกลาง"]));
 
-    // ---------- ✅ ร้านค้า (เพิ่มให้โชว์ 2 ช่องใหม่) ----------
+    // ---------- ✅ ร้านค้า (ของเดิม + เพิ่มใหม่) ----------
     pick("ประเภทร้าน", getAny(d, ["shopBusinessType", "ประเภทร้าน"]));
     pick("ระยะสัญญา", getAny(d, ["contractDuration", "ระยะสัญญา"]));
 
@@ -450,6 +458,40 @@ const PropertySummary = ({
     pick("ถนนหน้าร้านกว้าง (ม.)", getAny(d, ["shopRoadWidth", "ถนนหน้าร้านกว้าง (ม.)"]));
     pick("หน้ากว้าง (ม.)", getAny(d, ["shopFrontage", "หน้ากว้าง (ม.)"]));
     pick("ความลึก (ม.)", getAny(d, ["shopDepth", "ความลึก (ม.)"]));
+
+    // ---------- ✅ เซ้งร้าน: เพิ่มตามที่คุณเพิ่มใน DetailsFiled ----------
+    // ใช้ label แยก "(ร้าน)" เพื่อไม่ชนกับ "ค่าน้ำ/ค่าไฟ" ของคอนโด
+    pick("ค่าน้ำ (ร้าน)", getAny(d, ["shopWaterFee", "ค่าน้ำ (ร้าน)", "ค่าน้ำร้าน"]));
+    pick("ค่าไฟ (ร้าน)", getAny(d, ["shopElectricFee", "ค่าไฟ (ร้าน)", "ค่าไฟร้าน"]));
+
+    const hasStaffRaw = getAny(d, ["shopHasStaff", "มีพนักงาน"]);
+    if (hasStaffRaw !== undefined && hasStaffRaw !== null && String(hasStaffRaw).trim() !== "") {
+      const yes =
+        hasStaffRaw === true ||
+        hasStaffRaw === "true" ||
+        hasStaffRaw === "yes" ||
+        hasStaffRaw === 1 ||
+        hasStaffRaw === "1";
+      pick("มีพนักงาน", yes ? "มี" : "ไม่มี");
+      if (yes) {
+        pick("จำนวนพนักงาน", getAny(d, ["shopStaffCount", "จำนวนพนักงาน"]));
+        pick("ค่าแรงพนักงาน", getAny(d, ["shopStaffWage", "ค่าแรงพนักงาน"]));
+      }
+    }
+
+    const hasEquipRaw = getAny(d, ["shopHasEquipment", "มีอุปกรณ์ให้"]);
+    if (hasEquipRaw !== undefined && hasEquipRaw !== null && String(hasEquipRaw).trim() !== "") {
+      const yes =
+        hasEquipRaw === true ||
+        hasEquipRaw === "true" ||
+        hasEquipRaw === "yes" ||
+        hasEquipRaw === 1 ||
+        hasEquipRaw === "1";
+      pick("มีอุปกรณ์ให้", yes ? "มี" : "ไม่มี");
+      if (yes) {
+        pick("รายการอุปกรณ์", getAny(d, ["shopEquipmentList", "รายการอุปกรณ์"]));
+      }
+    }
 
     pick("รายละเอียดเพิ่มเติม", getAny(d, ["note", "รายละเอียดเพิ่มเติม"]));
 
@@ -485,6 +527,15 @@ const PropertySummary = ({
     // ✅ ร้านค้า (เพิ่มใหม่)
     "ประเภทร้าน",
     "ระยะสัญญา",
+
+    // ✅ เซ้งร้าน (เพิ่มใหม่)
+    "ค่าน้ำ (ร้าน)",
+    "ค่าไฟ (ร้าน)",
+    "มีพนักงาน",
+    "จำนวนพนักงาน",
+    "ค่าแรงพนักงาน",
+    "มีอุปกรณ์ให้",
+    "รายการอุปกรณ์",
 
     // ✅ ร้านค้า (ของเดิม)
     "ขนาดพื้นที่ร้าน (ตร.ม.)",

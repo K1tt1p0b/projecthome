@@ -187,6 +187,31 @@ const DetailsFiled = ({
   );
 
   /* =========================
+     ✅ เพิ่มสำหรับ "เซ้งร้าน" ตามที่ขอ
+     - ค่าน้ำ
+     - ค่าไฟ
+     - มีพนักงานไหม + จำนวน + ค่าแรง (ถ้ามี)
+     - มีอุปกรณ์ไหม + รายการ (ถ้ามี)
+  ========================= */
+  const [shopWaterFee, setShopWaterFee] = useState(initialValue?.shopWaterFee || "");
+  const [shopElectricFee, setShopElectricFee] = useState(
+    initialValue?.shopElectricFee || ""
+  );
+
+  const [shopHasStaff, setShopHasStaff] = useState(initialValue?.shopHasStaff ?? false);
+  const [shopStaffCount, setShopStaffCount] = useState(
+    initialValue?.shopStaffCount ?? ""
+  );
+  const [shopStaffWage, setShopStaffWage] = useState(initialValue?.shopStaffWage ?? "");
+
+  const [shopHasEquipment, setShopHasEquipment] = useState(
+    initialValue?.shopHasEquipment ?? false
+  );
+  const [shopEquipmentList, setShopEquipmentList] = useState(
+    initialValue?.shopEquipmentList ?? ""
+  );
+
+  /* =========================
      sync initialValue (สำคัญสำหรับหน้าแก้ไข)
   ========================= */
   useEffect(() => {
@@ -211,17 +236,12 @@ const DetailsFiled = ({
 
     if (initialValue.titleDeedImage !== undefined) {
       setTitleDeedImage(initialValue.titleDeedImage ?? null);
-    } else if (
-      Array.isArray(initialValue.titleDeedImages) &&
-      initialValue.titleDeedImages[0]
-    ) {
+    } else if (Array.isArray(initialValue.titleDeedImages) && initialValue.titleDeedImages[0]) {
       setTitleDeedImage(initialValue.titleDeedImages[0]);
     }
 
     setTitleDeedImageName(
-      initialValue.titleDeedImageName ??
-        initialValue.titleDeedImage?.name ??
-        ""
+      initialValue.titleDeedImageName ?? initialValue.titleDeedImage?.name ?? ""
     );
 
     // land extra
@@ -246,6 +266,17 @@ const DetailsFiled = ({
     // ✅ เพิ่มใหม่
     setShopBusinessType(initialValue.shopBusinessType ?? "");
     setContractDuration(initialValue.contractDuration ?? "");
+
+    // ✅ เซ้งร้าน - เพิ่มใหม่
+    setShopWaterFee(initialValue.shopWaterFee ?? "");
+    setShopElectricFee(initialValue.shopElectricFee ?? "");
+
+    setShopHasStaff(initialValue.shopHasStaff ?? false);
+    setShopStaffCount(initialValue.shopStaffCount ?? "");
+    setShopStaffWage(initialValue.shopStaffWage ?? "");
+
+    setShopHasEquipment(initialValue.shopHasEquipment ?? false);
+    setShopEquipmentList(initialValue.shopEquipmentList ?? "");
   }, [initialValue]);
 
   /* =========================
@@ -297,8 +328,33 @@ const DetailsFiled = ({
       // ✅ เพิ่มใหม่
       setShopBusinessType("");
       setContractDuration("");
+
+      // ✅ เซ้งร้าน - reset
+      setShopWaterFee("");
+      setShopElectricFee("");
+
+      setShopHasStaff(false);
+      setShopStaffCount("");
+      setShopStaffWage("");
+
+      setShopHasEquipment(false);
+      setShopEquipmentList("");
     }
   }, [propertyType]);
+
+  // ✅ กันข้อมูลค้าง: ถ้าเลือก "ไม่มีพนักงาน/ไม่มีอุปกรณ์" ให้ล้างค่าช่องย่อย
+  useEffect(() => {
+    if (!shopHasStaff) {
+      setShopStaffCount("");
+      setShopStaffWage("");
+    }
+  }, [shopHasStaff]);
+
+  useEffect(() => {
+    if (!shopHasEquipment) {
+      setShopEquipmentList("");
+    }
+  }, [shopHasEquipment]);
 
   /* =========================
      ต้องบังคับแนบรูปโฉนดไหม?
@@ -397,6 +453,15 @@ const DetailsFiled = ({
     // ✅ เพิ่มใหม่
     shopBusinessType,
     contractDuration,
+
+    // ✅ เซ้งร้าน - เพิ่มใหม่
+    shopWaterFee,
+    shopElectricFee,
+    shopHasStaff,
+    shopStaffCount,
+    shopStaffWage,
+    shopHasEquipment,
+    shopEquipmentList,
   });
 
   /* =========================
@@ -438,6 +503,13 @@ const DetailsFiled = ({
       // ✅ เพิ่มใหม่
       if (!String(shopBusinessType || "").trim()) return setError("กรุณาระบุ ประเภทร้าน");
       if (!String(contractDuration || "").trim()) return setError("กรุณาระบุ ระยะสัญญา");
+
+      // ✅ เซ้งร้าน - validate เฉพาะตอนเลือกว่ามี
+      if (shopHasStaff) {
+        if (!String(shopStaffCount || "").trim()) return setError("กรุณาระบุ จำนวนพนักงาน");
+        if (!String(shopStaffWage || "").trim())
+          return setError("กรุณาระบุ ค่าแรงพนักงาน (โดยประมาณ)");
+      }
     }
 
     setError("");
@@ -833,7 +905,7 @@ const DetailsFiled = ({
         )}
 
         {/* =======================
-            ✅ ร้านค้า/ธุรกิจ (ของเดิม + เพิ่มใหม่)
+            ✅ ร้านค้า/ธุรกิจ (ของเดิม + เพิ่มใหม่ + เซ้งร้าน)
         ======================= */}
         {isShop(propertyType) && (
           <>
@@ -928,6 +1000,105 @@ const DetailsFiled = ({
                 style={{ height: "55px" }}
               />
             </div>
+
+            {/* =======================
+               ✅ เซ้งร้าน: เพิ่มตามที่ขอ
+            ======================= */}
+            <div className="col-sm-6 col-md-4 mb20">
+              <label className="fw600 mb10">ค่าน้ำ (โดยประมาณ)</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="เช่น 20/หน่วย หรือ เหมาจ่าย"
+                value={shopWaterFee}
+                onChange={(e) => setShopWaterFee(e.target.value)}
+                style={{ height: "55px" }}
+              />
+            </div>
+
+            <div className="col-sm-6 col-md-4 mb20">
+              <label className="fw600 mb10">ค่าไฟ (โดยประมาณ)</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="เช่น 7/หน่วย หรือ ตามมิเตอร์"
+                value={shopElectricFee}
+                onChange={(e) => setShopElectricFee(e.target.value)}
+                style={{ height: "55px" }}
+              />
+            </div>
+
+            <div className="col-sm-6 col-md-4 mb20">
+              <label className="fw600 mb10">มีพนักงานกี่คน (ถ้ามี)</label>
+              <select
+                className="form-control"
+                value={shopHasStaff ? "yes" : "no"}
+                onChange={(e) => setShopHasStaff(e.target.value === "yes")}
+                style={{ height: "55px" }}
+              >
+                <option value="no">ไม่มีพนักงาน</option>
+                <option value="yes">มีพนักงาน</option>
+              </select>
+            </div>
+
+            {shopHasStaff && (
+              <>
+                <div className="col-sm-6 col-md-4 mb20">
+                  <label className="fw600 mb10">
+                    จำนวนพนักงาน <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    placeholder="เช่น 2"
+                    value={shopStaffCount}
+                    onChange={(e) => setShopStaffCount(e.target.value)}
+                    style={{ height: "55px" }}
+                    min={0}
+                  />
+                </div>
+
+                <div className="col-sm-6 col-md-4 mb20">
+                  <label className="fw600 mb10">
+                    ค่าแรงพนักงาน (ถ้ามี) <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="เช่น 12,000/เดือน หรือ 450/วัน"
+                    value={shopStaffWage}
+                    onChange={(e) => setShopStaffWage(e.target.value)}
+                    style={{ height: "55px" }}
+                  />
+                </div>
+              </>
+            )}
+
+            <div className="col-sm-6 col-md-4 mb20">
+              <label className="fw600 mb10">มีอุปกรณ์ให้มั้ย (ถ้ามี)</label>
+              <select
+                className="form-control"
+                value={shopHasEquipment ? "yes" : "no"}
+                onChange={(e) => setShopHasEquipment(e.target.value === "yes")}
+                style={{ height: "55px" }}
+              >
+                <option value="no">ไม่มีอุปกรณ์</option>
+                <option value="yes">มีอุปกรณ์ให้</option>
+              </select>
+            </div>
+
+            {shopHasEquipment && (
+              <div className="col-12 mb20">
+                <label className="fw600 mb10">รายการอุปกรณ์ที่ให้ (ถ้ามี)</label>
+                <textarea
+                  className="form-control"
+                  rows={3}
+                  placeholder="เช่น โต๊ะเก้าอี้, ตู้เย็น, เตาแก๊ส, เครื่องชงกาแฟ..."
+                  value={shopEquipmentList}
+                  onChange={(e) => setShopEquipmentList(e.target.value)}
+                />
+              </div>
+            )}
           </>
         )}
       </div>
