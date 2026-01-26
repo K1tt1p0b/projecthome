@@ -54,6 +54,11 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
   // ✅ ราคาประมาณ (dropdown)
   const [approxPrice, setApproxPrice] = useState(null);
 
+  // ✅ Co-Broker State (เพิ่มใหม่)
+  const [acceptCoBroke, setAcceptCoBroke] = useState(false);
+  const [commissionType, setCommissionType] = useState("percent"); // 'percent' | 'amount'
+  const [commissionValue, setCommissionValue] = useState("");
+
   const [announcerStatus, setAnnouncerStatus] = useState(null);
 
   // ✅ ประเภทการขาย: เลือกได้อย่างเดียว
@@ -175,6 +180,11 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
       toOption(initialValue.approxPrice_label, APPROX_PRICE_OPTIONS);
     setApproxPrice(ap);
 
+    // ✅ Co-Broker Init
+    setAcceptCoBroke(initialValue.acceptCoBroke === true || initialValue.acceptCoBroke === "true");
+    setCommissionType(initialValue.commissionType || "percent");
+    setCommissionValue(initialValue.commissionValue || "");
+
     // announcerStatus
     const a =
       toOption(initialValue.announcerStatus, announcerStatusOptions) ||
@@ -222,16 +232,21 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     title: title.trim(),
     description: description.trim(),
 
-    // ✅ ราคา: ถ้าไม่แสดงราคา ให้เป็น xxxx
+    // ✅ ราคา
     showPrice,
     price_text: showPrice ? price : "xxxx",
     price: showPrice ? priceNumber : 0,
 
-    // ✅ ราคาประมาณ (dropdown)
+    // ✅ ราคาประมาณ
     approxPrice: approxPrice?.value ?? null,
     approxPrice_label: approxPrice?.label ?? null,
     approxPrice_min: approxPrice?.min ?? null,
     approxPrice_max: approxPrice?.max ?? null,
+
+    // ✅ Co-Broker Data
+    acceptCoBroke,
+    commissionType: acceptCoBroke ? commissionType : null,
+    commissionValue: acceptCoBroke ? commissionValue : null,
 
     announcerStatus: announcerStatus?.value ?? null,
     announcerStatus_label: announcerStatus?.label ?? null,
@@ -352,7 +367,6 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
           </div>
         </div>
 
-        {/* ✅ ประเภทการขาย: single */}
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
             <label className="heading-color ff-heading fw600 mb10">
@@ -375,7 +389,6 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
           </div>
         </div>
 
-        {/* ✅ ประเภททรัพย์: ถ้า "เซ้ง" → เหลือแค่ร้านค้า และถ้าเปลี่ยนกลับขาย/เช่า → reset ว่าง */}
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
             <label className="heading-color ff-heading fw600 mb10">
@@ -422,7 +435,7 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
           </div>
         </div>
 
-        {/* ✅ แถวราคา: ซ้าย = ราคา, ขวา = ราคาประมาณ (dropdown) */}
+        {/* ✅ แถวราคา & Co-Broker */}
         <div className="col-sm-12 col-xl-8">
           <div className="row">
             {/* ซ้าย: ราคา */}
@@ -433,13 +446,14 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
                     ราคา {showPrice && <span className="text-danger">*</span>}
                   </label>
 
-                  <label className="d-flex align-items-center gap-2 mb-0">
+                  <label className="d-flex align-items-center gap-2 mb-0" style={{ cursor: 'pointer' }}>
                     <input
                       type="checkbox"
                       checked={showPrice}
                       onChange={(e) => setShowPrice(e.target.checked)}
+                      style={{ cursor: 'pointer' }}
                     />
-                    <span className="heading-color ff-heading fw600">แสดงราคา</span>
+                    <span className="heading-color ff-heading fw600" style={{ fontSize: '14px' }}>แสดงราคา</span>
                   </label>
                 </div>
 
@@ -486,6 +500,149 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
             </div>
           </div>
         </div>
+        {/* ✅✅ เพิ่มส่วน Co-Broke ตรงนี้ (เต็มความกว้างใน col-xl-8) */}
+        <div className="col-12 mb-5">
+          <div
+            className="rounded-4 transition-all"
+            style={{
+              backgroundColor: acceptCoBroke ? '#fff' : '#f8f9fa',
+              border: acceptCoBroke ? '2px solid #eb6753' : '1px solid #e9ecef',
+              padding: '24px',
+              boxShadow: acceptCoBroke ? '0 10px 30px rgba(235, 103, 83, 0.1)' : 'none',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            {/* Header ส่วนหัวกดเปิดปิด */}
+            <div className="d-flex align-items-center justify-content-between">
+              <div className="d-flex align-items-center gap-3">
+                {/* Icon Wrapper */}
+                <div
+                  className="d-flex align-items-center justify-content-center rounded-circle"
+                  style={{
+                    width: '50px',
+                    height: '50px',
+                    backgroundColor: acceptCoBroke ? '#eb6753' : '#e9ecef',
+                    color: acceptCoBroke ? '#fff' : '#6c757d',
+                    transition: 'all 0.3s ease',
+                    fontSize: '20px'
+                  }}
+                >
+                  <i className="fas fa-handshake"></i>
+                </div>
+
+                {/* Title & Desc */}
+                <div>
+                  <h6 className="m-0 fw-bold" style={{ fontSize: '16px', color: acceptCoBroke ? '#eb6753' : '#181a20' }}>
+                    ยินดีรับนายหน้าช่วยขาย
+                  </h6>
+                  <small className="text-muted">
+                    เปิดโอกาสให้นายหน้าท่านอื่นช่วยนำทรัพย์นี้ไปเสนอขาย เพื่อปิดการขายได้ไวขึ้น
+                  </small>
+                </div>
+              </div>
+
+              {/* Switch Toggle */}
+              <div className="form-check form-switch m-0">
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  role="button"
+                  checked={acceptCoBroke}
+                  onChange={(e) => {
+                    setAcceptCoBroke(e.target.checked);
+                    if (!e.target.checked) setCommissionValue("");
+                  }}
+                  style={{
+                    width: '3.5em',
+                    height: '1.9em',
+                    cursor: 'pointer',
+                    backgroundColor: acceptCoBroke ? '#eb6753' : undefined,
+                    borderColor: acceptCoBroke ? '#eb6753' : undefined
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Content Area (Expandable) */}
+            {acceptCoBroke && (
+              <div className="mt-4 animate__animated animate__fadeIn">
+                <hr className="mb-4 text-muted opacity-25" />
+
+                <div className="row">
+                  <div className="col-sm-6">
+                    <div className="mb20">
+                      <label className="heading-color ff-heading fw600 mb10">รูปแบบคอมมิชชั่น</label>
+                      <div className="location-area">
+                        <Select
+                          value={commissionType === 'percent' ? { value: 'percent', label: 'เปอร์เซ็นต์ (%)' } : { value: 'amount', label: 'จำนวนเงิน (บาท)' }}
+                          onChange={(option) => setCommissionType(option.value)}
+                          options={[
+                            { value: 'percent', label: 'เปอร์เซ็นต์ (%)' },
+                            { value: 'amount', label: 'จำนวนเงิน (บาท)' }
+                          ]}
+                          styles={{
+                            ...customStyles,
+                            control: (base, state) => ({
+                              ...base,
+                              borderColor: state.isFocused ? '#eb6753' : '#e9ecef',
+                              boxShadow: state.isFocused ? '0 0 0 1px #eb6753' : null,
+                              borderRadius: '8px',
+                              height: '55px'
+                            })
+                          }}
+                          className="select-custom pl-0"
+                          classNamePrefix="select"
+                          placeholder="เลือกรูปแบบ"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-sm-6">
+                    <div className="mb20">
+                      <label className="heading-color ff-heading fw600 mb10">
+                        {commissionType === 'percent' ? 'ระบุเปอร์เซ็นต์' : 'ระบุจำนวนเงิน'}
+                      </label>
+                      <div className="input-group">
+                        <input
+                          type="number"
+                          className="form-control"
+                          placeholder={commissionType === 'percent' ? 'เช่น 3' : 'เช่น 50000'}
+                          value={commissionValue}
+                          onChange={(e) => setCommissionValue(e.target.value)}
+                          style={{
+                            height: '55px',
+                            borderRadius: '8px 0 0 8px',
+                            borderColor: '#e9ecef'
+                          }}
+                        />
+                        <span
+                          className="input-group-text fw-bold"
+                          style={{
+                            borderRadius: '0 8px 8px 0',
+                            backgroundColor: '#fbfbfb',
+                            borderColor: '#e9ecef',
+                            color: '#eb6753'
+                          }}
+                        >
+                          {commissionType === 'percent' ? '%' : '฿'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-12 mt-1">
+                    <div className="d-flex align-items-center gap-2 text-muted" style={{ fontSize: '13px' }}>
+                      <i className="fas fa-info-circle"></i>
+                      <span>ข้อมูลส่วนนี้จะแสดงให้นายหน้าท่านอื่นเห็นเท่านั้น (ลูกค้าทั่วไปจะไม่เห็น)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        {/* จบส่วน Co-Broke */}
 
         {error && (
           <div className="col-12">

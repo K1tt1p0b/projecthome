@@ -13,30 +13,57 @@ import PropertyVideo from "@/components/property/property-single-style/common/Pr
 import ProperytyDescriptions from "@/components/property/property-single-style/common/ProperytyDescriptions";
 import PropertyGallery from "@/components/property/property-single-style/single-v5/property-gallery";
 
+// ✅ 1. Import Widget เข้ามา
+import CoBrokeSidebar from "@/components/property/CoBrokeSidebar";
+
 export const metadata = {
   title: "Property Single V5 || Homez - Real Estate NextJS Template",
 };
 
 const SingleV5 = async (props) => {
   const params = await props.params;
+  const id = params.id;
+
+  // 🔥🔥🔥 MOCK DATA: สร้างข้อมูลจำลองตรงนี้เลย ไม่กระทบไฟล์อื่น 🔥🔥🔥
+  const allMockData = [
+    {
+      id: 1,
+      title: "บ้านเดี่ยวสไตล์คันทรี (Mock)",
+      price: 14000000,
+
+      // ✅✅ ค่า Co-Broke ที่ต้องการเทส ✅✅
+      acceptCoBroke: true,       // เปิดรับ
+      commissionType: 'percent', // เปอร์เซ็นต์
+      commissionValue: 10,        // 3%
+    },
+    {
+      id: 2,
+      title: "วิลล่าหรู (Mock)",
+      price: 28000000,
+
+      acceptCoBroke: true,
+      commissionType: 'amount',
+      commissionValue: 50000,
+    }
+  ];
+
+  // ✅ ดึงข้อมูลจาก Mock (ถ้าหาไม่เจอ ให้ใช้ตัวแรกเป็น Default)
+  const data = allMockData.find((item) => String(item.id) === String(id)) || allMockData[0];
 
   return (
     <>
-      {/* ================= Header ================= */}
       <DefaultHeader />
       <MobileMenu />
 
-      {/* ================= Gallery ================= */}
       <section className="p-0 bgc-white">
-        <PropertyGallery id={params.id} />
+        {/* Gallery ยังใช้ id เดิมไปก่อน */}
+        <PropertyGallery id={id} />
       </section>
 
-      {/* ================= Content ================= */}
       <section className="pt30 pb90 bgc-f7">
         <div className="container">
-          {/* Header */}
           <div className="row sp-v5-property-details">
-            <PropertyHeader id={params.id} />
+            <PropertyHeader id={id} />
           </div>
 
           <div className="row mt50 mt30-lg">
@@ -52,7 +79,7 @@ const SingleV5 = async (props) => {
 
                 <h4 className="title fz17 mb30 mt50">ข้อมูลเพิ่มเติม</h4>
                 <div className="row">
-                  <PropertyDetails id={params.id} />
+                  <PropertyDetails id={id} />
                 </div>
               </div>
 
@@ -60,7 +87,7 @@ const SingleV5 = async (props) => {
               <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
                 <h4 className="title fz17 mb30">ภาพรวม</h4>
                 <div className="row">
-                  <OverView id={params.id} />
+                  <OverView id={id} />
                 </div>
               </div>
 
@@ -82,10 +109,16 @@ const SingleV5 = async (props) => {
             </div>
 
             {/* ================================================= */}
-            {/* 🟢 ฝั่งขวา */}
+            {/* 🟢 ฝั่งขวา (Sidebar) */}
             {/* ================================================= */}
             <div className="col-lg-6">
               <div className="column">
+
+                {/* ✅✅ 2. ส่ง Mock Data เข้าไปใน Widget ✅✅ */}
+                <div className="mb30">
+                  <CoBrokeSidebar property={data} />
+                </div>
+
                 {/* ===== Address / Map ===== */}
                 <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
                   <h4 className="title fz17 mb30">ที่ตั้ง</h4>
@@ -94,13 +127,13 @@ const SingleV5 = async (props) => {
                   </div>
                 </div>
 
-                {/* ===== ของเดิม (ถ้าจะเก็บไว้) ===== */}
+                {/* ===== ของเดิม ===== */}
                 <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
                   <h4 className="title fz17 mb30">ติดต่อสอบถาม</h4>
                   <InfoWithForm />
                 </div>
 
-                {/* ===== Contact Form (ใช้ FormContact) ===== */}
+                {/* ===== Contact Form ===== */}
                 <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
                   <h4 className="title fz17 mb30">ติดต่อผู้ประกาศ</h4>
                   <FormContact />
@@ -112,7 +145,6 @@ const SingleV5 = async (props) => {
         </div>
       </section>
 
-      {/* ================= Footer ================= */}
       <section className="footer-style1 pt60 pb-0">
         <Footer />
       </section>

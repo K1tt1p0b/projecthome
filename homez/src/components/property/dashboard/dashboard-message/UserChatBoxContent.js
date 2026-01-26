@@ -49,8 +49,8 @@ const ChatMessage = ({ message }) => {
     <li className={message.className}>
       <div
         className={`d-flex align-items-center ${message.className === "sent float-start"
-            ? "mb15"
-            : "justify-content-end mb15"
+          ? "mb15"
+          : "justify-content-end mb15"
           }`}
       >
         {/* Avatar ฝั่งซ้าย (คนอื่นส่ง) */}

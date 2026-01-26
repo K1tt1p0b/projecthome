@@ -1,10 +1,12 @@
 "use client";
 import React, { useState } from "react";
 import Image from "next/image";
-// ✅ 1. เพิ่ม Import สำหรับเปลี่ยนหน้าและแจ้งเตือน
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+// ✅ 1. Import Rich Text Editor
+import RichTextEditor from "@/components/common/RichTextEditor";
 
 // -------------------------
 // Helpers: Video URL
@@ -46,7 +48,6 @@ const getYouTubeThumb = (url) => {
 const isValidVideoUrl = (url) => isYouTubeUrl(url) || isTikTokUrl(url);
 
 const AddCourseForm = () => {
-  // ✅ 2. เรียกใช้ Router
   const router = useRouter();
 
   // --- State ---
@@ -149,10 +150,9 @@ const AddCourseForm = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // ✅ เพิ่มเช็คชื่อคอร์สกันเหนียว
     if (!formData.title) {
-        toast.error("กรุณากรอกชื่อคอร์สเรียน");
-        return;
+      toast.error("กรุณากรอกชื่อคอร์สเรียน");
+      return;
     }
 
     const { ok, errors, dup } = validateVideos();
@@ -160,9 +160,9 @@ const AddCourseForm = () => {
 
     if (!ok) {
       if (dup) {
-        toast.error("ลิงก์วิดีโอมีซ้ำกัน กรุณาแก้ไข"); // ใช้ toast แทน alert
+        toast.error("ลิงก์วิดีโอมีซ้ำกัน กรุณาแก้ไข");
       } else {
-        toast.error("กรุณาแก้ไขลิงก์วิดีโอให้ถูกต้อง"); // ใช้ toast แทน alert
+        toast.error("กรุณาแก้ไขลิงก์วิดีโอให้ถูกต้อง");
       }
       return;
     }
@@ -174,10 +174,9 @@ const AddCourseForm = () => {
       coverImage: imagePreview,
       videoUrls: finalVideoUrls,
     });
-    
-    // ✅ 3. แจ้งเตือนสำเร็จและเปลี่ยนหน้า
+
     toast.success("ลงประกาศคอร์สเรียนเรียบร้อยแล้ว!");
-    router.push("/dashboard-my-course"); // เปลี่ยนหน้าไปที่รายการคอร์สของฉัน
+    router.push("/dashboard-my-course");
   };
 
   return (
@@ -233,9 +232,8 @@ const AddCourseForm = () => {
                         <li key={option.value}>
                           <button
                             type="button"
-                            className={`dropdown-item rounded-2 py-2 ${
-                              formData.courseType === option.value ? "active" : ""
-                            }`}
+                            className={`dropdown-item rounded-2 py-2 ${formData.courseType === option.value ? "active" : ""
+                              }`}
                             onClick={() => handleDropdownSelect(option.value)}
                             style={{
                               cursor: "pointer",
@@ -268,23 +266,25 @@ const AddCourseForm = () => {
                 </div>
               </div>
 
-              {/* Description */}
+              {/* Description - เปลี่ยนเป็น Rich Text Editor */}
               <div className="col-md-12">
                 <div className="mb20">
                   <label className="heading-color ff-heading fw600 mb10">รายละเอียดบทเรียน</label>
-                  <textarea
-                    cols="30"
-                    rows="6"
-                    name="description"
-                    className="form-control"
+
+                  {/* ✅ 2. ใช้งาน Component RichTextEditor */}
+                  <RichTextEditor
+                    value={formData.description || ""}
+                    onChange={(content) => {
+                      // อัปเดต State โดยตรง
+                      setFormData((prev) => ({ ...prev, description: content }));
+                    }}
                     placeholder="รายละเอียดสิ่งที่จะได้รับ, เนื้อหาที่สอน..."
-                    value={formData.description}
-                    onChange={handleChange}
-                  ></textarea>
+                  />
+
                 </div>
               </div>
 
-              {/* ✅ วิดีโอ 4 ช่องแบบ box (2x2) */}
+              {/* วิดีโอ 4 ช่องแบบ box (2x2) */}
               <div className="col-md-12">
                 <div className="mb20">
                   <label className="heading-color ff-heading fw600 mb10">วิดีโอแนะนำคอร์ส (YouTube/TikTok)</label>

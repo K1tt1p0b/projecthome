@@ -92,6 +92,11 @@ const PropertySummary = ({
   const safeLocation = location || {};
   const safeImages = Array.isArray(images) ? images : [];
 
+  // ✅ ดึงข้อมูล Co-Broke มาเตรียมไว้
+  const acceptCoBroke = safeBasic.acceptCoBroke === true || safeBasic.acceptCoBroke === "true";
+  const commissionType = safeBasic.commissionType;
+  const commissionValue = safeBasic.commissionValue;
+
   // ✅ FIX: videos -> string url[]
   const safeVideos = useMemo(() => normalizeVideoList(videos), [videos]);
 
@@ -511,8 +516,25 @@ const PropertySummary = ({
                 <strong>ราคา:</strong>{" "}
                 {formatPrice(resolvedBasicInfo.price, resolvedBasicInfo.price_text)}
               </p>
+
+              {/* ✅✅ แสดงผล Co-Broke ในหน้าสรุป ✅✅ */}
+              <div className="mt-3 pt-3 border-top">
+                <div className="d-flex align-items-center gap-2">
+                  <i className={`fas fa-handshake ${acceptCoBroke ? 'text-success' : 'text-muted'}`}></i>
+                  <strong>นายหน้าช่วยขาย (Co-Broke):</strong>
+                  
+                  {acceptCoBroke ? (
+                    <span className="text-success fw-bold">
+                      ✅ ยินดีรับ ({Number(commissionValue).toLocaleString()} {commissionType === 'percent' ? '%' : 'บาท'})
+                    </span>
+                  ) : (
+                    <span className="text-muted">ไม่รับ / ไม่ระบุ</span>
+                  )}
+                </div>
+              </div>
+
               {resolvedBasicInfo.approxPrice && (
-                <p>
+                <p className="mt-2">
                   <strong>ราคาประมาณ:</strong> {String(resolvedBasicInfo.approxPrice)}
                 </p>
               )}

@@ -5,6 +5,9 @@ import Select from "react-select";
 import geographyData from "@/components/property/dashboard/dashboard-add-property/LocationField/geography.json";
 import { useRouter } from "next/navigation";
 
+// ✅ Import Rich Text Editor (ที่คุณเพิ่งสร้าง)
+import RichTextEditor from "@/components/common/RichTextEditor";
+
 // ✅ toastify
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -53,7 +56,7 @@ const isValidVideoUrl = (url) => isYouTubeUrl(url) || isTikTokUrl(url);
 
 const AddListingForm = () => {
 
-  const router = useRouter(); 
+  const router = useRouter();
   // --- State ---
   const [formData, setFormData] = useState({
     title: "",
@@ -277,15 +280,17 @@ const AddListingForm = () => {
           <div className="col-md-12">
             <div className="mb20">
               <label className="heading-color ff-heading fw600 mb10">รายละเอียด</label>
-              <textarea
-                cols="30"
-                rows="5"
-                name="description"
-                className="form-control"
+              
+              {/* ✅ เปลี่ยนเป็น Rich Text Editor */}
+              <RichTextEditor
+                value={formData.description || ""}
+                onChange={(content) => {
+                    // อัปเดต State โดยตรง
+                    setFormData((prev) => ({ ...prev, description: content }));
+                }}
                 placeholder="อธิบายรายละเอียดงานของคุณ ประสบการณ์ เครื่องจักรที่มี..."
-                value={formData.description}
-                onChange={handleChange}
-              ></textarea>
+              />
+              
             </div>
           </div>
 
