@@ -8,12 +8,12 @@ import L from "leaflet";
 // Type / Colors / Labels
 // =====================
 export const TYPE_META = [
-  { key: "house-and-land", label: "บ้าน / บ้านพร้อมที่ดิน", color: "#F97316" }, // ส้ม
+  { key: "house-and-land", label: "บ้านและที่ดิน", color: "#F97316" }, // ส้ม
   { key: "condo", label: "คอนโด", color: "#3B82F6" }, // น้ำเงิน
   { key: "land", label: "ที่ดิน", color: "#22C55E" }, // เขียว
   { key: "room-rent", label: "ห้องเช่า / หอพัก", color: "#A855F7" }, // ม่วง
-  { key: "shop", label: "ร้านค้า / พาณิชย์", color: "#EF4444" }, // แดง
-  { key: "office", label: "ออฟฟิศ", color: "#14B8A6" }, // teal
+  { key: "shop", label: "ร้านค้า", color: "#EF4444" }, // แดง
+  // { key: "office", label: "ออฟฟิศ", color: "#14B8A6" }, // ❌ เอาออก
   { key: "warehouse", label: "โกดัง", color: "#F59E0B" }, // amber
 ];
 
@@ -64,7 +64,7 @@ const dotIcon = (propertyType) => {
 
 // ===== Zoom thresholds =====
 const ZOOM_TO_LEVEL = {
-  PROVINCE_MAX: 7,  // <= 7 : province groups
+  PROVINCE_MAX: 7, // <= 7 : province groups
   DISTRICT_MAX: 10, // <= 10 : district groups
 };
 
@@ -133,7 +133,7 @@ function groupByRegion(points, level) {
       isMixed,
       mainType,
       color: isMixed ? MIXED_COLOR : (TYPE_COLOR[mainType] || DEFAULT_COLOR),
-      typeLabel: isMixed ? "หลายประเภท / ไม่ระบุ" : (TYPE_LABEL[mainType] || "ไม่ระบุ"),
+      typeLabel: isMixed ? "หลายประเภท" : (TYPE_LABEL[mainType] || "ไม่ระบุ"),
     };
   });
 }
@@ -178,7 +178,7 @@ function groupByLatLng(points) {
       isMixed,
       mainType,
       color: isMixed ? MIXED_COLOR : (TYPE_COLOR[mainType] || DEFAULT_COLOR),
-      typeLabel: isMixed ? "หลายประเภท / ไม่ระบุ" : (TYPE_LABEL[mainType] || "ไม่ระบุ"),
+      typeLabel: isMixed ? "หลายประเภท" : (TYPE_LABEL[mainType] || "ไม่ระบุ"),
     };
   });
 }
@@ -247,9 +247,9 @@ export default function MapMarkersLayerClient({
             </div>
           ))}
 
-          <div className="lx-type-legend-item" title="หลายประเภท / ไม่ระบุ">
+          <div className="lx-type-legend-item" title="หลายประเภท">
             <span className="lx-type-dot" style={{ background: MIXED_COLOR }} />
-            <span className="lx-type-label">หลายประเภท / ไม่ระบุ</span>
+            <span className="lx-type-label">หลายประเภท</span>
           </div>
         </div>
       )}

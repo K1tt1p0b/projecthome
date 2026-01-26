@@ -9,30 +9,20 @@ import { useRouter } from "next/navigation";
 import { propertyData as mockData } from "@/data/propertyData";
 import { toast } from "react-toastify";
 
-<<<<<<< HEAD
-// ✅ 1. ฟังก์ชันเลือกสีป้าย (ปรับปรุงใหม่: บังคับสวย เป๊ะทุกปุ่ม)
-const getStatusBadge = (status) => {
-  // สไตล์กลางที่ใช้ร่วมกันทุกปุ่ม (แก้เรื่องตัวเล็ก + ไม่ตรงกลาง)
-  const baseStyle = {
-    display: "inline-block",
-    padding: "10px 20px",        // เพิ่มพื้นที่ขอบ
-    borderRadius: "30px",        // ขอบมนสวย
-    fontSize: "14px",            // ✅ ตัวหนังสือใหญ่ขึ้น
-    fontWeight: "500",
-    lineHeight: "1",
-    textAlign: "center",         // ✅ จัดตัวหนังสือให้อยู่ตรงกลาง
-    minWidth: "120px",           // ✅ บังคับความกว้างให้เท่ากันทุกป้าย จะได้เรียงสวย
-  };
-
-=======
 // ✅ boost real store
 import {
   LS_AUTO,
   LS_MANUAL,
   AUTO_FALLBACK,
 } from "../dashboard-boost-property/boost/config/boostStorage";
-import { PACKAGES, getPackage } from "../dashboard-boost-property/boost/config/boostPackages";
-import { readLS, writeLS } from "../dashboard-boost-property/boost/utils/boostUtils";
+import {
+  PACKAGES,
+  getPackage,
+} from "../dashboard-boost-property/boost/config/boostPackages";
+import {
+  readLS,
+  writeLS,
+} from "../dashboard-boost-property/boost/utils/boostUtils";
 
 // =====================
 // ✅ จุดกลางแพ็กเกจผู้ใช้ (mock)
@@ -40,78 +30,13 @@ const USER_PACKAGE_LS_KEY = "landx_user_package_key_v1";
 const DEFAULT_PACKAGE_KEY = "pro";
 // =====================
 
-const getStatusStyle = (status) => {
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
-  switch (status) {
-    case "เผยแพร่แล้ว":
-    case "published":
-      return (
-        <span style={{ ...baseStyle, backgroundColor: "#E3F2FD", color: "#2196F3" }}>
-          เผยแพร่แล้ว
-        </span>
-      );
-
-    case "ขายแล้ว":
-    case "sold":
-      return (
-        <span style={{ ...baseStyle, backgroundColor: "#FFEBEE", color: "#F44336" }}>
-          ขายแล้ว
-        </span>
-      );
-
-    case "รอตรวจสอบ":
-    case "pending":
-      return (
-        <span style={{ ...baseStyle, backgroundColor: "#FFF3E0", color: "#FF9800" }}>
-          รอตรวจสอบ
-        </span>
-      );
-
-    case "กำลังดำเนินการ":
-      return (
-        <span style={{ ...baseStyle, backgroundColor: "#E8EAF6", color: "#3F51B5" }}>
-          กำลังดำเนินการ
-        </span>
-      );
-
-    case "ไม่อนุมัติ":
-      return (
-        <span style={{ ...baseStyle, backgroundColor: "#FFEBEE", color: "#D32F2F" }}>
-          ไม่อนุมัติ
-        </span>
-      );
-
-    default:
-      return (
-        <span style={{ ...baseStyle, backgroundColor: "#F5F5F5", color: "#616161" }}>
-          {status}
-        </span>
-      );
-  }
-};
-
-<<<<<<< HEAD
-// ... (ส่วนอื่นๆ ของไฟล์เหมือนเดิม ไม่ต้องแก้) ...
-=======
 // ✅ ไปหน้า boost confirm
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
 const BOOST_URL = (id, mode) =>
-  `/dashboard-boost-property?propertyId=${id}&step=2${mode ? `&mode=${mode}` : ""}`;
+  `/dashboard-boost-property?propertyId=${id}&step=2${
+    mode ? `&mode=${mode}` : ""
+  }`;
 
 const VIDEO_URL = (id) => `/dashboard-video-gallery?propertyId=${id}`;
-<<<<<<< HEAD
-const VIDEO_STORE_KEY = "landx_property_videos_v1";
-const MAX_SLOTS = 4;
-
-const toUrlText = (v) => {
-  if (!v) return "";
-  if (typeof v === "string") return v;
-  if (typeof v === "object") return v.url || v.src || v.link || "";
-  return String(v);
-};
-const toTrimmedUrl = (v) => String(toUrlText(v) || "").trim();
-
-=======
 
 // =====================
 // LocalStorage: Video
@@ -119,7 +44,6 @@ const toTrimmedUrl = (v) => String(toUrlText(v) || "").trim();
 const VIDEO_STORE_KEY = "landx_property_videos_v1";
 const MAX_SLOTS = 4;
 
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
 function safeParse(json) {
   try {
     return JSON.parse(json);
@@ -154,17 +78,10 @@ function detectProvider(url) {
   if (u.includes("tiktok.com/")) return "tiktok";
   return "youtube";
 }
-<<<<<<< HEAD
-
 function isValidVideoUrl(url) {
   const u = toTrimmedUrl(url);
   if (!u) return true;
 
-=======
-function isValidVideoUrl(url) {
-  const u = toTrimmedUrl(url);
-  if (!u) return true;
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
   const isYoutube =
     u.includes("youtube.com/watch") ||
     u.includes("youtu.be/") ||
@@ -175,10 +92,6 @@ function isValidVideoUrl(url) {
 function uid() {
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
 function normalizeStoreValueToUrls(v) {
   if (!v) return [];
   if (Array.isArray(v)) {
@@ -208,8 +121,6 @@ function buildItemsFromUrls(urls) {
     }));
 }
 
-<<<<<<< HEAD
-=======
 // =====================
 // ✅ Package helpers (source กลาง)
 // =====================
@@ -244,13 +155,19 @@ function normalizeAutoStore(raw, fallbackPkgKey) {
 
   // ---- legacy (เก่า) ----
   const oldItems = s.items && typeof s.items === "object" ? s.items : {};
-  const oldOrder = Array.isArray(s.order) ? s.order.map(String).filter(Boolean) : [];
-  const oldQueue = Array.isArray(s.queue) ? s.queue.map(String).filter(Boolean) : [];
+  const oldOrder = Array.isArray(s.order)
+    ? s.order.map(String).filter(Boolean)
+    : [];
+  const oldQueue = Array.isArray(s.queue)
+    ? s.queue.map(String).filter(Boolean)
+    : [];
 
   const legacyActiveId =
     typeof s.activePropertyId === "string" && s.activePropertyId
       ? s.activePropertyId
-      : oldOrder.find((id) => !!oldItems?.[id]) || Object.keys(oldItems)[0] || "";
+      : oldOrder.find((id) => !!oldItems?.[id]) ||
+        Object.keys(oldItems)[0] ||
+        "";
 
   const legacyQueuedId =
     typeof s.queuedPropertyId === "string" && s.queuedPropertyId
@@ -344,22 +261,88 @@ function getAutoBlockInfo(userPkgKey) {
   };
 }
 
+// =====================
+// ✅ Status badge (ของคุณ) แต่ใช้ร่วมกับโค้ดใหม่
+// =====================
+const baseStatusStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "10px 20px",
+  borderRadius: "30px",
+  fontSize: "14px",
+  fontWeight: "500",
+  lineHeight: "1",
+  textAlign: "center",
+  minWidth: "120px",
+  whiteSpace: "nowrap",
+};
+
+const getStatusMeta = (status) => {
+  const s = String(status || "");
+  switch (s) {
+    case "เผยแพร่แล้ว":
+    case "published":
+      return { label: "เผยแพร่แล้ว", bg: "#E3F2FD", color: "#2196F3" };
+    case "ขายแล้ว":
+    case "sold":
+      return { label: "ขายแล้ว", bg: "#FFEBEE", color: "#F44336" };
+    case "รอตรวจสอบ":
+    case "pending":
+      return { label: "รอตรวจสอบ", bg: "#FFF3E0", color: "#FF9800" };
+    case "กำลังดำเนินการ":
+      return { label: "กำลังดำเนินการ", bg: "#E8EAF6", color: "#3F51B5" };
+    case "ไม่อนุมัติ":
+      return { label: "ไม่อนุมัติ", bg: "#FFEBEE", color: "#D32F2F" };
+    default:
+      return { label: s || "-", bg: "#F5F5F5", color: "#616161" };
+  }
+};
+
 // ===== skeleton row =====
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
 const SkeletonRow = () => (
   <tr>
     <th scope="row">
       <div className="listing-style1 dashboard-style d-xxl-flex align-items-center mb-0">
-        <div style={{ width: 110, height: 94, borderRadius: 12, background: "#eee", flexShrink: 0 }} />
+        <div
+          style={{
+            width: 110,
+            height: 94,
+            borderRadius: 12,
+            background: "#eee",
+            flexShrink: 0,
+          }}
+        />
         <div className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4 w-100">
-          <div style={{ width: "60%", height: 14, background: "#eee", borderRadius: 6 }} />
-          <div style={{ width: "30%", height: 12, background: "#eee", borderRadius: 6, marginTop: 10 }} />
+          <div
+            style={{
+              width: "60%",
+              height: 14,
+              background: "#eee",
+              borderRadius: 6,
+            }}
+          />
+          <div
+            style={{
+              width: "30%",
+              height: 12,
+              background: "#eee",
+              borderRadius: 6,
+              marginTop: 10,
+            }}
+          />
         </div>
       </div>
     </th>
-    <td className="vam"><div style={{ width: 90, height: 12, background: "#eee", borderRadius: 6 }} /></td>
-    <td className="vam"><div style={{ width: 110, height: 28, background: "#eee", borderRadius: 999 }} /></td>
-    <td className="vam"><div style={{ width: 60, height: 12, background: "#eee", borderRadius: 6 }} /></td>
+    <td className="vam">
+      <div style={{ width: 90, height: 12, background: "#eee", borderRadius: 6 }} />
+    </td>
+    <td className="vam">
+      <div style={{ width: 110, height: 28, background: "#eee", borderRadius: 999 }} />
+    </td>
+    <td className="vam">
+      <div style={{ width: 60, height: 12, background: "#eee", borderRadius: 6 }} />
+    </td>
     <td className="vam">
       <div style={{ width: 120, height: 12, background: "#eee", borderRadius: 6 }} />
     </td>
@@ -368,14 +351,6 @@ const SkeletonRow = () => (
 
 const PropertyDataTable = () => {
   const router = useRouter();
-<<<<<<< HEAD
-  const [loading, setLoading] = useState(true);
-  const [properties, setProperties] = useState([]);
-  const [editingId, setEditingId] = useState(null);
-  const [deletingId, setDeletingId] = useState(null);
-  const [boostingId, setBoostingId] = useState(null);
-  const [videoSummary, setVideoSummary] = useState({});
-=======
 
   const [userPkgKey, setUserPkgKey] = useState(DEFAULT_PACKAGE_KEY);
 
@@ -390,16 +365,12 @@ const PropertyDataTable = () => {
   const [tick, setTick] = useState(0);
 
   // ===== modal (video) =====
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [videoModalProperty, setVideoModalProperty] = useState(null);
   const [videoInputs, setVideoInputs] = useState(Array(MAX_SLOTS).fill(""));
   const [videoSaving, setVideoSaving] = useState(false);
-<<<<<<< HEAD
-=======
 
   // ===== modal (boost picker) =====
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
   const [boostModalOpen, setBoostModalOpen] = useState(false);
   const [boostModalProperty, setBoostModalProperty] = useState(null);
 
@@ -415,8 +386,14 @@ const PropertyDataTable = () => {
   const pkg = useMemo(() => getPackage(userPkgKey), [userPkgKey]);
 
   // ✅ interval ของแพ็ก (ใช้ทั้ง manual/auto ใน mock นี้)
-  const MANUAL_COOLDOWN_MS = useMemo(() => Number(pkg.intervalMs || 0) || 0, [pkg]);
-  const AUTO_INTERVAL_MS = useMemo(() => Number(pkg.intervalMs || 0) || 0, [pkg]);
+  const MANUAL_COOLDOWN_MS = useMemo(
+    () => Number(pkg.intervalMs || 0) || 0,
+    [pkg]
+  );
+  const AUTO_INTERVAL_MS = useMemo(
+    () => Number(pkg.intervalMs || 0) || 0,
+    [pkg]
+  );
 
   const refreshVideoSummaryFromLocal = (propertyIds) => {
     const store = readVideoStore();
@@ -452,17 +429,15 @@ const PropertyDataTable = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-<<<<<<< HEAD
-=======
   useEffect(() => {
     const t = setInterval(() => setTick((x) => x + 1), 1000);
     return () => clearInterval(t);
   }, []);
 
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
   useEffect(() => {
     const onStorage = (e) => {
-      if (e.key === VIDEO_STORE_KEY) refreshVideoSummaryFromLocal(properties.map((p) => p.id));
+      if (e.key === VIDEO_STORE_KEY)
+        refreshVideoSummaryFromLocal(properties.map((p) => p.id));
       if (e.key === LS_AUTO || e.key === USER_PACKAGE_LS_KEY) {
         const k = readUserPackageKey();
         setUserPkgKey(k);
@@ -527,38 +502,6 @@ const PropertyDataTable = () => {
     }
   };
 
-<<<<<<< HEAD
-  const openBoostPicker = (property) => {
-    if (!property?.id) return;
-    if (deletingId === property.id) return;
-    setBoostModalProperty(property);
-    setBoostModalOpen(true);
-  };
-
-  const closeBoostPicker = () => {
-    if (boostingId) return;
-    setBoostModalOpen(false);
-    setBoostModalProperty(null);
-  };
-
-  const goBoost = async (mode) => {
-    const id = boostModalProperty?.id;
-    if (!id) return;
-    try {
-      setBoostingId(id);
-      await new Promise((r) => setTimeout(r, 200));
-      closeBoostPicker();
-      router.push(BOOST_URL(id, mode));
-    } catch (e) {
-      console.error(e);
-      toast.error("ไปหน้าดันประกาศไม่สำเร็จ");
-    } finally {
-      setBoostingId(null);
-    }
-  };
-
-=======
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
   const handleVideoPage = (id) => router.push(VIDEO_URL(id));
 
   // ===== modal video =====
@@ -602,17 +545,18 @@ const PropertyDataTable = () => {
       }
     }
 
-    const cleaned = videoInputs.map((u) => toTrimmedUrl(u)).filter(Boolean).slice(0, MAX_SLOTS);
+    const cleaned = videoInputs
+      .map((u) => toTrimmedUrl(u))
+      .filter(Boolean)
+      .slice(0, MAX_SLOTS);
 
     try {
       setVideoSaving(true);
       await new Promise((r) => setTimeout(r, 250));
       const store = readVideoStore();
       const key = String(property.id);
-<<<<<<< HEAD
-=======
 
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
+      // ห้ามซ้ำข้ามโพส
       const all = Object.entries(store || {}).flatMap(([pid, arr]) => {
         const urls = normalizeStoreValueToUrls(arr);
         return urls.map((u) => ({ pid, url: u }));
@@ -628,10 +572,7 @@ const PropertyDataTable = () => {
 
       store[key] = buildItemsFromUrls(cleaned);
       writeVideoStore(store);
-<<<<<<< HEAD
-=======
 
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
       setVideoSummary((prev) => ({
         ...(prev || {}),
         [property.id]: { count: cleaned.length, hasVideo: cleaned.length > 0 },
@@ -665,6 +606,7 @@ const PropertyDataTable = () => {
 
     const next = { ...store };
 
+    // ถ้ามีคิว -> สลับ active ไปคิว
     if (next.queuedPropertyId) {
       next.activePropertyId = next.queuedPropertyId;
       next.queuedPropertyId = "";
@@ -677,6 +619,7 @@ const PropertyDataTable = () => {
       return;
     }
 
+    // ถ้าถูกกดยกเลิก -> ปิดหลังครบเวลา
     if (next.cancelAfterCooldown) {
       next.activePropertyId = "";
       next.queuedPropertyId = "";
@@ -690,6 +633,7 @@ const PropertyDataTable = () => {
       return;
     }
 
+    // ไม่มีคิวและไม่ยกเลิก -> รีสตาร์ทรอบ
     next.activeStartedAt = now;
     next.cooldownEndAt = now + AUTO_INTERVAL_MS;
 
@@ -716,10 +660,15 @@ const PropertyDataTable = () => {
 
     // ---- auto status ----
     const autoRaw = readLS(LS_AUTO, AUTO_FALLBACK);
-    const autoStore = normalizeAutoStore({ ...AUTO_FALLBACK, ...autoRaw }, userPkgKey);
+    const autoStore = normalizeAutoStore(
+      { ...AUTO_FALLBACK, ...autoRaw },
+      userPkgKey
+    );
 
-    const isAutoActive = !!autoStore.activePropertyId && String(autoStore.activePropertyId) === sid;
-    const isAutoQueued = !!autoStore.queuedPropertyId && String(autoStore.queuedPropertyId) === sid;
+    const isAutoActive =
+      !!autoStore.activePropertyId && String(autoStore.activePropertyId) === sid;
+    const isAutoQueued =
+      !!autoStore.queuedPropertyId && String(autoStore.queuedPropertyId) === sid;
 
     if (isAutoActive || isAutoQueued) {
       const nextAt = Number(autoStore.cooldownEndAt || 0);
@@ -810,7 +759,9 @@ const PropertyDataTable = () => {
 
     // ✅ 2) มีคิวอยู่แล้ว -> ห้าม replace ต้องไปยกเลิกคิวก่อน
     if (info.blockedNeedCancelQueue && String(info.queuedId) !== String(id)) {
-      toast.warn(`ตอนนี้มีโพส #${info.queuedId} อยู่ในคิวแล้ว — ต้องยกเลิกคิวก่อน ถึงจะเลือกโพสอื่นได้`);
+      toast.warn(
+        `ตอนนี้มีโพส #${info.queuedId} อยู่ในคิวแล้ว — ต้องยกเลิกคิวก่อน ถึงจะเลือกโพสอื่นได้`
+      );
       return;
     }
 
@@ -1019,7 +970,6 @@ const PropertyDataTable = () => {
     const raw = readLS(LS_AUTO, AUTO_FALLBACK);
     const store = normalizeAutoStore({ ...AUTO_FALLBACK, ...raw }, userPkgKey);
 
-    // active ได้ 1 เสมอ
     const activeCount = store.activePropertyId ? 1 : 0;
     const max = 1;
     return { activeCount, max, isFull: activeCount >= max };
@@ -1038,41 +988,98 @@ const PropertyDataTable = () => {
 
   return (
     <>
-      {/* (Modal Video และ Boost Picker เหมือนเดิม...) */}
+      {/* =========================
+          Modal: Video
+      ========================= */}
       {videoModalOpen && (
-        <div role="dialog" aria-modal="true" onMouseDown={(e) => { if (e.target === e.currentTarget) closeVideoModal(); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-          <div style={{ width: "min(720px, 100%)", background: "#fff", borderRadius: 14, boxShadow: "0 12px 30px rgba(0,0,0,0.18)", overflow: "hidden" }}>
-            {/* ... content ของ video modal ... */}
+        <div
+          role="dialog"
+          aria-modal="true"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeVideoModal();
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+        >
+          <div
+            style={{
+              width: "min(720px, 100%)",
+              background: "#fff",
+              borderRadius: 14,
+              boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
+              overflow: "hidden",
+            }}
+          >
             <div className="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
-              <div><div className="h6 mb-0">วิดีโอประกาศ (สูงสุด {MAX_SLOTS} อัน)</div></div>
-              <button type="button" className="btn btn-light" onClick={closeVideoModal} disabled={videoSaving}><span className="fas fa-times" /></button>
+              <div>
+                <div className="h6 mb-0">วิดีโอประกาศ (สูงสุด {MAX_SLOTS} อัน)</div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-light"
+                onClick={closeVideoModal}
+                disabled={videoSaving}
+                aria-label="close"
+              >
+                <span className="fas fa-times" />
+              </button>
             </div>
+
             <div className="px-4 py-4">
               <div className="row">
                 {videoInputs.map((val, idx) => (
                   <div className="col-12" key={idx}>
-                    <label className="form-label" style={{ fontWeight: 600 }}>URL วิดีโอ {idx + 1}</label>
-                    <input className="form-control mb-2" value={String(val ?? "")} onChange={(e) => setVideoAt(idx, e.target.value)} disabled={videoSaving} />
+                    <label className="form-label" style={{ fontWeight: 600 }}>
+                      URL วิดีโอ {idx + 1}
+                    </label>
+                    <input
+                      className="form-control mb-2"
+                      value={String(val ?? "")}
+                      onChange={(e) => setVideoAt(idx, e.target.value)}
+                      disabled={videoSaving}
+                      placeholder="https://youtube.com/... หรือ https://tiktok.com/..."
+                    />
                   </div>
                 ))}
               </div>
+
               <div className="d-flex gap-2 justify-content-end mt-4">
-                <button type="button" className="ud-btn btn-white2" onClick={closeVideoModal} disabled={videoSaving} style={{ height: 44, padding: "0 18px", borderRadius: 12 }}>ยกเลิก</button>
-                <button type="button" className="ud-btn btn-thme" onClick={saveVideoUrlsFrontOnly} disabled={videoSaving} style={{ height: 44, padding: "0 18px", borderRadius: 12 }}>บันทึก</button>
+                <button
+                  type="button"
+                  className="ud-btn btn-white2"
+                  onClick={closeVideoModal}
+                  disabled={videoSaving}
+                  style={{ height: 44, padding: "0 18px", borderRadius: 12 }}
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="button"
+                  className="ud-btn btn-thme"
+                  onClick={saveVideoUrlsFrontOnly}
+                  disabled={videoSaving}
+                  style={{ height: 44, padding: "0 18px", borderRadius: 12 }}
+                >
+                  บันทึก
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* =========================
+          Modal: Boost Picker
+      ========================= */}
       {boostModalOpen && (
-<<<<<<< HEAD
-        <div role="dialog" aria-modal="true" onMouseDown={(e) => { if (e.target === e.currentTarget) closeBoostPicker(); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-          <div style={{ width: "min(520px, 100%)", background: "#fff", borderRadius: 14, boxShadow: "0 12px 30px rgba(0,0,0,0.18)", overflow: "hidden" }}>
-            <div className="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
-              <div><div className="h6 mb-0">เลือกประเภทการดันประกาศ</div></div>
-              <button type="button" className="btn btn-light" onClick={closeBoostPicker} disabled={!!boostingId}><span className="fas fa-times" /></button>
-=======
         <div
           role="dialog"
           aria-modal="true"
@@ -1117,14 +1124,9 @@ const PropertyDataTable = () => {
               >
                 <span className="fas fa-times" />
               </button>
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
             </div>
+
             <div className="px-4 py-4">
-<<<<<<< HEAD
-              <div className="d-flex flex-column gap-2">
-                <button type="button" className="ud-btn btn-thme" style={{ height: 48, borderRadius: 12, width: "100%" }} onClick={() => goBoost("manual")} disabled={!!boostingId}>ดันแบบแมนนวล</button>
-                <button type="button" className="ud-btn btn-white2" style={{ height: 48, borderRadius: 12, width: "100%" }} onClick={() => goBoost("auto")} disabled={!!boostingId}>ดันแบบออโต้</button>
-=======
               <div className="mb-3" style={{ fontSize: 13, opacity: 0.85 }}>
                 แพ็กคุณตอนนี้: <b>{pkg.label}</b>
               </div>
@@ -1198,12 +1200,9 @@ const PropertyDataTable = () => {
                       : "ไปหน้ายืนยันออโต้ แล้วกด “ยืนยัน”"}
                   </div>
                 </button>
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
               </div>
+
               <div className="d-flex justify-content-end mt-3">
-<<<<<<< HEAD
-                <button type="button" className="ud-btn btn-white2" style={{ height: 44, padding: "0 18px", borderRadius: 12 }} onClick={closeBoostPicker} disabled={!!boostingId}>ยกเลิก</button>
-=======
                 <button
                   type="button"
                   className="ud-btn btn-white2"
@@ -1213,13 +1212,15 @@ const PropertyDataTable = () => {
                 >
                   ปิด
                 </button>
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
               </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* =========================
+          Table
+      ========================= */}
       <table className="table-style3 table at-savesearch" style={{ tableLayout: "fixed" }}>
         <colgroup>
           <col style={{ width: "45%" }} />
@@ -1233,27 +1234,31 @@ const PropertyDataTable = () => {
           <tr>
             <th scope="col">รายการทรัพย์</th>
             <th scope="col">ราคา</th>
-<<<<<<< HEAD
-            {/* ✅ จัดกึ่งกลาง Header ด้วย */}
-            <th scope="col" style={{ textAlign: "center" }}>สถานะ</th>
-            <th scope="col">ยอดเข้าชม</th>
-            <th scope="col">จัดการ</th>
-=======
-            <th scope="col">สถานะ</th>
+            <th scope="col" style={{ textAlign: "center" }}>
+              สถานะ
+            </th>
             <th scope="col" style={{ whiteSpace: "nowrap" }}>
               ยอดเข้าชม
             </th>
             <th scope="col" style={{ textAlign: "right", paddingRight: 18 }}>
               จัดการ
             </th>
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
           </tr>
         </thead>
+
         <tbody className="t-body">
           {loading ? (
-            <><SkeletonRow /><SkeletonRow /><SkeletonRow /></>
+            <>
+              <SkeletonRow />
+              <SkeletonRow />
+              <SkeletonRow />
+            </>
           ) : !hasData ? (
-            <tr><td colSpan={5} className="text-center py-5">ยังไม่มีประกาศ</td></tr>
+            <tr>
+              <td colSpan={5} className="text-center py-5">
+                ยังไม่มีประกาศ
+              </td>
+            </tr>
           ) : (
             properties.map((property) => {
               const count = videoSummary?.[property.id]?.count ?? 0;
@@ -1263,37 +1268,37 @@ const PropertyDataTable = () => {
               const boostUi = getBoostUi(property.id);
               const isPublished = canBoostStatus(property);
 
-              const isAuto = boostUi?.has && boostUi?.mode === "auto";
               const isQueued = !!boostUi?.isAutoQueued;
               const isActive = !!boostUi?.isAutoActive;
 
               const canPressBoost =
                 isPublished &&
-                (!boostUi?.has ||
-                  (boostUi?.mode === "manual" && !boostUi?.manualCooling));
+                (!boostUi?.has || (boostUi?.mode === "manual" && !boostUi?.manualCooling));
+
+              const statusMeta = getStatusMeta(property.status);
 
               return (
                 <tr key={property.id}>
                   <th scope="row">
                     <div className="listing-style1 dashboard-style d-xxl-flex align-items-center mb-0">
                       <div className="list-thumb">
-                        <Image width={110} height={94} className="w-100" src={property.imageSrc} alt="property" />
+                        <Image
+                          width={110}
+                          height={94}
+                          className="w-100"
+                          src={property.imageSrc}
+                          alt="property"
+                        />
                       </div>
-<<<<<<< HEAD
-                      <div className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4">
-                        <div className="h6 list-title d-flex align-items-center gap-2">
-                          <Link href={`/single-v1/${property.id}`}>{property.title}</Link>
-                          {hasVideo && (
-                            <button type="button" className="icon" disabled={busy} style={{ border: "none", background: "transparent", padding: 0 }} onClick={() => handleVideoPage(property.id)}>
-                              <span className="fas fa-video" /> <span style={{ fontSize: 12 }}>{count}</span>
-                            </button>
-                          )}
-                        </div>
-                        <p className="list-text mb-0">{property.location?.address ?? "-"}</p>
-=======
 
-                      <div className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4" style={{ minWidth: 0 }}>
-                        <div className="h6 list-title d-flex align-items-center gap-2" style={{ marginBottom: 6 }}>
+                      <div
+                        className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4"
+                        style={{ minWidth: 0 }}
+                      >
+                        <div
+                          className="h6 list-title d-flex align-items-center gap-2"
+                          style={{ marginBottom: 6 }}
+                        >
                           <Link href={`/single-v1/${property.id}`}>{property.title}</Link>
 
                           {hasVideo && (
@@ -1417,53 +1422,17 @@ const PropertyDataTable = () => {
                             </span>
                           </div>
                         )}
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
                       </div>
                     </div>
                   </th>
+
+                  {/* ราคา (ไม่ซ้ำ) */}
                   <td className="vam">{property.priceText || property.price?.toLocaleString?.() || "-"}</td>
 
-<<<<<<< HEAD
-                  {/* ✅ ใช้ฟังก์ชัน getStatusBadge และจัดกึ่งกลาง */}
+                  {/* สถานะแบบ badge (ของคุณ) */}
                   <td className="vam" style={{ textAlign: "center" }}>
-                    {getStatusBadge(property.status)}
-                  </td>
-
-                  <td className="vam">{property.views ?? "-"}</td>
-                  <td className="vam">
-                    <div className="d-flex align-items-center justify-content-end">
-                      <div className="dropdown">
-                        <button type="button" className="icon" disabled={busy} style={{ border: "none", background: "transparent" }} data-bs-toggle="dropdown">
-                          <span className="fas fa-ellipsis-h" />
-                        </button>
-                        <ul className="dropdown-menu dropdown-menu-end">
-                          <li><button type="button" className="dropdown-item d-flex align-items-center gap-2" disabled={busy} onClick={() => handleEdit(property.id)}><span className="fas fa-pen" /> แก้ไข</button></li>
-
-                          {/* ✅ ปุ่มปิดการขาย */}
-                          {property.status !== "ขายแล้ว" && (
-                            <li><button type="button" className="dropdown-item d-flex align-items-center gap-2 text-success" disabled={busy} onClick={() => handleUpdateStatus(property.id, "ขายแล้ว")}><span className="fas fa-check-circle" /> ปิดการขาย</button></li>
-                          )}
-
-                          <li><button type="button" className="dropdown-item d-flex align-items-center gap-2" disabled={busy} onClick={() => openBoostPicker(property)}><span className="fas fa-bolt" /> ดันประกาศ</button></li>
-                          <li><button type="button" className="dropdown-item d-flex align-items-center gap-2" disabled={busy} onClick={() => openVideoModal(property)}><span className="fas fa-video" /> {hasVideo ? "แก้ไขวิดีโอ" : "เพิ่มวิดีโอ"}</button></li>
-                          <li><button type="button" className="dropdown-item d-flex align-items-center gap-2 text-danger" disabled={busy} onClick={() => handleDelete(property.id)}><span className="flaticon-bin" /> ลบ</button></li>
-                        </ul>
-=======
-                  <td className="vam">{property.priceText || property.price?.toLocaleString?.() || "-"}</td>
-
-                  <td className="vam" style={{ overflow: "hidden" }}>
-                    <span
-                      className={getStatusStyle(property.status)}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        whiteSpace: "nowrap",
-                        paddingInline: 14,
-                        maxWidth: "100%",
-                      }}
-                    >
-                      {property.status}
+                    <span style={{ ...baseStatusStyle, backgroundColor: statusMeta.bg, color: statusMeta.color }}>
+                      {statusMeta.label}
                     </span>
                   </td>
 
@@ -1493,12 +1462,26 @@ const PropertyDataTable = () => {
                                 type="button"
                                 className="dropdown-item d-flex align-items-center gap-2"
                                 disabled={busy}
-                                onClick={() => router.push(`/dashboard-edit-property/${property.id}`)}
+                                onClick={() => handleEdit(property.id)}
                               >
                                 <span className="fas fa-pen" />
                                 แก้ไข
                               </button>
                             </li>
+
+                            {property.status !== "ขายแล้ว" && (
+                              <li>
+                                <button
+                                  type="button"
+                                  className="dropdown-item d-flex align-items-center gap-2 text-success"
+                                  disabled={busy}
+                                  onClick={() => handleUpdateStatus(property.id, "ขายแล้ว")}
+                                >
+                                  <span className="fas fa-check-circle" />
+                                  ปิดการขาย
+                                </button>
+                              </li>
+                            )}
 
                             <li>
                               <button
@@ -1575,12 +1558,26 @@ const PropertyDataTable = () => {
                                 type="button"
                                 className="dropdown-item d-flex align-items-center gap-2"
                                 disabled={busy}
-                                onClick={() => router.push(`/dashboard-edit-property/${property.id}`)}
+                                onClick={() => handleEdit(property.id)}
                               >
                                 <span className="fas fa-pen" />
                                 แก้ไข
                               </button>
                             </li>
+
+                            {property.status !== "ขายแล้ว" && (
+                              <li>
+                                <button
+                                  type="button"
+                                  className="dropdown-item d-flex align-items-center gap-2 text-success"
+                                  disabled={busy}
+                                  onClick={() => handleUpdateStatus(property.id, "ขายแล้ว")}
+                                >
+                                  <span className="fas fa-check-circle" />
+                                  ปิดการขาย
+                                </button>
+                              </li>
+                            )}
 
                             <li>
                               <button
@@ -1671,12 +1668,26 @@ const PropertyDataTable = () => {
                                 type="button"
                                 className="dropdown-item d-flex align-items-center gap-2"
                                 disabled={busy}
-                                onClick={() => router.push(`/dashboard-edit-property/${property.id}`)}
+                                onClick={() => handleEdit(property.id)}
                               >
                                 <span className="fas fa-pen" />
                                 แก้ไข
                               </button>
                             </li>
+
+                            {property.status !== "ขายแล้ว" && (
+                              <li>
+                                <button
+                                  type="button"
+                                  className="dropdown-item d-flex align-items-center gap-2 text-success"
+                                  disabled={busy}
+                                  onClick={() => handleUpdateStatus(property.id, "ขายแล้ว")}
+                                >
+                                  <span className="fas fa-check-circle" />
+                                  ปิดการขาย
+                                </button>
+                              </li>
+                            )}
 
                             <li>
                               <button
@@ -1776,6 +1787,20 @@ const PropertyDataTable = () => {
                               </button>
                             </li>
 
+                            {property.status !== "ขายแล้ว" && (
+                              <li>
+                                <button
+                                  type="button"
+                                  className="dropdown-item d-flex align-items-center gap-2 text-success"
+                                  disabled={busy}
+                                  onClick={() => handleUpdateStatus(property.id, "ขายแล้ว")}
+                                >
+                                  <span className="fas fa-check-circle" />
+                                  ปิดการขาย
+                                </button>
+                              </li>
+                            )}
+
                             <li>
                               <button
                                 type="button"
@@ -1815,7 +1840,6 @@ const PropertyDataTable = () => {
 
                           <ReactTooltip id={`actions-${property.id}`} place="top" content="จัดการ" />
                         </div>
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
                       </div>
                     )}
                   </td>

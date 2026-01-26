@@ -12,7 +12,11 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
   const customStyles = {
     option: (styles, { isFocused, isSelected }) => ({
       ...styles,
-      backgroundColor: isSelected ? "#eb6753" : isFocused ? "#eb675312" : undefined,
+      backgroundColor: isSelected
+        ? "#eb6753"
+        : isFocused
+        ? "#eb675312"
+        : undefined,
       color: isSelected ? "#fff" : styles.color,
     }),
     menuPortal: (base) => ({ ...base, zIndex: 9999 }),
@@ -23,13 +27,48 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
   const APPROX_PRICE_OPTIONS = useMemo(
     () => [
       { value: "0-100000", label: "ต่ำกว่า 100,000", min: 0, max: 100000 },
-      { value: "100000-300000", label: "100,000 - 300,000", min: 100000, max: 300000 },
-      { value: "300000-500000", label: "300,000 - 500,000", min: 300000, max: 500000 },
-      { value: "500000-1000000", label: "500,000 - 1,000,000", min: 500000, max: 1000000 },
-      { value: "1000000-3000000", label: "1,000,000 - 3,000,000", min: 1000000, max: 3000000 },
-      { value: "3000000-5000000", label: "3,000,000 - 5,000,000", min: 3000000, max: 5000000 },
-      { value: "5000000-10000000", label: "5,000,000 - 10,000,000", min: 5000000, max: 10000000 },
-      { value: "10000000-20000000", label: "10,000,000 - 20,000,000", min: 10000000, max: 20000000 },
+      {
+        value: "100000-300000",
+        label: "100,000 - 300,000",
+        min: 100000,
+        max: 300000,
+      },
+      {
+        value: "300000-500000",
+        label: "300,000 - 500,000",
+        min: 300000,
+        max: 500000,
+      },
+      {
+        value: "500000-1000000",
+        label: "500,000 - 1,000,000",
+        min: 500000,
+        max: 1000000,
+      },
+      {
+        value: "1000000-3000000",
+        label: "1,000,000 - 3,000,000",
+        min: 1000000,
+        max: 3000000,
+      },
+      {
+        value: "3000000-5000000",
+        label: "3,000,000 - 5,000,000",
+        min: 3000000,
+        max: 5000000,
+      },
+      {
+        value: "5000000-10000000",
+        label: "5,000,000 - 10,000,000",
+        min: 5000000,
+        max: 10000000,
+      },
+      {
+        value: "10000000-20000000",
+        label: "10,000,000 - 20,000,000",
+        min: 10000000,
+        max: 20000000,
+      },
       { value: "20000000+", label: "มากกว่า 20,000,000", min: 20000000, max: null },
     ],
     []
@@ -86,7 +125,7 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
   // ✅ ราคาประมาณ (มีเสมอ / ไม่บังคับ)
   const [approxPrice, setApproxPrice] = useState(null);
 
-  // ✅ Co-Broker State (เพิ่มใหม่)
+  // ✅ Co-Broker State
   const [acceptCoBroke, setAcceptCoBroke] = useState(false);
   const [commissionType, setCommissionType] = useState("percent"); // 'percent' | 'amount'
   const [commissionValue, setCommissionValue] = useState("");
@@ -226,6 +265,7 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
       String(initialValue.price_text ?? initialValue.priceText ?? "").includes("x") ||
       String(initialValue.rent_text ?? "").includes("x") ||
       String(initialValue.keyMoney_text ?? "").includes("x");
+
     const show =
       initialValue.showPrice ??
       initialValue.show_price ??
@@ -233,30 +273,14 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
         (Number(initialValue.price ?? 0) > 0 ||
           Number(initialValue.rentPerMonth ?? 0) > 0 ||
           Number(initialValue.keyMoney ?? 0) > 0));
+
     setShowPrice(Boolean(show));
 
-<<<<<<< HEAD
-    // ✅ price
-    const initialPriceText =
-      initialValue.price_text ??
-      initialValue.priceText ??
-      (initialValue.price != null ? formatNumberWithComma(initialValue.price) : "");
-    setPrice(String(initialPriceText ?? ""));
-
-    // ✅ approxPrice
-    const ap =
-      toOption(initialValue.approxPrice, APPROX_PRICE_OPTIONS) ||
-      toOption(initialValue.approxPrice_value, APPROX_PRICE_OPTIONS) ||
-      toOption(initialValue.approxPrice_label, APPROX_PRICE_OPTIONS);
-    setApproxPrice(ap);
-
-    // ✅ Co-Broker Init
+    // ✅ Co-Broke init
     setAcceptCoBroke(initialValue.acceptCoBroke === true || initialValue.acceptCoBroke === "true");
     setCommissionType(initialValue.commissionType || "percent");
     setCommissionValue(initialValue.commissionValue || "");
 
-=======
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
     // announcerStatus
     const a =
       toOption(initialValue.announcerStatus, announcerStatusOptions) ||
@@ -285,18 +309,16 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
       toOption(initialValue.propertyType_value, propertyTypeOptions);
     setPropertyType(ptOpt);
 
-    // ✅ condition: ต้อง map ตามโหมด (เดิมอาจเก็บเป็น value/label)
-    // เราจะพยายามหาใน 2 ชุดก่อน แล้วค่อยตกไป null
+    // ✅ condition: map ให้เจอทั้ง 2 ชุดก่อน
     const condRaw =
       initialValue.condition ?? initialValue.condition_value ?? initialValue.condition_label;
 
     const condFromSaleRent = toOption(condRaw, CONDITION_OPTIONS_SALE_RENT);
     const condFromTransfer = toOption(condRaw, CONDITION_OPTIONS_TRANSFER);
 
-    // ถ้า initialValue เป็นเซ้ง -> prioritize transfer
     const modeGuess =
-      String(initialValue.listingType_label ?? "")
-        .includes("เซ้ง") || String(initialValue.listingType ?? "").includes("transfer");
+      String(initialValue.listingType_label ?? "").includes("เซ้ง") ||
+      String(initialValue.listingType ?? "").includes("transfer");
 
     setCondition(modeGuess ? condFromTransfer : condFromSaleRent || condFromTransfer || null);
 
@@ -339,6 +361,7 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
       prevModeRef.current = listingMode;
       return;
     }
+
     if (prev !== listingMode) {
       setError("");
 
@@ -354,29 +377,10 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
         setSalePrice("");
       }
 
-<<<<<<< HEAD
-    // ✅ ราคา
-    showPrice,
-    price_text: showPrice ? price : "xxxx",
-    price: showPrice ? priceNumber : 0,
-
-    // ✅ ราคาประมาณ
-    approxPrice: approxPrice?.value ?? null,
-    approxPrice_label: approxPrice?.label ?? null,
-    approxPrice_min: approxPrice?.min ?? null,
-    approxPrice_max: approxPrice?.max ?? null,
-
-    // ✅ Co-Broker Data
-    acceptCoBroke,
-    commissionType: acceptCoBroke ? commissionType : null,
-    commissionValue: acceptCoBroke ? commissionValue : null,
-
-    announcerStatus: announcerStatus?.value ?? null,
-    announcerStatus_label: announcerStatus?.label ?? null,
-=======
       // ✅ เปลี่ยนโหมดแล้ว reset condition เสมอ (options เปลี่ยน)
       setCondition(null);
     }
+
     prevModeRef.current = listingMode;
   }, [listingMode]);
 
@@ -391,13 +395,10 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     if (!salePriceNumber) return "";
     return showPrice ? formatNumberWithComma(salePriceNumber) : maskPriceDigits(salePriceNumber);
   }, [showPrice, salePriceNumber]);
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
 
   const previewRent = useMemo(() => {
     if (!rentPerMonthNumber) return "";
-    return showPrice
-      ? formatNumberWithComma(rentPerMonthNumber)
-      : maskPriceDigits(rentPerMonthNumber);
+    return showPrice ? formatNumberWithComma(rentPerMonthNumber) : maskPriceDigits(rentPerMonthNumber);
   }, [showPrice, rentPerMonthNumber]);
 
   const previewKey = useMemo(() => {
@@ -416,6 +417,11 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
       showPrice,
       listingMode,
 
+      // ✅ Co-Broke
+      acceptCoBroke,
+      commissionType: acceptCoBroke ? commissionType : null,
+      commissionValue: acceptCoBroke ? commissionValue : null,
+
       announcerStatus: announcerStatus?.value ?? null,
       announcerStatus_label: announcerStatus?.label ?? null,
 
@@ -425,7 +431,7 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
       propertyType: propertyType?.value ?? null,
       propertyType_label: propertyType?.label ?? null,
 
-      // ✅ condition ส่งเสมอทุกโหมด (แต่ options ต่างกัน)
+      // ✅ condition
       condition: condition?.value ?? null,
       condition_label: condition?.label ?? null,
 
@@ -584,10 +590,7 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
           </div>
         </div>
 
-<<<<<<< HEAD
-=======
         {/* ===== listingType ===== */}
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
             <label className="heading-color ff-heading fw600 mb10">
@@ -610,10 +613,7 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
           </div>
         </div>
 
-<<<<<<< HEAD
-=======
         {/* ===== propertyType ===== */}
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
             <label className="heading-color ff-heading fw600 mb10">
@@ -637,14 +637,6 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
           </div>
         </div>
 
-<<<<<<< HEAD
-        {/* ✅ แถวราคา & Co-Broker */}
-        <div className="col-sm-12 col-xl-8">
-          <div className="row">
-            {/* ซ้าย: ราคา */}
-            <div className="col-sm-6">
-              <div className="mb30">
-=======
         {/* =========================
             ROW: สภาพทรัพย์ | ราคา | ราคาประมาณ
             - เซ้ง: ราคาเซ้ง | ค่าเช่า | ราคาประมาณ
@@ -679,20 +671,24 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
             {/* ช่อง 1: ราคาเซ้ง + checkbox */}
             <div className="col-sm-6 col-xl-4">
               <div className="mb20">
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
                 <div className="d-flex align-items-center justify-content-between mb10">
                   <label className="heading-color ff-heading fw600 mb0">
                     ราคาเซ้ง <span className="text-danger">*</span>
                   </label>
 
-                  <label className="d-flex align-items-center gap-2 mb-0" style={{ cursor: 'pointer' }}>
+                  <label
+                    className="d-flex align-items-center gap-2 mb-0"
+                    style={{ cursor: "pointer" }}
+                  >
                     <input
                       type="checkbox"
                       checked={showPrice}
                       onChange={(e) => setShowPrice(e.target.checked)}
-                      style={{ cursor: 'pointer' }}
+                      style={{ cursor: "pointer" }}
                     />
-                    <span className="heading-color ff-heading fw600" style={{ fontSize: '14px' }}>แสดงราคา</span>
+                    <span className="heading-color ff-heading fw600" style={{ fontSize: 14 }}>
+                      แสดงราคา
+                    </span>
                   </label>
                 </div>
 
@@ -760,158 +756,10 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
                 </small>
               </div>
             </div>
-<<<<<<< HEAD
-          </div>
-        </div>
-        {/* ✅✅ เพิ่มส่วน Co-Broke ตรงนี้ (เต็มความกว้างใน col-xl-8) */}
-        <div className="col-12 mb-5">
-          <div
-            className="rounded-4 transition-all"
-            style={{
-              backgroundColor: acceptCoBroke ? '#fff' : '#f8f9fa',
-              border: acceptCoBroke ? '2px solid #eb6753' : '1px solid #e9ecef',
-              padding: '24px',
-              boxShadow: acceptCoBroke ? '0 10px 30px rgba(235, 103, 83, 0.1)' : 'none',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            {/* Header ส่วนหัวกดเปิดปิด */}
-            <div className="d-flex align-items-center justify-content-between">
-              <div className="d-flex align-items-center gap-3">
-                {/* Icon Wrapper */}
-                <div
-                  className="d-flex align-items-center justify-content-center rounded-circle"
-                  style={{
-                    width: '50px',
-                    height: '50px',
-                    backgroundColor: acceptCoBroke ? '#eb6753' : '#e9ecef',
-                    color: acceptCoBroke ? '#fff' : '#6c757d',
-                    transition: 'all 0.3s ease',
-                    fontSize: '20px'
-                  }}
-                >
-                  <i className="fas fa-handshake"></i>
-                </div>
-
-                {/* Title & Desc */}
-                <div>
-                  <h6 className="m-0 fw-bold" style={{ fontSize: '16px', color: acceptCoBroke ? '#eb6753' : '#181a20' }}>
-                    ยินดีรับนายหน้าช่วยขาย
-                  </h6>
-                  <small className="text-muted">
-                    เปิดโอกาสให้นายหน้าท่านอื่นช่วยนำทรัพย์นี้ไปเสนอขาย เพื่อปิดการขายได้ไวขึ้น
-                  </small>
-                </div>
-              </div>
-
-              {/* Switch Toggle */}
-              <div className="form-check form-switch m-0">
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  role="button"
-                  checked={acceptCoBroke}
-                  onChange={(e) => {
-                    setAcceptCoBroke(e.target.checked);
-                    if (!e.target.checked) setCommissionValue("");
-                  }}
-                  style={{
-                    width: '3.5em',
-                    height: '1.9em',
-                    cursor: 'pointer',
-                    backgroundColor: acceptCoBroke ? '#eb6753' : undefined,
-                    borderColor: acceptCoBroke ? '#eb6753' : undefined
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Content Area (Expandable) */}
-            {acceptCoBroke && (
-              <div className="mt-4 animate__animated animate__fadeIn">
-                <hr className="mb-4 text-muted opacity-25" />
-
-                <div className="row">
-                  <div className="col-sm-6">
-                    <div className="mb20">
-                      <label className="heading-color ff-heading fw600 mb10">รูปแบบคอมมิชชั่น</label>
-                      <div className="location-area">
-                        <Select
-                          value={commissionType === 'percent' ? { value: 'percent', label: 'เปอร์เซ็นต์ (%)' } : { value: 'amount', label: 'จำนวนเงิน (บาท)' }}
-                          onChange={(option) => setCommissionType(option.value)}
-                          options={[
-                            { value: 'percent', label: 'เปอร์เซ็นต์ (%)' },
-                            { value: 'amount', label: 'จำนวนเงิน (บาท)' }
-                          ]}
-                          styles={{
-                            ...customStyles,
-                            control: (base, state) => ({
-                              ...base,
-                              borderColor: state.isFocused ? '#eb6753' : '#e9ecef',
-                              boxShadow: state.isFocused ? '0 0 0 1px #eb6753' : null,
-                              borderRadius: '8px',
-                              height: '55px'
-                            })
-                          }}
-                          className="select-custom pl-0"
-                          classNamePrefix="select"
-                          placeholder="เลือกรูปแบบ"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="col-sm-6">
-                    <div className="mb20">
-                      <label className="heading-color ff-heading fw600 mb10">
-                        {commissionType === 'percent' ? 'ระบุเปอร์เซ็นต์' : 'ระบุจำนวนเงิน'}
-                      </label>
-                      <div className="input-group">
-                        <input
-                          type="number"
-                          className="form-control"
-                          placeholder={commissionType === 'percent' ? 'เช่น 3' : 'เช่น 50000'}
-                          value={commissionValue}
-                          onChange={(e) => setCommissionValue(e.target.value)}
-                          style={{
-                            height: '55px',
-                            borderRadius: '8px 0 0 8px',
-                            borderColor: '#e9ecef'
-                          }}
-                        />
-                        <span
-                          className="input-group-text fw-bold"
-                          style={{
-                            borderRadius: '0 8px 8px 0',
-                            backgroundColor: '#fbfbfb',
-                            borderColor: '#e9ecef',
-                            color: '#eb6753'
-                          }}
-                        >
-                          {commissionType === 'percent' ? '%' : '฿'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="col-12 mt-1">
-                    <div className="d-flex align-items-center gap-2 text-muted" style={{ fontSize: '13px' }}>
-                      <i className="fas fa-info-circle"></i>
-                      <span>ข้อมูลส่วนนี้จะแสดงให้นายหน้าท่านอื่นเห็นเท่านั้น (ลูกค้าทั่วไปจะไม่เห็น)</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        {/* จบส่วน Co-Broke */}
-=======
           </>
         ) : (
           <>
             {/* ====== CASE: ขาย/เช่า ====== */}
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
 
             {/* สภาพทรัพย์ (มือ1/มือ2) */}
             <div className="col-sm-6 col-xl-4">
@@ -1023,6 +871,134 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
             </div>
           </>
         )}
+
+        {/* ✅ Co-Broke (เต็มความกว้าง) */}
+        <div className="col-12 mb-4">
+          <div
+            className="rounded-4"
+            style={{
+              backgroundColor: acceptCoBroke ? "#fff" : "#f8f9fa",
+              border: acceptCoBroke ? "2px solid #eb6753" : "1px solid #e9ecef",
+              padding: 20,
+              boxShadow: acceptCoBroke ? "0 10px 30px rgba(235, 103, 83, 0.10)" : "none",
+              transition: "all 0.25s ease",
+            }}
+          >
+            <div className="d-flex align-items-center justify-content-between">
+              <div className="d-flex align-items-center gap-3">
+                <div
+                  className="d-flex align-items-center justify-content-center rounded-circle"
+                  style={{
+                    width: 48,
+                    height: 48,
+                    backgroundColor: acceptCoBroke ? "#eb6753" : "#e9ecef",
+                    color: acceptCoBroke ? "#fff" : "#6c757d",
+                    transition: "all 0.25s ease",
+                    fontSize: 18,
+                  }}
+                >
+                  <i className="fas fa-handshake"></i>
+                </div>
+
+                <div>
+                  <div
+                    className="fw-bold"
+                    style={{ fontSize: 16, color: acceptCoBroke ? "#eb6753" : "#181a20" }}
+                  >
+                    ยินดีรับนายหน้าช่วยขาย (Co-Broke)
+                  </div>
+                  <small className="text-muted">
+                    เปิดโอกาสให้นายหน้าท่านอื่นช่วยนำทรัพย์นี้ไปเสนอขาย เพื่อปิดการขายได้ไวขึ้น
+                  </small>
+                </div>
+              </div>
+
+              <div className="form-check form-switch m-0">
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  role="button"
+                  checked={acceptCoBroke}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setAcceptCoBroke(checked);
+                    if (!checked) setCommissionValue("");
+                  }}
+                  style={{
+                    width: "3.2em",
+                    height: "1.8em",
+                    cursor: "pointer",
+                    backgroundColor: acceptCoBroke ? "#eb6753" : undefined,
+                    borderColor: acceptCoBroke ? "#eb6753" : undefined,
+                  }}
+                />
+              </div>
+            </div>
+
+            {acceptCoBroke && (
+              <div className="mt-4">
+                <hr className="mb-4 text-muted opacity-25" />
+                <div className="row">
+                  <div className="col-sm-6">
+                    <div className="mb20">
+                      <label className="heading-color ff-heading fw600 mb10">รูปแบบคอมมิชชั่น</label>
+                      <div className="location-area">
+                        {showSelect && (
+                          <Select
+                            value={
+                              commissionType === "percent"
+                                ? { value: "percent", label: "เปอร์เซ็นต์ (%)" }
+                                : { value: "amount", label: "จำนวนเงิน (บาท)" }
+                            }
+                            onChange={(opt) => setCommissionType(opt?.value || "percent")}
+                            options={[
+                              { value: "percent", label: "เปอร์เซ็นต์ (%)" },
+                              { value: "amount", label: "จำนวนเงิน (บาท)" },
+                            ]}
+                            styles={customStyles}
+                            menuPortalTarget={document.body}
+                            className="select-custom pl-0"
+                            classNamePrefix="select"
+                            placeholder="เลือกรูปแบบ"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-sm-6">
+                    <div className="mb20">
+                      <label className="heading-color ff-heading fw600 mb10">
+                        {commissionType === "percent" ? "ระบุเปอร์เซ็นต์" : "ระบุจำนวนเงิน"}
+                      </label>
+
+                      <div className="input-group">
+                        <input
+                          type="number"
+                          className="form-control"
+                          placeholder={commissionType === "percent" ? "เช่น 3" : "เช่น 50000"}
+                          value={commissionValue}
+                          onChange={(e) => setCommissionValue(e.target.value)}
+                          style={{ height: 52 }}
+                        />
+                        <span className="input-group-text fw-bold">
+                          {commissionType === "percent" ? "%" : "฿"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-12 mt-1">
+                    <div className="d-flex align-items-center gap-2 text-muted" style={{ fontSize: 13 }}>
+                      <i className="fas fa-info-circle"></i>
+                      <span>ข้อมูลส่วนนี้จะแสดงให้นายหน้าท่านอื่นเห็นเท่านั้น (ลูกค้าทั่วไปจะไม่เห็น)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* error */}
         {error && (

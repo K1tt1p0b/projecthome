@@ -18,7 +18,8 @@ const safeParse = (v) => {
   }
 };
 
-const isBlank = (v) => v === undefined || v === null || String(v).trim() === "";
+const isBlank = (v) =>
+  v === undefined || v === null || String(v).trim() === "";
 
 // ✅ ดึงค่าได้หลายคีย์ (รองรับไทย/อังกฤษ/legacy)
 const getAny = (obj, keys) => {
@@ -48,7 +49,8 @@ const labelOf = (v) => {
 const getVideoUrl = (v) => {
   if (!v) return "";
   if (typeof v === "string") return v.trim();
-  if (typeof v === "object") return String(v.url || v.src || v.link || "").trim();
+  if (typeof v === "object")
+    return String(v.url || v.src || v.link || "").trim();
   return String(v).trim();
 };
 
@@ -93,7 +95,8 @@ const PropertySummary = ({
   const safeImages = Array.isArray(images) ? images : [];
 
   // ✅ ดึงข้อมูล Co-Broke มาเตรียมไว้
-  const acceptCoBroke = safeBasic.acceptCoBroke === true || safeBasic.acceptCoBroke === "true";
+  const acceptCoBroke =
+    safeBasic.acceptCoBroke === true || safeBasic.acceptCoBroke === "true";
   const commissionType = safeBasic.commissionType;
   const commissionValue = safeBasic.commissionValue;
 
@@ -120,7 +123,8 @@ const PropertySummary = ({
       const t = String(rawText ?? "").trim();
       if (t) return `${t} ${suffix}`;
       const n = toNumber(rawNumber);
-      if (n > 0) return n.toLocaleString("en-US").replace(/\d/g, "x") + ` ${suffix}`;
+      if (n > 0)
+        return n.toLocaleString("en-US").replace(/\d/g, "x") + ` ${suffix}`;
       return "-";
     }
 
@@ -147,13 +151,16 @@ const PropertySummary = ({
       (Array.isArray(b.listingTypes) && b.listingTypes.length > 0
         ? b.listingTypes
             .map((lt) => {
-              const val = typeof lt === "object" ? lt.value ?? lt.label ?? null : lt;
+              const val =
+                typeof lt === "object" ? lt.value ?? lt.label ?? null : lt;
               return findLabel(listingTypeOptions, val) || String(val || "");
             })
             .filter(Boolean)
             .join(", ")
         : null) ||
-      (listingTypeValue ? findLabel(listingTypeOptions, listingTypeValue) : null) ||
+      (listingTypeValue
+        ? findLabel(listingTypeOptions, listingTypeValue)
+        : null) ||
       "-";
     listingTypeLabel = String(listingTypeLabel || "-");
 
@@ -164,7 +171,9 @@ const PropertySummary = ({
         : b.propertyType || b.propertyType_value;
     let propertyTypeLabel =
       b.propertyType_label ||
-      (propertyTypeValue ? findLabel(propertyTypeOptions, propertyTypeValue) : null) ||
+      (propertyTypeValue
+        ? findLabel(propertyTypeOptions, propertyTypeValue)
+        : null) ||
       "-";
     propertyTypeLabel = String(propertyTypeLabel || "-");
 
@@ -175,7 +184,9 @@ const PropertySummary = ({
         : b.condition || b.condition_value;
     let conditionLabel =
       b.condition_label ||
-      (conditionValue ? findLabel(propertyConditionOptions, conditionValue) : null) ||
+      (conditionValue
+        ? findLabel(propertyConditionOptions, conditionValue)
+        : null) ||
       "-";
     conditionLabel = String(conditionLabel || "-");
 
@@ -188,7 +199,9 @@ const PropertySummary = ({
         : b.announcerStatus || b.announcer_status || b.announcerStatus_value;
     let announcerStatusLabel =
       b.announcerStatus_label ||
-      (announcerStatusValue ? findLabel(announcerStatusOptions, announcerStatusValue) : null) ||
+      (announcerStatusValue
+        ? findLabel(announcerStatusOptions, announcerStatusValue)
+        : null) ||
       b.announcerStatusText ||
       "-";
     announcerStatusLabel = String(announcerStatusLabel || "-");
@@ -269,7 +282,12 @@ const PropertySummary = ({
       return [
         {
           label: "ค่าเช่า/เดือน",
-          value: formatMoney(b.rentPerMonth, b.rent_text, b.showPrice, "บาท/เดือน"),
+          value: formatMoney(
+            b.rentPerMonth,
+            b.rent_text,
+            b.showPrice,
+            "บาท/เดือน"
+          ),
         },
       ];
     }
@@ -282,7 +300,12 @@ const PropertySummary = ({
       },
       {
         label: "ค่าเช่า/เดือน",
-        value: formatMoney(b.rentPerMonth, b.rent_text, b.showPrice, "บาท/เดือน"),
+        value: formatMoney(
+          b.rentPerMonth,
+          b.rent_text,
+          b.showPrice,
+          "บาท/เดือน"
+        ),
       },
     ];
   }, [resolvedBasicInfo]);
@@ -293,7 +316,9 @@ const PropertySummary = ({
   useEffect(() => {
     const fromProps = details || {};
 
-    const hasNonBlankInProps = Object.keys(fromProps).some((k) => !isBlank(fromProps?.[k]));
+    const hasNonBlankInProps = Object.keys(fromProps).some(
+      (k) => !isBlank(fromProps?.[k])
+    );
     if (hasNonBlankInProps) {
       setResolvedDetails(fromProps);
       return;
@@ -399,8 +424,14 @@ const PropertySummary = ({
     // ---------- บ้านและที่ดิน ----------
     pick("ห้องนอน", labelOf(getAny(d, ["bedrooms", "ห้องนอน"])));
     pick("ห้องน้ำ", labelOf(getAny(d, ["bathrooms", "ห้องน้ำ"])));
-    pick("พื้นที่ใช้สอย (ตร.ม.)", getAny(d, ["usableArea", "พื้นที่ใช้สอย (ตร.ม.)", "พื้นที่ใช้สอย"]));
-    pick("ขนาดที่ดิน (ตร.ว.)", getAny(d, ["landSqw", "ขนาดที่ดิน (ตร.ว.)", "ขนาดที่ดิน"]));
+    pick(
+      "พื้นที่ใช้สอย (ตร.ม.)",
+      getAny(d, ["usableArea", "พื้นที่ใช้สอย (ตร.ม.)", "พื้นที่ใช้สอย"])
+    );
+    pick(
+      "ขนาดที่ดิน (ตร.ว.)",
+      getAny(d, ["landSqw", "ขนาดที่ดิน (ตร.ว.)", "ขนาดที่ดิน"])
+    );
     pick(
       "เอกสารสิทธิ (เลขโฉนด)",
       getAny(d, ["deedNumber", "titleDeed", "เอกสารสิทธิ (เลขโฉนด)", "เอกสารสิทธิ"])
@@ -423,8 +454,17 @@ const PropertySummary = ({
     pick("ความลึกที่ดิน (ม.)", getAny(d, ["depth", "ความลึกที่ดิน (ม.)"]));
 
     // ---------- รูปโฉนด ----------
-    const deedFile = getAny(d, ["titleDeedImage", "titleDeedImages", "รูปเอกสารโฉนด", "รูปโฉนด"]);
-    const deedName = getAny(d, ["titleDeedImageName", "ชื่อไฟล์โฉนด", "ไฟล์เดิม/ที่เลือก"]);
+    const deedFile = getAny(d, [
+      "titleDeedImage",
+      "titleDeedImages",
+      "รูปเอกสารโฉนด",
+      "รูปโฉนด",
+    ]);
+    const deedName = getAny(d, [
+      "titleDeedImageName",
+      "ชื่อไฟล์โฉนด",
+      "ไฟล์เดิม/ที่เลือก",
+    ]);
 
     let deedText = undefined;
     if (typeof deedFile === "string" && deedFile.trim()) deedText = deedFile;
@@ -442,8 +482,10 @@ const PropertySummary = ({
     // ---------- ที่ดินเปล่า ----------
     const landFillRaw = getAny(d, ["landFillStatus", "สภาพที่ดิน"]);
     const zoningRaw = getAny(d, ["zoningColor", "ผังสี"]);
-    if (!isBlank(landFillRaw)) pick("สภาพที่ดิน", LAND_FILL_LABEL[landFillRaw] ?? landFillRaw);
-    if (!isBlank(zoningRaw)) pick("ผังสี", ZONING_COLOR_LABEL[zoningRaw] ?? zoningRaw);
+    if (!isBlank(landFillRaw))
+      pick("สภาพที่ดิน", LAND_FILL_LABEL[landFillRaw] ?? landFillRaw);
+    if (!isBlank(zoningRaw))
+      pick("ผังสี", ZONING_COLOR_LABEL[zoningRaw] ?? zoningRaw);
 
     // ---------- คอนโด / ห้องเช่า ----------
     pick("อาคาร/ตึก", getAny(d, ["building", "อาคาร/ตึก", "อาคาร"]));
@@ -465,12 +507,15 @@ const PropertySummary = ({
     pick("ความลึก (ม.)", getAny(d, ["shopDepth", "ความลึก (ม.)"]));
 
     // ---------- ✅ เซ้งร้าน: เพิ่มตามที่คุณเพิ่มใน DetailsFiled ----------
-    // ใช้ label แยก "(ร้าน)" เพื่อไม่ชนกับ "ค่าน้ำ/ค่าไฟ" ของคอนโด
     pick("ค่าน้ำ (ร้าน)", getAny(d, ["shopWaterFee", "ค่าน้ำ (ร้าน)", "ค่าน้ำร้าน"]));
     pick("ค่าไฟ (ร้าน)", getAny(d, ["shopElectricFee", "ค่าไฟ (ร้าน)", "ค่าไฟร้าน"]));
 
     const hasStaffRaw = getAny(d, ["shopHasStaff", "มีพนักงาน"]);
-    if (hasStaffRaw !== undefined && hasStaffRaw !== null && String(hasStaffRaw).trim() !== "") {
+    if (
+      hasStaffRaw !== undefined &&
+      hasStaffRaw !== null &&
+      String(hasStaffRaw).trim() !== ""
+    ) {
       const yes =
         hasStaffRaw === true ||
         hasStaffRaw === "true" ||
@@ -485,7 +530,11 @@ const PropertySummary = ({
     }
 
     const hasEquipRaw = getAny(d, ["shopHasEquipment", "มีอุปกรณ์ให้"]);
-    if (hasEquipRaw !== undefined && hasEquipRaw !== null && String(hasEquipRaw).trim() !== "") {
+    if (
+      hasEquipRaw !== undefined &&
+      hasEquipRaw !== null &&
+      String(hasEquipRaw).trim() !== ""
+    ) {
       const yes =
         hasEquipRaw === true ||
         hasEquipRaw === "true" ||
@@ -584,7 +633,10 @@ const PropertySummary = ({
   }, [detailsView]);
 
   const neighborhoodText =
-    safeLocation.neighborhood || safeLocation.village || safeLocation.projectName || "";
+    safeLocation.neighborhood ||
+    safeLocation.village ||
+    safeLocation.projectName ||
+    "";
 
   const mapLat = Number(safeLocation.latitude ?? safeLocation.lat);
   const mapLng = Number(safeLocation.longitude ?? safeLocation.lng);
@@ -643,28 +695,6 @@ const PropertySummary = ({
               <p>
                 <strong>สภาพทรัพย์:</strong> {resolvedBasicInfo.condition}
               </p>
-<<<<<<< HEAD
-              <p>
-                <strong>ราคา:</strong>{" "}
-                {formatPrice(resolvedBasicInfo.price, resolvedBasicInfo.price_text)}
-              </p>
-
-              {/* ✅✅ แสดงผล Co-Broke ในหน้าสรุป ✅✅ */}
-              <div className="mt-3 pt-3 border-top">
-                <div className="d-flex align-items-center gap-2">
-                  <i className={`fas fa-handshake ${acceptCoBroke ? 'text-success' : 'text-muted'}`}></i>
-                  <strong>นายหน้าช่วยขาย (Co-Broke):</strong>
-                  
-                  {acceptCoBroke ? (
-                    <span className="text-success fw-bold">
-                      ✅ ยินดีรับ ({Number(commissionValue).toLocaleString()} {commissionType === 'percent' ? '%' : 'บาท'})
-                    </span>
-                  ) : (
-                    <span className="text-muted">ไม่รับ / ไม่ระบุ</span>
-                  )}
-                </div>
-              </div>
-=======
 
               {/* ✅ ราคาแบบใหม่: ขาย/เช่า/เซ้ง */}
               {priceLines.map((line) => (
@@ -672,11 +702,33 @@ const PropertySummary = ({
                   <strong>{line.label}:</strong> {line.value}
                 </p>
               ))}
->>>>>>> 353060465078a18ec9a0de83128572d32477e838
+
+              {/* ✅✅ แสดงผล Co-Broke ในหน้าสรุป ✅✅ */}
+              <div className="mt-3 pt-3 border-top">
+                <div className="d-flex align-items-center gap-2">
+                  <i
+                    className={`fas fa-handshake ${
+                      acceptCoBroke ? "text-success" : "text-muted"
+                    }`}
+                  ></i>
+                  <strong>นายหน้าช่วยขาย (Co-Broke):</strong>
+
+                  {acceptCoBroke ? (
+                    <span className="text-success fw-bold">
+                      ✅ ยินดีรับ (
+                      {Number(commissionValue || 0).toLocaleString()}{" "}
+                      {commissionType === "percent" ? "%" : "บาท"})
+                    </span>
+                  ) : (
+                    <span className="text-muted">ไม่รับ / ไม่ระบุ</span>
+                  )}
+                </div>
+              </div>
 
               {resolvedBasicInfo.approxPrice && (
                 <p className="mt-2">
-                  <strong>ราคาประมาณ:</strong> {String(resolvedBasicInfo.approxPrice)}
+                  <strong>ราคาประมาณ:</strong>{" "}
+                  {String(resolvedBasicInfo.approxPrice)}
                 </p>
               )}
 
@@ -693,7 +745,11 @@ const PropertySummary = ({
         <div className="d-flex justify-content-between align-items-center mb10">
           <h4 className="ff-heading fw600 mb0">ที่อยู่ทรัพย์สิน</h4>
           {onEditLocation && (
-            <button type="button" style={editButtonStyle} onClick={onEditLocation}>
+            <button
+              type="button"
+              style={editButtonStyle}
+              onClick={onEditLocation}
+            >
               {isEmptyObject(safeLocation) ? "เพิ่มข้อมูล" : "แก้ไข"}
             </button>
           )}
@@ -769,8 +825,14 @@ const PropertySummary = ({
         <div className="d-flex justify-content-between align-items-center mb10">
           <h4 className="ff-heading fw600 mb0">รายละเอียดทรัพย์เพิ่มเติม</h4>
           {onEditDetails && (
-            <button type="button" style={editButtonStyle} onClick={onEditDetails}>
-              {detailsEntries.length === 0 && amenities.length === 0 ? "เพิ่มข้อมูล" : "แก้ไข"}
+            <button
+              type="button"
+              style={editButtonStyle}
+              onClick={onEditDetails}
+            >
+              {detailsEntries.length === 0 && amenities.length === 0
+                ? "เพิ่มข้อมูล"
+                : "แก้ไข"}
             </button>
           )}
         </div>
@@ -796,7 +858,9 @@ const PropertySummary = ({
 
               {amenities.length > 0 && (
                 <div className="mt20">
-                  <div style={{ fontWeight: 700, marginBottom: 8 }}>สิ่งอำนวยความสะดวก:</div>
+                  <div style={{ fontWeight: 700, marginBottom: 8 }}>
+                    สิ่งอำนวยความสะดวก:
+                  </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     {amenities.map((a, idx) => (
                       <span
@@ -809,7 +873,9 @@ const PropertySummary = ({
                           fontSize: 12,
                         }}
                       >
-                        {typeof a === "object" ? a?.label ?? a?.value ?? String(a) : String(a)}
+                        {typeof a === "object"
+                          ? a?.label ?? a?.value ?? String(a)
+                          : String(a)}
                       </span>
                     ))}
                   </div>
@@ -825,7 +891,11 @@ const PropertySummary = ({
         <div className="d-flex justify-content-between align-items-center mb10">
           <h4 className="ff-heading fw600 mb0">รูปภาพทรัพย์สิน</h4>
           {onEditImages && (
-            <button type="button" style={editButtonStyle} onClick={onEditImages}>
+            <button
+              type="button"
+              style={editButtonStyle}
+              onClick={onEditImages}
+            >
               {safeImages.length === 0 ? "เพิ่มรูป" : "แก้ไข"}
             </button>
           )}
@@ -900,10 +970,18 @@ const PropertySummary = ({
       {/* Actions */}
       <div className="col-12">
         <div className="d-flex justify-content-end gap-2">
-          <button type="button" className="ud-btn btn-light" onClick={handleSaveDraft}>
+          <button
+            type="button"
+            className="ud-btn btn-light"
+            onClick={handleSaveDraft}
+          >
             บันทึกร่าง
           </button>
-          <button type="button" className="ud-btn btn-thm" onClick={handleSubmit}>
+          <button
+            type="button"
+            className="ud-btn btn-thm"
+            onClick={handleSubmit}
+          >
             ยืนยันลงประกาศ
           </button>
         </div>
