@@ -1,8 +1,6 @@
 body.page-map-v1 {
-  /* 🔥 เอา scrollbar ขวาของเว็บออก */
   overflow: hidden;
-
-  --mapv1-header-h: 92px; // ปรับตาม header จริง
+  --mapv1-header-h: 92px;
 }
 
 /* bootstrap fix */
@@ -41,4 +39,120 @@ body.page-map-v1 .map-v1-left-scroll {
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 8px;
+}
+
+/* ===== แถบที่เลือกจาก map ===== */
+body.page-map-v1 .lx-picked-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 10px 0 6px;
+}
+
+body.page-map-v1 .lx-picked-title {
+  font-size: 13px;
+  opacity: .92;
+}
+
+/* ===== highlight card ===== */
+body.page-map-v1 .lx-card-active {
+  outline: 2px solid rgba(249, 115, 22, 0.35);
+  box-shadow: 0 18px 36px rgba(249, 115, 22, 0.18);
+}
+
+/* ===== price row: ราคา + ป้ายขาย/ให้เช่า ===== */
+body.page-map-v1 .lx-price-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body.page-map-v1 .lx-for-what-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(0,0,0,.06);
+}
+
+/* ===== Legend (map) ===== */
+.lx-type-legend {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 1500;
+
+  background: rgba(255,255,255,.96);
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 18px 36px rgba(0,0,0,.16);
+
+  width: 260px;
+  pointer-events: auto;
+}
+
+.lx-type-legend-title {
+  font-weight: 900;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.lx-type-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.lx-type-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  box-shadow: 0 6px 14px rgba(0,0,0,.12);
+}
+
+.lx-type-label {
+  font-size: 12px;
+  opacity: .9;
+}
+
+/* dot icon */
+.lx-dot-icon {
+  background: transparent;
+  border: none;
+}
+
+.lx-dot {
+  display: inline-block;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  box-shadow: 0 8px 18px rgba(0,0,0,.18);
+}
+
+/* badge icon */
+.lx-count-icon {
+  background: transparent;
+  border: none;
+}
+
+.lx-count-badge {
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  font-weight: 900;
+  font-size: 14px;
+  border: 3px solid #ffffff;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.18);
+  user-select: none;
 }

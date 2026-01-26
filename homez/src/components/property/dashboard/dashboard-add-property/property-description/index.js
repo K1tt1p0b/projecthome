@@ -5,7 +5,6 @@ import Select from "@/components/common/ClientSelect";
 
 import announcerStatusOptions from "./announcerStatusOptions.json";
 import listingTypeOptions from "./listingTypeOptions.json";
-import propertyConditionOptions from "./propertyConditionOptions.json";
 import propertyTypeOptionsRaw from "./propertyTypeOptions.json";
 import { toast } from "react-toastify";
 
@@ -14,12 +13,13 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     option: (styles, { isFocused, isSelected }) => ({
       ...styles,
       backgroundColor: isSelected ? "#eb6753" : isFocused ? "#eb675312" : undefined,
+      color: isSelected ? "#fff" : styles.color,
     }),
     menuPortal: (base) => ({ ...base, zIndex: 9999 }),
     menu: (base) => ({ ...base, zIndex: 9999 }),
   };
 
-  // ✅ dropdown "ราคาประมาณ" (ช่วงราคาประมาณ)
+  // ✅ dropdown "ราคาประมาณ" (โชว์ทุกโหมด / ไม่บังคับ)
   const APPROX_PRICE_OPTIONS = useMemo(
     () => [
       { value: "0-100000", label: "ต่ำกว่า 100,000", min: 0, max: 100000 },
@@ -35,23 +35,55 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     []
   );
 
-  // ✅ เพิ่ม "ร้านค้า" ในประเภททรัพย์
+  // ✅ condition options แยกตามโหมด
+  // - ขาย/เช่า: มือ1/มือ2
+  // - เซ้ง: พร้อมเปิด/ปรับปรุงเล็กน้อย
+  const CONDITION_OPTIONS_SALE_RENT = useMemo(
+    () => [
+      { value: "first-hand", label: "มือ 1" },
+      { value: "second-hand", label: "มือ 2" },
+    ],
+    []
+  );
+
+  const CONDITION_OPTIONS_TRANSFER = useMemo(
+    () => [
+      { value: "ready", label: "พร้อมเปิดทันที" },
+      { value: "renovate", label: "ต้องปรับปรุงเล็กน้อย" },
+    ],
+    []
+  );
+
+  // ✅ เพิ่ม "ร้านค้า" + "หอพัก" ในประเภททรัพย์ (กันกรณี options เดิมไม่มี)
   const propertyTypeOptions = useMemo(() => {
     const existsShop = (propertyTypeOptionsRaw || []).some(
       (o) => String(o?.value) === "shop" || String(o?.label) === "ร้านค้า"
     );
-    if (existsShop) return propertyTypeOptionsRaw;
-    return [...(propertyTypeOptionsRaw || []), { value: "shop", label: "ร้านค้า" }];
+    const existsDormitory = (propertyTypeOptionsRaw || []).some(
+      (o) => String(o?.value) === "dormitory" || String(o?.label) === "หอพัก"
+    );
+
+    let next = propertyTypeOptionsRaw || [];
+    if (!existsShop) next = [...next, { value: "shop", label: "ร้านค้า" }];
+    if (!existsDormitory) next = [...next, { value: "dormitory", label: "หอพัก" }];
+    return next;
   }, []);
 
+  // ----------------------------
+  // state: common
+  // ----------------------------
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
-  // ✅ ราคา + แสดงราคา
+  // ✅ checkbox แสดงราคา (ใช้ร่วมกันทุกโหมด)
   const [showPrice, setShowPrice] = useState(true);
-  const [price, setPrice] = useState("");
 
-  // ✅ ราคาประมาณ (dropdown)
+  // ✅ ราคาแบบแยกตามโหมด
+  const [salePrice, setSalePrice] = useState(""); // ขาย
+  const [rentPerMonth, setRentPerMonth] = useState(""); // เช่า/เซ้ง
+  const [keyMoney, setKeyMoney] = useState(""); // เซ้ง
+
+  // ✅ ราคาประมาณ (มีเสมอ / ไม่บังคับ)
   const [approxPrice, setApproxPrice] = useState(null);
 
   // ✅ Co-Broker State (เพิ่มใหม่)
@@ -60,35 +92,33 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
   const [commissionValue, setCommissionValue] = useState("");
 
   const [announcerStatus, setAnnouncerStatus] = useState(null);
-
-  // ✅ ประเภทการขาย: เลือกได้อย่างเดียว
-  const [listingType, setListingType] = useState(null);
-
+  const [listingType, setListingType] = useState(null); // single
   const [propertyType, setPropertyType] = useState(null);
+
+  // ✅ สภาพทรัพย์ (ใช้คนละ options ตามโหมด)
   const [condition, setCondition] = useState(null);
 
   const [error, setError] = useState("");
   const [showSelect, setShowSelect] = useState(false);
-
   useEffect(() => setShowSelect(true), []);
 
   // ----------------------------
-  // helpers: normalize initialValue -> option objects
+  // helpers
   // ----------------------------
   const toOption = (raw, options) => {
     if (!raw) return null;
-
     if (typeof raw === "object" && raw.value != null) return raw;
-
     const s = String(raw).trim();
+    return (
+      options.find((o) => String(o.value) === s) ||
+      options.find((o) => String(o.label) === s) ||
+      null
+    );
+  };
 
-    let found = options.find((o) => String(o.value) === s);
-    if (found) return found;
-
-    found = options.find((o) => String(o.label) === s);
-    if (found) return found;
-
-    return null;
+  const normalizeNumber = (v) => {
+    const n = Number(String(v ?? "").replace(/,/g, "").trim());
+    return Number.isFinite(n) ? n : 0;
   };
 
   const formatNumberWithComma = (n) => {
@@ -97,21 +127,48 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     return num.toLocaleString("en-US");
   };
 
-  // ✅ ตรวจว่าประเภทการขาย = "เซ้ง" ไหม (กันพลาดทั้ง value/label)
-  const isTransferListing = useMemo(() => {
+  // ✅ แทนทุกเลขด้วย x แต่คง comma ไว้
+  const maskPriceDigits = (priceNumber) => {
+    const n = Number(priceNumber);
+    if (!Number.isFinite(n) || n <= 0) return "";
+    const formatted = n.toLocaleString("en-US");
+    return formatted.replace(/\d/g, "x");
+  };
+
+  // ----------------------------
+  // determine listing mode: sale | rent | transfer
+  // ----------------------------
+  const listingMode = useMemo(() => {
     const v = String(listingType?.value ?? "").toLowerCase();
     const l = String(listingType?.label ?? "");
-    return (
+
+    const transfer =
       l.includes("เซ้ง") ||
       v === "เซ้ง" ||
-      v === "seung" ||
-      v === "transfer" ||
-      v === "takeover" ||
-      v === "cession"
-    );
+      v.includes("seung") ||
+      v.includes("transfer") ||
+      v.includes("takeover") ||
+      v.includes("cession");
+    if (transfer) return "transfer";
+
+    const rent = l.includes("เช่า") || v.includes("rent");
+    if (rent) return "rent";
+
+    return "sale";
   }, [listingType]);
 
-  // ✅ option ร้านค้า
+  const isSale = listingMode === "sale";
+  const isRent = listingMode === "rent";
+  const isTransfer = listingMode === "transfer";
+
+  // ✅ condition options ตามโหมด
+  const conditionOptions = useMemo(() => {
+    return isTransfer ? CONDITION_OPTIONS_TRANSFER : CONDITION_OPTIONS_SALE_RENT;
+  }, [isTransfer, CONDITION_OPTIONS_TRANSFER, CONDITION_OPTIONS_SALE_RENT]);
+
+  // ----------------------------
+  // shop option + filter property types (เซ้ง => ร้านค้าเท่านั้น)
+  // ----------------------------
   const shopOption = useMemo(() => {
     return (
       propertyTypeOptions.find((o) => String(o.value) === "shop") ||
@@ -120,52 +177,65 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     );
   }, [propertyTypeOptions]);
 
-  // ✅ options ของประเภททรัพย์: ถ้า "เซ้ง" → เหลือแค่ร้านค้า
   const filteredPropertyTypeOptions = useMemo(() => {
-    if (!isTransferListing) return propertyTypeOptions;
+    if (!isTransfer) return propertyTypeOptions;
     return [shopOption];
-  }, [isTransferListing, propertyTypeOptions, shopOption]);
+  }, [isTransfer, propertyTypeOptions, shopOption]);
 
-  // ✅ สำคัญ: จับ “การเปลี่ยนจาก เซ้ง -> ไม่เซ้ง” เพื่อ reset ประเภททรัพย์เป็นค่าว่าง
+  // ✅ จับ transition เซ้ง <-> ไม่เซ้ง เพื่อจัดการ propertyType + condition
   const didHydrateRef = useRef(false);
   const prevIsTransferRef = useRef(false);
 
   useEffect(() => {
-    // หลัง render ครั้งแรกให้เริ่มจับ transition
     if (!didHydrateRef.current) {
-      prevIsTransferRef.current = isTransferListing;
+      prevIsTransferRef.current = isTransfer;
       didHydrateRef.current = true;
       return;
     }
 
     const prev = prevIsTransferRef.current;
 
-    // ✅ ตอนนี้เป็น "เซ้ง" → บังคับร้านค้า
-    if (isTransferListing) {
+    if (isTransfer) {
       setPropertyType(shopOption);
     }
 
-    // ✅ ถ้าเคยเป็น "เซ้ง" แล้วเปลี่ยนกลับ "ขาย/เช่า/อื่นๆ" → reset เป็นค่าว่าง
-    if (prev === true && isTransferListing === false) {
-      setPropertyType(null); // << รีใหม่เลย ให้เลือกใหม่
+    // ถ้าเคยเป็นเซ้งแล้วกลับเป็นขาย/เช่า => reset ประเภททรัพย์ให้เลือกใหม่
+    if (prev === true && isTransfer === false) {
+      setPropertyType(null);
     }
 
-    prevIsTransferRef.current = isTransferListing;
-  }, [isTransferListing, shopOption]);
+    // ✅ เปลี่ยนโหมดแล้ว: reset condition เสมอ (เพราะ options คนละชุด)
+    if (prev !== isTransfer) {
+      setCondition(null);
+    }
 
-  // sync จาก initialValue (สำคัญสุดสำหรับหน้าแก้ไข)
+    prevIsTransferRef.current = isTransfer;
+  }, [isTransfer, shopOption]);
+
+  // ----------------------------
+  // sync from initialValue (รองรับหน้าแก้ไข)
+  // ----------------------------
   useEffect(() => {
     if (!initialValue) return;
 
     setTitle(initialValue.title ?? "");
     setDescription(initialValue.description ?? "");
 
-    // ✅ showPrice
+    // ✅ showPrice (ถ้า text เป็น x => ถือว่าไม่แสดง)
+    const anyMasked =
+      String(initialValue.price_text ?? initialValue.priceText ?? "").includes("x") ||
+      String(initialValue.rent_text ?? "").includes("x") ||
+      String(initialValue.keyMoney_text ?? "").includes("x");
     const show =
       initialValue.showPrice ??
-      (Number(initialValue.price ?? 0) > 0 || !!(initialValue.price_text ?? initialValue.priceText));
+      initialValue.show_price ??
+      (!anyMasked &&
+        (Number(initialValue.price ?? 0) > 0 ||
+          Number(initialValue.rentPerMonth ?? 0) > 0 ||
+          Number(initialValue.keyMoney ?? 0) > 0));
     setShowPrice(Boolean(show));
 
+<<<<<<< HEAD
     // ✅ price
     const initialPriceText =
       initialValue.price_text ??
@@ -185,6 +255,8 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     setCommissionType(initialValue.commissionType || "percent");
     setCommissionValue(initialValue.commissionValue || "");
 
+=======
+>>>>>>> 353060465078a18ec9a0de83128572d32477e838
     // announcerStatus
     const a =
       toOption(initialValue.announcerStatus, announcerStatusOptions) ||
@@ -192,7 +264,7 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
       toOption(initialValue.announcerStatus_value, announcerStatusOptions);
     setAnnouncerStatus(a);
 
-    // ✅ listingType
+    // listingType
     const rawLT =
       initialValue.listingType ??
       initialValue.listingType_value ??
@@ -206,32 +278,83 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     else lt = toOption(rawLT, listingTypeOptions);
     setListingType(lt);
 
-    // propertyType (ตั้งค่าตาม initial ไว้ก่อน)
-    const pt =
+    // propertyType
+    const ptOpt =
       toOption(initialValue.propertyType, propertyTypeOptions) ||
       toOption(initialValue.propertyType_label, propertyTypeOptions) ||
       toOption(initialValue.propertyType_value, propertyTypeOptions);
-    setPropertyType(pt);
+    setPropertyType(ptOpt);
 
-    // condition
-    const cd =
-      toOption(initialValue.condition, propertyConditionOptions) ||
-      toOption(initialValue.condition_label, propertyConditionOptions) ||
-      toOption(initialValue.condition_value, propertyConditionOptions);
-    setCondition(cd);
+    // ✅ condition: ต้อง map ตามโหมด (เดิมอาจเก็บเป็น value/label)
+    // เราจะพยายามหาใน 2 ชุดก่อน แล้วค่อยตกไป null
+    const condRaw =
+      initialValue.condition ?? initialValue.condition_value ?? initialValue.condition_label;
+
+    const condFromSaleRent = toOption(condRaw, CONDITION_OPTIONS_SALE_RENT);
+    const condFromTransfer = toOption(condRaw, CONDITION_OPTIONS_TRANSFER);
+
+    // ถ้า initialValue เป็นเซ้ง -> prioritize transfer
+    const modeGuess =
+      String(initialValue.listingType_label ?? "")
+        .includes("เซ้ง") || String(initialValue.listingType ?? "").includes("transfer");
+
+    setCondition(modeGuess ? condFromTransfer : condFromSaleRent || condFromTransfer || null);
+
+    // ✅ ราคา
+    const saleN = normalizeNumber(initialValue.salePrice ?? initialValue.price);
+    const rentN = normalizeNumber(
+      initialValue.rentPerMonth ?? initialValue.rent_price ?? initialValue.rent
+    );
+    const keyN = normalizeNumber(
+      initialValue.keyMoney ?? initialValue.transferPrice ?? initialValue.key_money
+    );
+
+    setSalePrice(saleN > 0 ? formatNumberWithComma(saleN) : "");
+    setRentPerMonth(rentN > 0 ? formatNumberWithComma(rentN) : "");
+    setKeyMoney(keyN > 0 ? formatNumberWithComma(keyN) : "");
+
+    // approxPrice
+    const ap =
+      toOption(initialValue.approxPrice, APPROX_PRICE_OPTIONS) ||
+      toOption(initialValue.approxPrice_value, APPROX_PRICE_OPTIONS) ||
+      toOption(initialValue.approxPrice_label, APPROX_PRICE_OPTIONS);
+    setApproxPrice(ap);
 
     setError("");
-  }, [initialValue, propertyTypeOptions, APPROX_PRICE_OPTIONS]);
+  }, [
+    initialValue,
+    propertyTypeOptions,
+    APPROX_PRICE_OPTIONS,
+    CONDITION_OPTIONS_SALE_RENT,
+    CONDITION_OPTIONS_TRANSFER,
+  ]);
 
-  const priceNumber = useMemo(() => {
-    const n = Number(String(price).replace(/,/g, ""));
-    return Number.isFinite(n) ? n : 0;
-  }, [price]);
+  // ----------------------------
+  // when listing mode changes, clear irrelevant pricing fields (กันข้อมูลค้าง)
+  // ----------------------------
+  const prevModeRef = useRef(null);
+  useEffect(() => {
+    const prev = prevModeRef.current;
+    if (prev === null) {
+      prevModeRef.current = listingMode;
+      return;
+    }
+    if (prev !== listingMode) {
+      setError("");
 
-  const buildFormData = () => ({
-    title: title.trim(),
-    description: description.trim(),
+      if (listingMode === "sale") {
+        setRentPerMonth("");
+        setKeyMoney("");
+      }
+      if (listingMode === "rent") {
+        setSalePrice("");
+        setKeyMoney("");
+      }
+      if (listingMode === "transfer") {
+        setSalePrice("");
+      }
 
+<<<<<<< HEAD
     // ✅ ราคา
     showPrice,
     price_text: showPrice ? price : "xxxx",
@@ -250,18 +373,107 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
 
     announcerStatus: announcerStatus?.value ?? null,
     announcerStatus_label: announcerStatus?.label ?? null,
+=======
+      // ✅ เปลี่ยนโหมดแล้ว reset condition เสมอ (options เปลี่ยน)
+      setCondition(null);
+    }
+    prevModeRef.current = listingMode;
+  }, [listingMode]);
 
-    listingType: listingType?.value ?? null,
-    listingType_label: listingType?.label ?? null,
+  // ----------------------------
+  // computed numbers + preview
+  // ----------------------------
+  const salePriceNumber = useMemo(() => normalizeNumber(salePrice), [salePrice]);
+  const rentPerMonthNumber = useMemo(() => normalizeNumber(rentPerMonth), [rentPerMonth]);
+  const keyMoneyNumber = useMemo(() => normalizeNumber(keyMoney), [keyMoney]);
 
-    propertyType: propertyType?.value ?? null,
-    propertyType_label: propertyType?.label ?? null,
+  const previewSale = useMemo(() => {
+    if (!salePriceNumber) return "";
+    return showPrice ? formatNumberWithComma(salePriceNumber) : maskPriceDigits(salePriceNumber);
+  }, [showPrice, salePriceNumber]);
+>>>>>>> 353060465078a18ec9a0de83128572d32477e838
 
-    condition: condition?.value ?? null,
-    condition_label: condition?.label ?? null,
-  });
+  const previewRent = useMemo(() => {
+    if (!rentPerMonthNumber) return "";
+    return showPrice
+      ? formatNumberWithComma(rentPerMonthNumber)
+      : maskPriceDigits(rentPerMonthNumber);
+  }, [showPrice, rentPerMonthNumber]);
 
-  // ✅ เช็คลำดับ “ทีละ step”
+  const previewKey = useMemo(() => {
+    if (!keyMoneyNumber) return "";
+    return showPrice ? formatNumberWithComma(keyMoneyNumber) : maskPriceDigits(keyMoneyNumber);
+  }, [showPrice, keyMoneyNumber]);
+
+  // ----------------------------
+  // build payload
+  // ----------------------------
+  const buildFormData = () => {
+    const base = {
+      title: title.trim(),
+      description: description.trim(),
+
+      showPrice,
+      listingMode,
+
+      announcerStatus: announcerStatus?.value ?? null,
+      announcerStatus_label: announcerStatus?.label ?? null,
+
+      listingType: listingType?.value ?? null,
+      listingType_label: listingType?.label ?? null,
+
+      propertyType: propertyType?.value ?? null,
+      propertyType_label: propertyType?.label ?? null,
+
+      // ✅ condition ส่งเสมอทุกโหมด (แต่ options ต่างกัน)
+      condition: condition?.value ?? null,
+      condition_label: condition?.label ?? null,
+
+      // ราคาประมาณ (UI มีเสมอ)
+      approxPrice: approxPrice?.value ?? null,
+      approxPrice_label: approxPrice?.label ?? null,
+      approxPrice_min: approxPrice?.min ?? null,
+      approxPrice_max: approxPrice?.max ?? null,
+    };
+
+    if (listingMode === "sale") {
+      return {
+        ...base,
+        salePrice: salePriceNumber,
+        price: salePriceNumber,
+        price_text: showPrice
+          ? formatNumberWithComma(salePriceNumber)
+          : maskPriceDigits(salePriceNumber),
+      };
+    }
+
+    if (listingMode === "rent") {
+      return {
+        ...base,
+        rentPerMonth: rentPerMonthNumber,
+        rent_text: showPrice
+          ? formatNumberWithComma(rentPerMonthNumber)
+          : maskPriceDigits(rentPerMonthNumber),
+      };
+    }
+
+    return {
+      ...base,
+      keyMoney: keyMoneyNumber,
+      keyMoney_text: showPrice
+        ? formatNumberWithComma(keyMoneyNumber)
+        : maskPriceDigits(keyMoneyNumber),
+
+      rentPerMonth: rentPerMonthNumber,
+      rent_text: showPrice
+        ? formatNumberWithComma(rentPerMonthNumber)
+        : maskPriceDigits(rentPerMonthNumber),
+    };
+  };
+
+  // ----------------------------
+  // validation
+  // ----------------------------
   const getFirstMissingField = () => {
     if (!title.trim()) return "หัวข้อประกาศ";
     if (!description.trim()) return "รายละเอียดประกาศ";
@@ -269,40 +481,42 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
     if (!listingType) return "ประเภทการขาย";
     if (!propertyType) return "ประเภททรัพย์";
     if (!condition) return "สภาพทรัพย์";
-    if (showPrice && (!price.trim() || priceNumber <= 0)) return "ราคา";
+
+    if (listingMode === "sale") {
+      if (!salePrice.trim() || salePriceNumber <= 0) return "ราคา";
+    }
+    if (listingMode === "rent") {
+      if (!rentPerMonth.trim() || rentPerMonthNumber <= 0) return "ค่าเช่า/เดือน";
+    }
+    if (listingMode === "transfer") {
+      if (!keyMoney.trim() || keyMoneyNumber <= 0) return "ราคาเซ้ง";
+      if (!rentPerMonth.trim() || rentPerMonthNumber <= 0) return "ค่าเช่า/เดือน";
+    }
+
     return null;
   };
 
-  const isAllEmpty = () => {
-    const noTitle = !title.trim();
-    const noDesc = !description.trim();
-    const noAnnouncer = !announcerStatus;
-    const noListing = !listingType;
-    const noPropertyType = !propertyType;
-    const noCondition = !condition;
-    const noPrice = showPrice ? (!price.trim() || priceNumber <= 0) : true;
-
-    return noTitle && noDesc && noAnnouncer && noListing && noPropertyType && noCondition && noPrice;
-  };
-
   const handleNext = () => {
-    if (isAllEmpty()) {
-      toast.warn("กรุณากรอกข้อมูลให้ครบถ้วน");
-      return;
-    }
-
     const firstMissing = getFirstMissingField();
     if (firstMissing) {
       toast.warn(`กรุณากรอก${firstMissing}`);
       return;
     }
-
+    setError("");
     onNext?.(buildFormData());
   };
 
   const handleSaveDraft = () => {
     onSaveDraft?.(buildFormData());
     alert("บันทึกร่างประกาศเรียบร้อย (mock)");
+  };
+
+  // ----------------------------
+  // UI helpers
+  // ----------------------------
+  const onMoneyInput = (setter) => (e) => {
+    const next = String(e.target.value ?? "").replace(/[^\d,]/g, "");
+    setter(next);
   };
 
   return (
@@ -314,6 +528,7 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
       }}
     >
       <div className="row">
+        {/* ===== Title ===== */}
         <div className="col-sm-12">
           <div className="mb20">
             <label className="heading-color ff-heading fw600 mb10">
@@ -329,6 +544,7 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
           </div>
         </div>
 
+        {/* ===== Description ===== */}
         <div className="col-sm-12">
           <div className="mb20">
             <label className="heading-color ff-heading fw600 mb10">
@@ -345,6 +561,7 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
           </div>
         </div>
 
+        {/* ===== announcerStatus ===== */}
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
             <label className="heading-color ff-heading fw600 mb10">
@@ -367,6 +584,10 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
           </div>
         </div>
 
+<<<<<<< HEAD
+=======
+        {/* ===== listingType ===== */}
+>>>>>>> 353060465078a18ec9a0de83128572d32477e838
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
             <label className="heading-color ff-heading fw600 mb10">
@@ -389,6 +610,10 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
           </div>
         </div>
 
+<<<<<<< HEAD
+=======
+        {/* ===== propertyType ===== */}
+>>>>>>> 353060465078a18ec9a0de83128572d32477e838
         <div className="col-sm-6 col-xl-4">
           <div className="mb20">
             <label className="heading-color ff-heading fw600 mb10">
@@ -405,45 +630,59 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
                   className="select-custom pl-0"
                   classNamePrefix="select"
                   placeholder="เลือกประเภททรัพย์"
-                  isDisabled={isTransferListing}
-                />
-              )}
-            </div>
-
-          </div>
-        </div>
-
-        <div className="col-sm-6 col-xl-4">
-          <div className="mb20">
-            <label className="heading-color ff-heading fw600 mb10">
-              สภาพทรัพย์ <span className="text-danger">*</span>
-            </label>
-            <div className="location-area">
-              {showSelect && (
-                <Select
-                  value={condition}
-                  onChange={setCondition}
-                  options={propertyConditionOptions}
-                  styles={customStyles}
-                  menuPortalTarget={document.body}
-                  className="select-custom pl-0"
-                  classNamePrefix="select"
-                  placeholder="เลือกสภาพทรัพย์"
+                  isDisabled={isTransfer} // เซ้ง = ล็อคเป็นร้านค้า
                 />
               )}
             </div>
           </div>
         </div>
 
+<<<<<<< HEAD
         {/* ✅ แถวราคา & Co-Broker */}
         <div className="col-sm-12 col-xl-8">
           <div className="row">
             {/* ซ้าย: ราคา */}
             <div className="col-sm-6">
               <div className="mb30">
+=======
+        {/* =========================
+            ROW: สภาพทรัพย์ | ราคา | ราคาประมาณ
+            - เซ้ง: ราคาเซ้ง | ค่าเช่า | ราคาประมาณ
+        ========================= */}
+
+        {/* ====== CASE: เซ้ง ====== */}
+        {isTransfer ? (
+          <>
+            {/* สภาพทรัพย์ (พร้อมเปิด/ปรับปรุงเล็กน้อย) */}
+            <div className="col-sm-6 col-xl-4">
+              <div className="mb20">
+                <label className="heading-color ff-heading fw600 mb10">
+                  สภาพทรัพย์ <span className="text-danger">*</span>
+                </label>
+                <div className="location-area">
+                  {showSelect && (
+                    <Select
+                      value={condition}
+                      onChange={setCondition}
+                      options={conditionOptions}
+                      styles={customStyles}
+                      menuPortalTarget={document.body}
+                      className="select-custom pl-0"
+                      classNamePrefix="select"
+                      placeholder="เลือกสภาพทรัพย์"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* ช่อง 1: ราคาเซ้ง + checkbox */}
+            <div className="col-sm-6 col-xl-4">
+              <div className="mb20">
+>>>>>>> 353060465078a18ec9a0de83128572d32477e838
                 <div className="d-flex align-items-center justify-content-between mb10">
                   <label className="heading-color ff-heading fw600 mb0">
-                    ราคา {showPrice && <span className="text-danger">*</span>}
+                    ราคาเซ้ง <span className="text-danger">*</span>
                   </label>
 
                   <label className="d-flex align-items-center gap-2 mb-0" style={{ cursor: 'pointer' }}>
@@ -461,23 +700,46 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
                   type="text"
                   inputMode="numeric"
                   className="form-control"
-                  placeholder={showPrice ? "กรอกราคาทรัพย์" : "ไม่แสดงราคา (จะส่งเป็น xxxx)"}
-                  value={showPrice ? price : ""}
-                  disabled={!showPrice}
-                  onChange={(e) => setPrice(e.target.value.replace(/[^\d,]/g, ""))}
+                  placeholder="กรอกราคาเซ้ง"
+                  value={keyMoney}
+                  onChange={onMoneyInput(setKeyMoney)}
                 />
 
-                {!showPrice && (
+                {keyMoneyNumber > 0 && (
                   <small className="text-muted d-block mt-1">
-                    ตอนบันทึก/ถัดไป ระบบจะส่ง <b>price_text = "xxxx"</b>
+                    จะแสดงเป็น: <b>{previewKey}</b>
                   </small>
                 )}
               </div>
             </div>
 
-            {/* ขวา: ราคาประมาณ */}
-            <div className="col-sm-6">
-              <div className="mb30">
+            {/* ช่อง 2: ค่าเช่า/เดือน */}
+            <div className="col-sm-6 col-xl-4">
+              <div className="mb20">
+                <label className="heading-color ff-heading fw600 mb10">
+                  ค่าเช่า/เดือน <span className="text-danger">*</span>
+                </label>
+
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  className="form-control"
+                  placeholder="กรอกค่าเช่าต่อเดือน"
+                  value={rentPerMonth}
+                  onChange={onMoneyInput(setRentPerMonth)}
+                />
+
+                {rentPerMonthNumber > 0 && (
+                  <small className="text-muted d-block mt-1">
+                    จะแสดงเป็น: <b>{previewRent}</b>
+                  </small>
+                )}
+              </div>
+            </div>
+
+            {/* ราคาประมาณ */}
+            <div className="col-sm-6 col-xl-4">
+              <div className="mb20">
                 <label className="heading-color ff-heading fw600 mb10">ราคาประมาณ</label>
                 <div className="location-area">
                   {showSelect && (
@@ -498,6 +760,7 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
                 </small>
               </div>
             </div>
+<<<<<<< HEAD
           </div>
         </div>
         {/* ✅✅ เพิ่มส่วน Co-Broke ตรงนี้ (เต็มความกว้างใน col-xl-8) */}
@@ -643,13 +906,132 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
           </div>
         </div>
         {/* จบส่วน Co-Broke */}
+=======
+          </>
+        ) : (
+          <>
+            {/* ====== CASE: ขาย/เช่า ====== */}
+>>>>>>> 353060465078a18ec9a0de83128572d32477e838
 
+            {/* สภาพทรัพย์ (มือ1/มือ2) */}
+            <div className="col-sm-6 col-xl-4">
+              <div className="mb20">
+                <label className="heading-color ff-heading fw600 mb10">
+                  สภาพทรัพย์ <span className="text-danger">*</span>
+                </label>
+                <div className="location-area">
+                  {showSelect && (
+                    <Select
+                      value={condition}
+                      onChange={setCondition}
+                      options={conditionOptions}
+                      styles={customStyles}
+                      menuPortalTarget={document.body}
+                      className="select-custom pl-0"
+                      classNamePrefix="select"
+                      placeholder="เลือกสภาพทรัพย์"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* ราคา/ค่าเช่า + checkbox */}
+            <div className="col-sm-6 col-xl-4">
+              <div className="mb20">
+                <div className="d-flex align-items-center justify-content-between mb10">
+                  <label className="heading-color ff-heading fw600 mb0">
+                    {isSale ? (
+                      <>
+                        ราคา <span className="text-danger">*</span>
+                      </>
+                    ) : (
+                      <>
+                        ค่าเช่า/เดือน <span className="text-danger">*</span>
+                      </>
+                    )}
+                  </label>
+
+                  <label className="d-flex align-items-center gap-2 mb-0">
+                    <input
+                      type="checkbox"
+                      checked={showPrice}
+                      onChange={(e) => setShowPrice(e.target.checked)}
+                    />
+                    <span className="heading-color ff-heading fw600">แสดงราคา</span>
+                  </label>
+                </div>
+
+                {isSale ? (
+                  <>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      className="form-control"
+                      placeholder="กรอกราคาทรัพย์"
+                      value={salePrice}
+                      onChange={onMoneyInput(setSalePrice)}
+                    />
+                    {salePriceNumber > 0 && (
+                      <small className="text-muted d-block mt-1">
+                        จะแสดงเป็น: <b>{previewSale}</b>
+                      </small>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      className="form-control"
+                      placeholder="กรอกค่าเช่าต่อเดือน"
+                      value={rentPerMonth}
+                      onChange={onMoneyInput(setRentPerMonth)}
+                    />
+                    {rentPerMonthNumber > 0 && (
+                      <small className="text-muted d-block mt-1">
+                        จะแสดงเป็น: <b>{previewRent}</b>
+                      </small>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* ราคาประมาณ */}
+            <div className="col-sm-6 col-xl-4">
+              <div className="mb20">
+                <label className="heading-color ff-heading fw600 mb10">ราคาประมาณ</label>
+                <div className="location-area">
+                  {showSelect && (
+                    <Select
+                      value={approxPrice}
+                      onChange={setApproxPrice}
+                      options={APPROX_PRICE_OPTIONS}
+                      styles={customStyles}
+                      menuPortalTarget={document.body}
+                      className="select-custom pl-0"
+                      classNamePrefix="select"
+                      placeholder="เลือกช่วงราคาโดยประมาณ"
+                    />
+                  )}
+                </div>
+                <small className="text-muted d-block mt-1">
+                  (ไม่บังคับ) ใช้เพื่อช่วยให้ผู้สนใจเห็นช่วงราคาคร่าวๆ
+                </small>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* error */}
         {error && (
           <div className="col-12">
             <p className="text-danger mb10">{error}</p>
           </div>
         )}
 
+        {/* buttons */}
         <div className="col-12">
           <div className="d-flex justify-content-between mt10">
             <button type="button" className="ud-btn btn-light" onClick={handleSaveDraft}>

@@ -109,6 +109,33 @@ const PropertySummary = ({
     return found?.label || value;
   };
 
+  const toNumber = (v) => {
+    const n = Number(String(v ?? "").replace(/,/g, "").trim());
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  // ✅ format เงิน (รองรับ showPrice=false => masked text)
+  const formatMoney = (rawNumber, rawText, showPrice, suffix = "บาท") => {
+    if (showPrice === false) {
+      const t = String(rawText ?? "").trim();
+      if (t) return `${t} ${suffix}`;
+      const n = toNumber(rawNumber);
+      if (n > 0) return n.toLocaleString("en-US").replace(/\d/g, "x") + ` ${suffix}`;
+      return "-";
+    }
+
+    const n = toNumber(rawNumber);
+    if (n > 0) return n.toLocaleString("en-US") + ` ${suffix}`;
+
+    const n2 = toNumber(rawText);
+    if (n2 > 0) return n2.toLocaleString("en-US") + ` ${suffix}`;
+
+    const t2 = String(rawText ?? "").trim();
+    if (t2) return `${t2} ${suffix}`;
+
+    return "-";
+  };
+
   // ✅ แปลงข้อมูล basicInfo จาก property-description เป็น display format
   const resolvedBasicInfo = useMemo(() => {
     const b = safeBasic || {};
@@ -120,8 +147,7 @@ const PropertySummary = ({
       (Array.isArray(b.listingTypes) && b.listingTypes.length > 0
         ? b.listingTypes
             .map((lt) => {
-              const val =
-                typeof lt === "object" ? lt.value ?? lt.label ?? null : lt;
+              const val = typeof lt === "object" ? lt.value ?? lt.label ?? null : lt;
               return findLabel(listingTypeOptions, val) || String(val || "");
             })
             .filter(Boolean)
@@ -162,23 +188,52 @@ const PropertySummary = ({
         : b.announcerStatus || b.announcer_status || b.announcerStatus_value;
     let announcerStatusLabel =
       b.announcerStatus_label ||
-      (announcerStatusValue
-        ? findLabel(announcerStatusOptions, announcerStatusValue)
-        : null) ||
+      (announcerStatusValue ? findLabel(announcerStatusOptions, announcerStatusValue) : null) ||
       b.announcerStatusText ||
       "-";
     announcerStatusLabel = String(announcerStatusLabel || "-");
 
+    // ✅ showPrice
+    const showPrice = b.showPrice !== undefined ? Boolean(b.showPrice) : true;
+
+    // ✅ listingMode ใหม่: sale | rent | transfer
+    const listingMode = String(b.listingMode || "").trim() || null;
+
+    // ✅ ราคาตามโหมด
+    const salePrice = getAny(b, ["salePrice", "price"]);
+    const priceText = getAny(b, ["price_text", "priceText"]);
+
+    const rentPerMonth = getAny(b, ["rentPerMonth", "rent_price", "rent"]);
+    const rentText = getAny(b, ["rent_text"]);
+
+    const keyMoney = getAny(b, ["keyMoney", "transferPrice", "key_money"]);
+    const keyMoneyText = getAny(b, ["keyMoney_text"]);
+
     return {
       title: String(b.title || "-"),
       description: String(b.description || "-"),
-      price: b.price ?? b.price_text ?? undefined,
-      price_text: b.price_text, // ✅ สำหรับเช็ค "xxxx"
+
+      showPrice,
+      listingMode,
+
+      // sale
+      salePrice,
+      price_text: priceText,
+
+      // rent
+      rentPerMonth,
+      rent_text: rentText,
+
+      // transfer
+      keyMoney,
+      keyMoney_text: keyMoneyText,
+
       approxPrice: b.approxPrice_label
         ? String(b.approxPrice_label)
         : b.approxPrice
         ? String(b.approxPrice)
         : null,
+
       listingType: listingTypeLabel,
       propertyType: propertyTypeLabel,
       condition: conditionLabel,
@@ -186,18 +241,51 @@ const PropertySummary = ({
     };
   }, [safeBasic]);
 
-  const formatPrice = (p, priceText) => {
-    if (priceText === "xxxx" || String(priceText || "").trim() === "xxxx") {
-      return "ไม่ระบุราคา";
+  // ✅ สร้างข้อความราคาให้ถูกตาม listingMode
+  const priceLines = useMemo(() => {
+    const b = resolvedBasicInfo;
+    const mode = String(b.listingMode || "").toLowerCase();
+
+    // fallback: ถ้าไม่มี listingMode ให้ใช้แบบเดิม (ราคาเดียว)
+    if (!mode) {
+      return [
+        {
+          label: "ราคา",
+          value: formatMoney(b.salePrice, b.price_text, b.showPrice, "บาท"),
+        },
+      ];
     }
-    if (p === undefined || p === null || p === "") return "-";
-    if (typeof p === "number") {
-      if (p <= 0) return "ไม่ระบุราคา";
-      return p.toLocaleString() + " บาท";
+
+    if (mode === "sale") {
+      return [
+        {
+          label: "ราคา",
+          value: formatMoney(b.salePrice, b.price_text, b.showPrice, "บาท"),
+        },
+      ];
     }
-    const n = Number(String(p).replace(/,/g, ""));
-    return Number.isFinite(n) && n > 0 ? n.toLocaleString() + " บาท" : "ไม่ระบุราคา";
-  };
+
+    if (mode === "rent") {
+      return [
+        {
+          label: "ค่าเช่า/เดือน",
+          value: formatMoney(b.rentPerMonth, b.rent_text, b.showPrice, "บาท/เดือน"),
+        },
+      ];
+    }
+
+    // transfer
+    return [
+      {
+        label: "ราคาเซ้ง",
+        value: formatMoney(b.keyMoney, b.keyMoney_text, b.showPrice, "บาท"),
+      },
+      {
+        label: "ค่าเช่า/เดือน",
+        value: formatMoney(b.rentPerMonth, b.rent_text, b.showPrice, "บาท/เดือน"),
+      },
+    ];
+  }, [resolvedBasicInfo]);
 
   // ✅ Details: props เป็นหลัก / กัน hydration
   const [resolvedDetails, setResolvedDetails] = useState(() => details || {});
@@ -205,9 +293,7 @@ const PropertySummary = ({
   useEffect(() => {
     const fromProps = details || {};
 
-    const hasNonBlankInProps = Object.keys(fromProps).some(
-      (k) => !isBlank(fromProps?.[k])
-    );
+    const hasNonBlankInProps = Object.keys(fromProps).some((k) => !isBlank(fromProps?.[k]));
     if (hasNonBlankInProps) {
       setResolvedDetails(fromProps);
       return;
@@ -242,7 +328,12 @@ const PropertySummary = ({
       keys.includes("deedNumber") ||
       keys.includes("titleDeed") ||
       keys.includes("landSqw") ||
-      keys.includes("usableArea");
+      keys.includes("usableArea") ||
+      // ✅ กันกรณีร้านค้า / เซ้งร้าน
+      keys.includes("shopBusinessType") ||
+      keys.includes("contractDuration") ||
+      keys.includes("shopWaterFee") ||
+      keys.includes("shopElectricFee");
 
     setResolvedDetails(looksValid ? ls : fromProps);
   }, [details]);
@@ -308,14 +399,8 @@ const PropertySummary = ({
     // ---------- บ้านและที่ดิน ----------
     pick("ห้องนอน", labelOf(getAny(d, ["bedrooms", "ห้องนอน"])));
     pick("ห้องน้ำ", labelOf(getAny(d, ["bathrooms", "ห้องน้ำ"])));
-    pick(
-      "พื้นที่ใช้สอย (ตร.ม.)",
-      getAny(d, ["usableArea", "พื้นที่ใช้สอย (ตร.ม.)", "พื้นที่ใช้สอย"])
-    );
-    pick(
-      "ขนาดที่ดิน (ตร.ว.)",
-      getAny(d, ["landSqw", "ขนาดที่ดิน (ตร.ว.)", "ขนาดที่ดิน"])
-    );
+    pick("พื้นที่ใช้สอย (ตร.ม.)", getAny(d, ["usableArea", "พื้นที่ใช้สอย (ตร.ม.)", "พื้นที่ใช้สอย"]));
+    pick("ขนาดที่ดิน (ตร.ว.)", getAny(d, ["landSqw", "ขนาดที่ดิน (ตร.ว.)", "ขนาดที่ดิน"]));
     pick(
       "เอกสารสิทธิ (เลขโฉนด)",
       getAny(d, ["deedNumber", "titleDeed", "เอกสารสิทธิ (เลขโฉนด)", "เอกสารสิทธิ"])
@@ -338,55 +423,80 @@ const PropertySummary = ({
     pick("ความลึกที่ดิน (ม.)", getAny(d, ["depth", "ความลึกที่ดิน (ม.)"]));
 
     // ---------- รูปโฉนด ----------
-    const deedFile = getAny(d, [
-      "titleDeedImage",
-      "titleDeedImages",
-      "รูปเอกสารโฉนด",
-      "รูปโฉนด",
-    ]);
-
-    const deedName = getAny(d, [
-      "titleDeedImageName",
-      "ชื่อไฟล์โฉนด",
-      "ไฟล์เดิม/ที่เลือก",
-    ]);
+    const deedFile = getAny(d, ["titleDeedImage", "titleDeedImages", "รูปเอกสารโฉนด", "รูปโฉนด"]);
+    const deedName = getAny(d, ["titleDeedImageName", "ชื่อไฟล์โฉนด", "ไฟล์เดิม/ที่เลือก"]);
 
     let deedText = undefined;
-
-    if (typeof deedFile === "string" && deedFile.trim()) {
-      deedText = deedFile;
-    } else if (deedFile?.name) {
-      deedText = deedFile.name;
-    } else if (typeof deedFile === "object" && deedFile?.url) {
-      deedText = deedFile.url;
-    } else if (Array.isArray(deedFile)) {
+    if (typeof deedFile === "string" && deedFile.trim()) deedText = deedFile;
+    else if (deedFile?.name) deedText = deedFile.name;
+    else if (typeof deedFile === "object" && deedFile?.url) deedText = deedFile.url;
+    else if (Array.isArray(deedFile)) {
       const first = deedFile[0];
       if (typeof first === "string" && first.trim()) deedText = first;
       else if (first?.name) deedText = first.name;
       else if (first?.url) deedText = first.url;
     }
-
     if (isBlank(deedText) && !isBlank(deedName)) deedText = deedName;
-
     pick("รูปโฉนด", deedText);
 
     // ---------- ที่ดินเปล่า ----------
     const landFillRaw = getAny(d, ["landFillStatus", "สภาพที่ดิน"]);
     const zoningRaw = getAny(d, ["zoningColor", "ผังสี"]);
-
-    if (!isBlank(landFillRaw))
-      pick("สภาพที่ดิน", LAND_FILL_LABEL[landFillRaw] ?? landFillRaw);
-    if (!isBlank(zoningRaw))
-      pick("ผังสี", ZONING_COLOR_LABEL[zoningRaw] ?? zoningRaw);
+    if (!isBlank(landFillRaw)) pick("สภาพที่ดิน", LAND_FILL_LABEL[landFillRaw] ?? landFillRaw);
+    if (!isBlank(zoningRaw)) pick("ผังสี", ZONING_COLOR_LABEL[zoningRaw] ?? zoningRaw);
 
     // ---------- คอนโด / ห้องเช่า ----------
     pick("อาคาร/ตึก", getAny(d, ["building", "อาคาร/ตึก", "อาคาร"]));
     pick("ชั้น", getAny(d, ["unitFloor", "ชั้น"]));
     pick("ขนาดห้อง (ตร.ม.)", getAny(d, ["roomArea", "ขนาดห้อง (ตร.ม.)", "ขนาดห้อง"]));
-
     pick("ค่าน้ำ", getAny(d, ["waterFee", "waterRate", "ค่าน้ำ"]));
     pick("ค่าไฟ", getAny(d, ["electricFee", "electricRate", "ค่าไฟ"]));
     pick("ค่าส่วนกลาง", getAny(d, ["commonFee", "ค่าส่วนกลาง"]));
+
+    // ---------- ✅ ร้านค้า (ของเดิม + เพิ่มใหม่) ----------
+    pick("ประเภทร้าน", getAny(d, ["shopBusinessType", "ประเภทร้าน"]));
+    pick("ระยะสัญญา", getAny(d, ["contractDuration", "ระยะสัญญา"]));
+
+    // (ของเดิมร้าน) — เผื่อบางหน้าอยากเห็นใน summary ด้วย (ถ้ามีค่า)
+    pick("ขนาดพื้นที่ร้าน (ตร.ม.)", getAny(d, ["shopArea", "ขนาดพื้นที่ร้าน (ตร.ม.)"]));
+    pick("ชั้น/ทำเลชั้น", getAny(d, ["shopFloor", "ชั้น/ทำเลชั้น"]));
+    pick("ถนนหน้าร้านกว้าง (ม.)", getAny(d, ["shopRoadWidth", "ถนนหน้าร้านกว้าง (ม.)"]));
+    pick("หน้ากว้าง (ม.)", getAny(d, ["shopFrontage", "หน้ากว้าง (ม.)"]));
+    pick("ความลึก (ม.)", getAny(d, ["shopDepth", "ความลึก (ม.)"]));
+
+    // ---------- ✅ เซ้งร้าน: เพิ่มตามที่คุณเพิ่มใน DetailsFiled ----------
+    // ใช้ label แยก "(ร้าน)" เพื่อไม่ชนกับ "ค่าน้ำ/ค่าไฟ" ของคอนโด
+    pick("ค่าน้ำ (ร้าน)", getAny(d, ["shopWaterFee", "ค่าน้ำ (ร้าน)", "ค่าน้ำร้าน"]));
+    pick("ค่าไฟ (ร้าน)", getAny(d, ["shopElectricFee", "ค่าไฟ (ร้าน)", "ค่าไฟร้าน"]));
+
+    const hasStaffRaw = getAny(d, ["shopHasStaff", "มีพนักงาน"]);
+    if (hasStaffRaw !== undefined && hasStaffRaw !== null && String(hasStaffRaw).trim() !== "") {
+      const yes =
+        hasStaffRaw === true ||
+        hasStaffRaw === "true" ||
+        hasStaffRaw === "yes" ||
+        hasStaffRaw === 1 ||
+        hasStaffRaw === "1";
+      pick("มีพนักงาน", yes ? "มี" : "ไม่มี");
+      if (yes) {
+        pick("จำนวนพนักงาน", getAny(d, ["shopStaffCount", "จำนวนพนักงาน"]));
+        pick("ค่าแรงพนักงาน", getAny(d, ["shopStaffWage", "ค่าแรงพนักงาน"]));
+      }
+    }
+
+    const hasEquipRaw = getAny(d, ["shopHasEquipment", "มีอุปกรณ์ให้"]);
+    if (hasEquipRaw !== undefined && hasEquipRaw !== null && String(hasEquipRaw).trim() !== "") {
+      const yes =
+        hasEquipRaw === true ||
+        hasEquipRaw === "true" ||
+        hasEquipRaw === "yes" ||
+        hasEquipRaw === 1 ||
+        hasEquipRaw === "1";
+      pick("มีอุปกรณ์ให้", yes ? "มี" : "ไม่มี");
+      if (yes) {
+        pick("รายการอุปกรณ์", getAny(d, ["shopEquipmentList", "รายการอุปกรณ์"]));
+      }
+    }
 
     pick("รายละเอียดเพิ่มเติม", getAny(d, ["note", "รายละเอียดเพิ่มเติม"]));
 
@@ -418,6 +528,27 @@ const PropertySummary = ({
     "ค่าน้ำ",
     "ค่าไฟ",
     "ค่าส่วนกลาง",
+
+    // ✅ ร้านค้า (เพิ่มใหม่)
+    "ประเภทร้าน",
+    "ระยะสัญญา",
+
+    // ✅ เซ้งร้าน (เพิ่มใหม่)
+    "ค่าน้ำ (ร้าน)",
+    "ค่าไฟ (ร้าน)",
+    "มีพนักงาน",
+    "จำนวนพนักงาน",
+    "ค่าแรงพนักงาน",
+    "มีอุปกรณ์ให้",
+    "รายการอุปกรณ์",
+
+    // ✅ ร้านค้า (ของเดิม)
+    "ขนาดพื้นที่ร้าน (ตร.ม.)",
+    "ชั้น/ทำเลชั้น",
+    "ถนนหน้าร้านกว้าง (ม.)",
+    "หน้ากว้าง (ม.)",
+    "ความลึก (ม.)",
+
     "รายละเอียดเพิ่มเติม",
   ];
 
@@ -512,6 +643,7 @@ const PropertySummary = ({
               <p>
                 <strong>สภาพทรัพย์:</strong> {resolvedBasicInfo.condition}
               </p>
+<<<<<<< HEAD
               <p>
                 <strong>ราคา:</strong>{" "}
                 {formatPrice(resolvedBasicInfo.price, resolvedBasicInfo.price_text)}
@@ -532,12 +664,22 @@ const PropertySummary = ({
                   )}
                 </div>
               </div>
+=======
+
+              {/* ✅ ราคาแบบใหม่: ขาย/เช่า/เซ้ง */}
+              {priceLines.map((line) => (
+                <p key={line.label}>
+                  <strong>{line.label}:</strong> {line.value}
+                </p>
+              ))}
+>>>>>>> 353060465078a18ec9a0de83128572d32477e838
 
               {resolvedBasicInfo.approxPrice && (
                 <p className="mt-2">
                   <strong>ราคาประมาณ:</strong> {String(resolvedBasicInfo.approxPrice)}
                 </p>
               )}
+
               <p className="mt10">
                 <strong>รายละเอียดประกาศ:</strong> {resolvedBasicInfo.description}
               </p>
@@ -654,9 +796,7 @@ const PropertySummary = ({
 
               {amenities.length > 0 && (
                 <div className="mt20">
-                  <div style={{ fontWeight: 700, marginBottom: 8 }}>
-                    สิ่งอำนวยความสะดวก:
-                  </div>
+                  <div style={{ fontWeight: 700, marginBottom: 8 }}>สิ่งอำนวยความสะดวก:</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     {amenities.map((a, idx) => (
                       <span
@@ -669,9 +809,7 @@ const PropertySummary = ({
                           fontSize: 12,
                         }}
                       >
-                        {typeof a === "object"
-                          ? a?.label ?? a?.value ?? String(a)
-                          : String(a)}
+                        {typeof a === "object" ? a?.label ?? a?.value ?? String(a) : String(a)}
                       </span>
                     ))}
                   </div>
