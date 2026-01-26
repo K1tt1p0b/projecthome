@@ -15,8 +15,8 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
       backgroundColor: isSelected
         ? "#eb6753"
         : isFocused
-        ? "#eb675312"
-        : undefined,
+          ? "#eb675312"
+          : undefined,
       color: isSelected ? "#fff" : styles.color,
     }),
     menuPortal: (base) => ({ ...base, zIndex: 9999 }),
@@ -974,11 +974,16 @@ const PropertyDescription = ({ initialValue, onNext, onSaveDraft }) => {
 
                       <div className="input-group">
                         <input
-                          type="number"
+                          type="text"             // 1. เปลี่ยนเป็น text เพื่อคุมเองได้
+                          inputMode="numeric"     // 2. ให้มือถือเด้งแป้นตัวเลข
                           className="form-control"
                           placeholder={commissionType === "percent" ? "เช่น 3" : "เช่น 50000"}
                           value={commissionValue}
-                          onChange={(e) => setCommissionValue(e.target.value)}
+                          // ✅✅ 3. แก้ตรงนี้: ลบทุกอย่างที่ไม่ใช่เลข 0-9 ทิ้งทันที (รวมถึงจุดทศนิยมด้วย)
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/[^0-9]/g, "");
+                            setCommissionValue(val);
+                          }}
                           style={{ height: 52 }}
                         />
                         <span className="input-group-text fw-bold">

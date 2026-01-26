@@ -13,10 +13,8 @@ const RichTextEditor = ({ value, onChange, placeholder }) => {
   // ตั้งค่าปุ่มใน Toolbar (อยากเพิ่มอะไรใส่ตรงนี้)
   const modules = {
     toolbar: [
-      [{ header: [1, 2, 3, false] }],
       ["bold", "italic", "underline", "strike"], // ตัวหนา, เอียง, ขีดเส้น
       [{ list: "ordered" }, { list: "bullet" }], // ลิสต์รายการ
-      ["link", "clean"], // ลิงก์, ล้าง format
     ],
   };
 
