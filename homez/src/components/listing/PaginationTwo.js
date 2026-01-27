@@ -104,12 +104,6 @@ const PaginationTwo = (
           ""
         )}
 
-
-
-     
-
-
-
         <li className="page-item pointer">
           <span
             className="page-link"

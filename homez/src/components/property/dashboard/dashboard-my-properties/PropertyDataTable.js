@@ -1148,7 +1148,7 @@ const PropertyDataTable = () => {
                   <div className="d-flex align-items-center justify-content-between">
                     <div style={{ fontWeight: 900 }}>
                       <span className="fas fa-bolt me-2" />
-                      Manual (ดันทันที)
+                      ดันทันที
                     </div>
                     <div style={{ fontSize: 12, opacity: 0.8 }}>{pkg.manualFreeText}</div>
                   </div>
@@ -1174,7 +1174,7 @@ const PropertyDataTable = () => {
                   <div className="d-flex align-items-center justify-content-between">
                     <div style={{ fontWeight: 900 }}>
                       <span className="fas fa-robot me-2" />
-                      Auto (ตั้งอัตโนมัติ)
+                      ดันทันทีต่อเนื่อง
                     </div>
 
                     <div style={{ fontSize: 12, opacity: 0.7 }}>

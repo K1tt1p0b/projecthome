@@ -183,6 +183,17 @@ function groupByLatLng(points) {
   });
 }
 
+// ===== helper: google maps url =====
+const toFixed6 = (v) => (Number.isFinite(Number(v)) ? Number(v).toFixed(6) : "");
+const buildGoogleMapsUrl = (lat, lng) => {
+  const la = Number(lat);
+  const lo = Number(lng);
+  if (!Number.isFinite(la) || !Number.isFinite(lo)) return "";
+  return `https://www.google.com/maps?q=${encodeURIComponent(
+    `${toFixed6(la)},${toFixed6(lo)}`
+  )}`;
+};
+
 export default function MapMarkersLayerClient({
   points,
   onSelect,
@@ -220,6 +231,10 @@ export default function MapMarkersLayerClient({
     const size = map.getSize();
     const prefer = p.y < size.y * 0.38 ? "top" : "bottom";
 
+    const la = Number(lat);
+    const lo = Number(lng);
+    const googleMapsUrl = buildGoogleMapsUrl(la, lo);
+
     return {
       title: titleFallback,
       items,
@@ -229,6 +244,12 @@ export default function MapMarkersLayerClient({
       mapW: size.x,
       mapH: size.y,
       level,
+
+      // ✅ เพิ่มให้ฝั่ง panel / ฝั่งซ้ายเอาไปใช้
+      lat: Number.isFinite(la) ? la : undefined,
+      lng: Number.isFinite(lo) ? lo : undefined,
+      googleMapsUrl,
+
       ...meta,
     };
   };
@@ -316,7 +337,9 @@ export default function MapMarkersLayerClient({
             >
               <Tooltip direction="top" offset={[0, -8]} opacity={0.95} sticky>
                 <div style={{ fontWeight: 800, marginBottom: 2 }}>
-                  {g.count > 1 ? `จุดนี้มี ${g.count} รายการ` : (g.items?.[0]?.title || "รายการทรัพย์")}
+                  {g.count > 1
+                    ? `จุดนี้มี ${g.count} รายการ`
+                    : (g.items?.[0]?.title || "รายการทรัพย์")}
                 </div>
                 <div style={{ fontSize: 12, opacity: 0.9 }}>{g.typeLabel}</div>
               </Tooltip>
