@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { toast } from "react-toastify";
 import s from "./template-setting.module.css";
 
@@ -52,13 +53,14 @@ const TEMPLATES = [
 ];
 
 // ✅ Sections (Mock) — ตัด contact + property_map ออก
+// ✅ เพิ่ม href ให้แต่ละอันเพื่อทำเป็นลิงก์ใต้ description
 const SECTIONS = [
-  { key: "about", title: "เกี่ยวกับฉัน", desc: "แนะนำตัว/ประสบการณ์/บริษัท", icon: "flaticon-user" },
-  { key: "properties", title: "ทรัพย์สินของฉัน", desc: "รายการทรัพย์ (ขาย/เช่า/แนะนำ)", icon: "flaticon-home" },
-  { key: "services", title: "งานบริการของฉัน", desc: "ฝากขาย/ประเมินราคา/ปรึกษาสินเชื่อ", icon: "fas fa-hard-hat" },
-  { key: "courses", title: "คอร์สเรียนของฉัน", desc: "คอร์ส/คอร์สออนไลน์", icon: "fas fa-book" },
-  { key: "gallery", title: "แกลเลอรี่", desc: "รูปภาพแกลเลอรี่/ผลงาน/บรรยากาศ", icon: "flaticon-images" },
-  { key: "video", title: "วิดีโอ", desc: "วิดีโอแนะนำ/พาชมทรัพย์", icon: "flaticon-play" },
+  { key: "about", title: "เกี่ยวกับฉัน", desc: "แนะนำตัว/ประสบการณ์/บริษัท", icon: "flaticon-user", href: "/dashboard-about-me" },
+  { key: "properties", title: "ทรัพย์สินของฉัน", desc: "รายการทรัพย์ (ขาย/เช่า/แนะนำ)", icon: "flaticon-home", href: "/dashboard-my-properties" },
+  { key: "services", title: "งานบริการของฉัน", desc: "ฝากขาย/ประเมินราคา/ปรึกษาสินเชื่อ", icon: "fas fa-hard-hat", href: "dashboard-my-construction" },
+  { key: "courses", title: "คอร์สเรียนของฉัน", desc: "คอร์ส/คอร์สออนไลน์", icon: "fas fa-book", href: "/dashboard-my-course" },
+  { key: "gallery", title: "แกลเลอรี่", desc: "รูปภาพแกลเลอรี่/ผลงาน/บรรยากาศ", icon: "flaticon-images", href: "/dashboard-gallery" },
+  { key: "video", title: "วิดีโอ", desc: "วิดีโอแนะนำ/พาชมทรัพย์", icon: "flaticon-play", href: "/dashboard-video-gallery" },
 ];
 
 const LS_KEY = "microsite_template_setting_v1";
@@ -223,8 +225,7 @@ export default function TemplateSettingClient() {
 
         <div className={s.summary}>
           <div className={s.pill}>
-            เทมเพลตตอนนี้:{" "}
-            <b>{currentTpl ? currentTpl.name : "ยังไม่เลือก"}</b>
+            เทมเพลตตอนนี้: <b>{currentTpl ? currentTpl.name : "ยังไม่เลือก"}</b>
             {isFirstTimeDefault && currentTpl?.id === DEFAULT_TEMPLATE_ID ? (
               <span style={{ marginLeft: 8, fontWeight: 700 }}>• (ค่าเริ่มต้น)</span>
             ) : null}
@@ -257,9 +258,7 @@ export default function TemplateSettingClient() {
             <div style={{ fontWeight: 900, marginBottom: 6, color: "var(--orange-text)" }}>
               นี่คือพื้นที่ตัวอย่างของ Template
             </div>
-            <div style={{ opacity: 0.85 }}>
-              โปรดเลือก template ด้านล่างเพื่อแสดงตัวอย่าง
-            </div>
+            <div style={{ opacity: 0.85 }}>โปรดเลือก template ด้านล่างเพื่อแสดงตัวอย่าง</div>
           </div>
         ) : (
           <div className={s.sliderWrap}>
@@ -415,9 +414,21 @@ export default function TemplateSettingClient() {
                   <div className={s.icon}>
                     <i className={sec.icon} />
                   </div>
+
                   <div>
                     <h5 className={s.sectionTitle}>{sec.title}</h5>
                     <p className={s.sectionDesc}>{sec.desc}</p>
+
+                    {/* ✅ ลิงก์ใต้ description */}
+                    {sec.href ? (
+                      <Link
+                        href={sec.href}
+                        onClick={(e) => e.stopPropagation()} // ✅ กันไม่ให้ toggle ตอนกดลิงก์
+                        className={s.sectionLink}
+                      >
+                        ไปยังหน้าเมนูนี้ →
+                      </Link>
+                    ) : null}
                   </div>
                 </div>
 
