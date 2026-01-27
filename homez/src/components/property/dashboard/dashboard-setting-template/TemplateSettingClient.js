@@ -61,11 +61,19 @@ const SECTIONS = [
   { key: "video", title: "วิดีโอ", desc: "วิดีโอแนะนำ/พาชมทรัพย์", icon: "flaticon-play" },
 ];
 
-export default function TemplateSettingClient() {
-  // ✅ เปลี่ยนจาก tab เป็น step
-  const [step, setStep] = useState(1); // 1=เลือก Template, 2=เลือกข้อมูล
-  const [selectedTemplate, setSelectedTemplate] = useState("sellpage-a");
+const LS_KEY = "microsite_template_setting_v1";
+const DEFAULT_TEMPLATE_ID = "sellpage-a";
 
+/**
+ * เก็บค่าใน localStorage:
+ * {
+ *   selectedTemplateId: string | null,
+ *   hasEverVisited: boolean,
+ *   enabledSections: Record<string, boolean>
+ * }
+ */
+
+export default function TemplateSettingClient() {
   const initialSections = useMemo(
     () => ({
       properties: false,
@@ -78,21 +86,87 @@ export default function TemplateSettingClient() {
     []
   );
 
+  // ✅ เลือกได้/ไม่เลือกก็ได้
+  const [selectedTemplate, setSelectedTemplate] = useState(null); // string | null
   const [enabledSections, setEnabledSections] = useState(initialSections);
 
-  const currentTpl = useMemo(
-    () => TEMPLATES.find((t) => t.id === selectedTemplate) || TEMPLATES[0],
-    [selectedTemplate]
-  );
+  // ใช้ไว้โชว์ว่า default เพราะ “เข้าครั้งแรก”
+  const [isFirstTimeDefault, setIsFirstTimeDefault] = useState(false);
+
+  // ===== Load from localStorage (ครั้งแรกให้ default) =====
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) {
+        // ✅ เข้าครั้งแรก → ให้ default ไปก่อน
+        setSelectedTemplate(DEFAULT_TEMPLATE_ID);
+        setEnabledSections(initialSections);
+        setIsFirstTimeDefault(true);
+
+        localStorage.setItem(
+          LS_KEY,
+          JSON.stringify({
+            selectedTemplateId: DEFAULT_TEMPLATE_ID,
+            hasEverVisited: true,
+            enabledSections: initialSections,
+          })
+        );
+        return;
+      }
+
+      const parsed = JSON.parse(raw);
+      const tplId = parsed?.selectedTemplateId ?? null;
+      const sec = parsed?.enabledSections ?? initialSections;
+
+      setSelectedTemplate(tplId);
+      setEnabledSections(sec);
+      setIsFirstTimeDefault(false);
+    } catch {
+      // ถ้า parse พัง ให้ fallback เป็น default
+      setSelectedTemplate(DEFAULT_TEMPLATE_ID);
+      setEnabledSections(initialSections);
+      setIsFirstTimeDefault(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const persist = (next) => {
+    try {
+      localStorage.setItem(
+        LS_KEY,
+        JSON.stringify({
+          selectedTemplateId: next.selectedTemplateId ?? null,
+          hasEverVisited: true,
+          enabledSections: next.enabledSections ?? enabledSections,
+        })
+      );
+    } catch {
+      // ignore
+    }
+  };
+
+  const currentTpl = useMemo(() => {
+    if (!selectedTemplate) return null;
+    return TEMPLATES.find((t) => t.id === selectedTemplate) || null;
+  }, [selectedTemplate]);
 
   const enabledCount = Object.values(enabledSections).filter(Boolean).length;
 
   const toggleSection = (key) => {
-    setEnabledSections((prev) => ({ ...prev, [key]: !prev[key] }));
+    setEnabledSections((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      persist({ selectedTemplateId: selectedTemplate, enabledSections: next });
+      return next;
+    });
   };
 
-  // ===== Slider state =====
-  const slides = Array.isArray(currentTpl.slides) && currentTpl.slides.length ? currentTpl.slides : [currentTpl.cover];
+  // ===== Slider state (อยู่ด้านบน) =====
+  const slides = useMemo(() => {
+    if (!currentTpl) return [];
+    const arr = Array.isArray(currentTpl.slides) && currentTpl.slides.length ? currentTpl.slides : [currentTpl.cover];
+    return arr.filter(Boolean);
+  }, [currentTpl]);
+
   const [slideIndex, setSlideIndex] = useState(0);
 
   useEffect(() => {
@@ -105,35 +179,36 @@ export default function TemplateSettingClient() {
   const prev = () => setSlideIndex((i) => Math.max(0, i - 1));
   const next = () => setSlideIndex((i) => Math.min(slides.length - 1, i + 1));
 
-  const goNextStep = () => {
-    if (!selectedTemplate) {
-      toast.info("กรุณาเลือกเทมเพลตก่อน");
-      return;
-    }
-    setStep(2);
-    // เลื่อนให้เห็น step 2 ทันที
-    setTimeout(() => {
-      const el = document.getElementById("step-2");
-      el?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 50);
+  const pickTemplate = (tplId) => {
+    setIsFirstTimeDefault(false);
+
+    // ✅ คลิกอันเดิมซ้ำ = ยกเลิกเลือก (ตามที่อยากให้ไม่เลือกได้)
+    setSelectedTemplate((prevId) => {
+      const nextId = prevId === tplId ? null : tplId;
+      persist({ selectedTemplateId: nextId, enabledSections });
+      return nextId;
+    });
   };
 
-  const goPrevStep = () => {
-    setStep(1);
-    setTimeout(() => {
-      const el = document.getElementById("step-1");
-      el?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 50);
+  const clearTemplate = () => {
+    setIsFirstTimeDefault(false);
+    setSelectedTemplate(null);
+    persist({ selectedTemplateId: null, enabledSections });
+    toast.info("ยกเลิกการเลือกเทมเพลตแล้ว");
   };
 
   const resetAll = () => {
-    setSelectedTemplate("sellpage-a");
+    setSelectedTemplate(DEFAULT_TEMPLATE_ID);
     setEnabledSections(initialSections);
-    setStep(1);
+    setIsFirstTimeDefault(true);
+    setSlideIndex(0);
+
+    persist({ selectedTemplateId: DEFAULT_TEMPLATE_ID, enabledSections: initialSections });
     toast.info("รีเซ็ตค่า (Mock)");
   };
 
   const saveMock = () => {
+    // บันทึก mock: ณ จุดนี้เราก็ persist ไว้แล้วระหว่างทาง
     toast.success("บันทึกการตั้งค่า (Mock)");
   };
 
@@ -143,12 +218,16 @@ export default function TemplateSettingClient() {
       <div className={s.head}>
         <div>
           <h2 className={s.title}>ตั้งค่า Microsite Template</h2>
-          <p className={s.sub}>ทำเป็น Step: 1) เลือกเทมเพลต → กดถัดไป → 2) เลือกข้อมูล (Mock UI)</p>
+          <p className={s.sub}>หน้าเดียว: เลือกเทมเพลต (เลือก/ไม่เลือกก็ได้) + เลือกข้อมูล (Mock UI)</p>
         </div>
 
         <div className={s.summary}>
           <div className={s.pill}>
-            เทมเพลตที่เลือก: <b>{currentTpl.name}</b>
+            เทมเพลตตอนนี้:{" "}
+            <b>{currentTpl ? currentTpl.name : "ยังไม่เลือก"}</b>
+            {isFirstTimeDefault && currentTpl?.id === DEFAULT_TEMPLATE_ID ? (
+              <span style={{ marginLeft: 8, fontWeight: 700 }}>• (ค่าเริ่มต้น)</span>
+            ) : null}
           </div>
           <div className={s.pill}>
             Section ที่เปิด: <b>{enabledCount}</b> / {SECTIONS.length}
@@ -156,110 +235,48 @@ export default function TemplateSettingClient() {
         </div>
       </div>
 
-      {/* Step indicator (ใช้ pill เดิมให้เข้าธีม) */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <div
-          className={s.pill}
-          style={{
-            borderColor: step === 1 ? "var(--orange-border)" : undefined,
-            background: step === 1 ? "var(--orange-soft)" : undefined,
-            color: step === 1 ? "var(--orange-text)" : undefined,
-            fontWeight: 800,
-          }}
-        >
-          Step 1: เลือก Template
+      {/* ================= PREVIEW (อยู่บนสุด) ================= */}
+      <div className={s.block}>
+        <div className={s.blockTitle}>
+          <h4>ตัวอย่าง Template</h4>
+          <span className={s.miniHint}>เลือกเทมเพลตด้านล่างเพื่อดูตัวอย่าง · สามารถ “ไม่เลือก” ได้</span>
         </div>
-        <div
-          className={s.pill}
-          style={{
-            borderColor: step === 2 ? "var(--orange-border)" : undefined,
-            background: step === 2 ? "var(--orange-soft)" : undefined,
-            color: step === 2 ? "var(--orange-text)" : undefined,
-            fontWeight: 800,
-          }}
-        >
-          Step 2: เลือกข้อมูล
-        </div>
-      </div>
 
-      {/* ================= STEP 1 ================= */}
-      {step === 1 && (
-        <div id="step-1" className={s.block}>
-          <div className={s.blockTitle}>
-            <h4>1) เลือกเทมเพลต microsite</h4>
-            <span className={s.miniHint}>แถวละ 3 (รวม 6 อัน) · เลือกแล้วกด “ถัดไป”</span>
+        {/* ✅ ถ้ายังไม่เลือก ให้เป็น placeholder ข้อความ */}
+        {!currentTpl ? (
+          <div
+            className={s.sliderWrap}
+            style={{
+              padding: 18,
+              borderStyle: "dashed",
+              borderWidth: 2,
+              borderColor: "var(--orange-border)",
+              background: "var(--orange-soft)",
+            }}
+          >
+            <div style={{ fontWeight: 900, marginBottom: 6, color: "var(--orange-text)" }}>
+              นี่คือพื้นที่ตัวอย่างของ Template
+            </div>
+            <div style={{ opacity: 0.85 }}>
+              โปรดเลือก template ด้านล่างเพื่อแสดงตัวอย่าง
+            </div>
           </div>
-
-          <div className={s.grid}>
-            {TEMPLATES.map((tpl) => {
-              const active = tpl.id === selectedTemplate;
-
-              return (
-                <div
-                  key={tpl.id}
-                  className={`${s.card} ${active ? s.active : ""}`}
-                  onClick={() => {
-                    setSelectedTemplate(tpl.id);
-                  }}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <div className={s.preview}>
-                    <Image
-                      src={tpl.cover || tpl.slides?.[0]}
-                      alt={tpl.name}
-                      fill
-                      className={s.image}
-                      sizes="(max-width: 1200px) 50vw, 33vw"
-                    />
-                    {active && <span className={s.badge}>เลือกอยู่</span>}
-                  </div>
-
-                  <div className={s.cardBody}>
-                    <h5 className={s.cardTitle}>{tpl.name}</h5>
-                    <p className={s.cardDesc}>{tpl.desc}</p>
-
-                    <div className={s.cardActions}>
-                      <button
-                        type="button"
-                        className={s.btnGhost}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const el = document.getElementById("tpl-slider");
-                          el?.scrollIntoView({ behavior: "smooth", block: "start" });
-                          toast.info("เลื่อนลงไปดูสไลด์ตัวอย่าง");
-                        }}
-                      >
-                        ดูตัวอย่าง
-                      </button>
-
-                      <button
-                        type="button"
-                        className={s.btnPick}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedTemplate(tpl.id);
-                          toast.success("เลือกเทมเพลตแล้ว (Mock)");
-                        }}
-                      >
-                        เลือกเทมเพลต
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* ✅ Slider preview */}
-          <div id="tpl-slider" className={s.sliderWrap}>
+        ) : (
+          <div className={s.sliderWrap}>
             <div className={s.sliderHead}>
               <div>
-                <h4 className={s.sliderTitle}>ตัวอย่าง: {currentTpl.name}</h4>
-                <p className={s.sliderSub}>แสดงเป็นสไลด์รูป (Mock)</p>
+                <h4 className={s.sliderTitle}>{currentTpl.name}</h4>
+                <p className={s.sliderSub}>ตัวอย่างรูป (Mock)</p>
               </div>
-              <div className={s.sliderCount}>
-                รูป <b>{slideIndex + 1}</b> / {slides.length}
+
+              <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                <div className={s.sliderCount}>
+                  รูป <b>{Math.min(slideIndex + 1, slides.length || 1)}</b> / {slides.length || 1}
+                </div>
+
+                <button type="button" className={s.btnGhost} onClick={clearTemplate}>
+                  ไม่เลือกเทมเพลต
+                </button>
               </div>
             </div>
 
@@ -276,13 +293,16 @@ export default function TemplateSettingClient() {
 
               <div className={s.sliderImageWrap}>
                 <Image
-                  src={slides[slideIndex]}
+                  src={slides[slideIndex] || currentTpl.cover}
                   alt={`${currentTpl.name} slide ${slideIndex + 1}`}
                   fill
                   className={s.sliderImage}
                   sizes="(max-width: 1200px) 100vw, 900px"
                   priority
                 />
+                <span className={s.badge} style={{ right: 12, left: "auto" }}>
+                  ตัวอย่าง
+                </span>
               </div>
 
               <button
@@ -315,80 +335,111 @@ export default function TemplateSettingClient() {
               })}
             </div>
           </div>
+        )}
+      </div>
 
-          {/* ✅ Step 1 actions */}
-          <div className={s.footerActions}>
-            <button type="button" className={s.btnGhost} onClick={resetAll}>
-              รีเซ็ต
-            </button>
-
-            <button
-              type="button"
-              className={s.btnPick}
-              onClick={goNextStep}
-              disabled={!selectedTemplate}
-              style={{ opacity: selectedTemplate ? 1 : 0.5 }}
-            >
-              ถัดไป
-            </button>
-          </div>
+      {/* ================= TEMPLATE GRID ================= */}
+      <div className={s.block}>
+        <div className={s.blockTitle}>
+          <h4>เลือกเทมเพลต microsite</h4>
+          <span className={s.miniHint}>แถวละ 3 (รวม 6 อัน) · คลิกซ้ำเพื่อ “ยกเลิกเลือก”</span>
         </div>
-      )}
 
-      {/* ================= STEP 2 ================= */}
-      {step === 2 && (
-        <div id="step-2" className={s.block}>
-          <div className={s.blockTitle}>
-            <h4>2) เลือกข้อมูลที่จะแสดงบน microsite</h4>
-            <span className={s.miniHint}>ตัด “ช่องทางติดต่อ” และ “แผนที่ทรัพย์” ออกแล้ว</span>
-          </div>
+        <div className={s.grid}>
+          {TEMPLATES.map((tpl) => {
+            const active = tpl.id === selectedTemplate;
 
-          <div className={s.sectionGrid}>
-            {SECTIONS.map((sec) => {
-              const on = !!enabledSections[sec.key];
+            return (
+              <div
+                key={tpl.id}
+                className={`${s.card} ${active ? s.active : ""}`}
+                onClick={() => pickTemplate(tpl.id)}
+                role="button"
+                tabIndex={0}
+              >
+                <div className={s.preview}>
+                  <Image
+                    src={tpl.cover || tpl.slides?.[0]}
+                    alt={tpl.name}
+                    fill
+                    className={s.image}
+                    sizes="(max-width: 1200px) 50vw, 33vw"
+                  />
+                  {active && <span className={s.badge}>เลือกอยู่</span>}
+                </div>
 
-              return (
-                <div
-                  key={sec.key}
-                  className={`${s.sectionCard} ${on ? s.sectionOn : ""}`}
-                  onClick={() => toggleSection(sec.key)}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                    <div className={s.icon}>
-                      <i className={sec.icon} />
-                    </div>
-                    <div>
-                      <h5 className={s.sectionTitle}>{sec.title}</h5>
-                      <p className={s.sectionDesc}>{sec.desc}</p>
-                    </div>
-                  </div>
+                <div className={s.cardBody}>
+                  <h5 className={s.cardTitle}>{tpl.name}</h5>
+                  <p className={s.cardDesc}>{tpl.desc}</p>
 
-                  <div className={s.sectionRight}>
-                    <span className={`${s.statePill} ${on ? s.stateOn : s.stateOff}`}>{on ? "แสดง" : "ซ่อน"}</span>
+                  <div className={s.cardActions}>
+                    <button
+                      type="button"
+                      className={active ? s.btnGhost : s.btnPick}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        pickTemplate(tpl.id);
+                        toast.success(active ? "ยกเลิกเลือกเทมเพลตแล้ว (Mock)" : "เลือกเทมเพลตแล้ว (Mock)");
+                      }}
+                    >
+                      {active ? "ยกเลิกเลือก" : "เลือกเทมเพลต"}
+                    </button>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-
-          {/* ✅ Step 2 actions */}
-          <div className={s.footerActions}>
-            <button type="button" className={s.btnGhost} onClick={goPrevStep}>
-              ย้อนกลับ
-            </button>
-
-            <button type="button" className={s.btnGhost} onClick={resetAll}>
-              รีเซ็ต
-            </button>
-
-            <button type="button" className={s.btnSave} onClick={saveMock}>
-              บันทึกการตั้งค่า
-            </button>
-          </div>
+              </div>
+            );
+          })}
         </div>
-      )}
+      </div>
+
+      {/* ================= SECTIONS ================= */}
+      <div className={s.block}>
+        <div className={s.blockTitle}>
+          <h4>เลือกข้อมูลที่จะแสดงบน microsite</h4>
+          <span className={s.miniHint}>ตัด “ช่องทางติดต่อ” และ “แผนที่ทรัพย์” ออกแล้ว</span>
+        </div>
+
+        <div className={s.sectionGrid}>
+          {SECTIONS.map((sec) => {
+            const on = !!enabledSections[sec.key];
+
+            return (
+              <div
+                key={sec.key}
+                className={`${s.sectionCard} ${on ? s.sectionOn : ""}`}
+                onClick={() => toggleSection(sec.key)}
+                role="button"
+                tabIndex={0}
+              >
+                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  <div className={s.icon}>
+                    <i className={sec.icon} />
+                  </div>
+                  <div>
+                    <h5 className={s.sectionTitle}>{sec.title}</h5>
+                    <p className={s.sectionDesc}>{sec.desc}</p>
+                  </div>
+                </div>
+
+                <div className={s.sectionRight}>
+                  <span className={`${s.statePill} ${on ? s.stateOn : s.stateOff}`}>{on ? "แสดง" : "ซ่อน"}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Actions */}
+        <div className={s.footerActions}>
+          <button type="button" className={s.btnGhost} onClick={resetAll}>
+            รีเซ็ต
+          </button>
+
+          <button type="button" className={s.btnSave} onClick={saveMock}>
+            บันทึกการตั้งค่า
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

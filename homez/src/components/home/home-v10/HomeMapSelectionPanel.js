@@ -7,8 +7,6 @@ function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
 
-const MAX_SHOW = 4; // ✅ รองรับเคสหมุดเลข 4
-
 export default function HomeMapSelectionPanel({ selection, onClose }) {
   const { title, items, prefer, anchorX, mapW } = selection || {};
 
@@ -17,12 +15,8 @@ export default function HomeMapSelectionPanel({ selection, onClose }) {
     [items]
   );
 
-  const showItems = useMemo(() => {
-    // ถ้าน้อยกว่าหรือเท่ากับ 4 → โชว์ทั้งหมด
-    if (safeItems.length <= MAX_SHOW) return safeItems;
-    // ถ้ามากกว่า → โชว์ 4 ใบก่อน
-    return safeItems.slice(0, MAX_SHOW);
-  }, [safeItems]);
+  // ✅ ไม่จำกัดจำนวน: โชว์ทั้งหมด (ให้ไปคุมความสูง/scroll ที่ CSS แทน)
+  const showItems = safeItems;
 
   if (!selection) return null;
 
@@ -55,7 +49,15 @@ export default function HomeMapSelectionPanel({ selection, onClose }) {
       aria-label="รายการทรัพย์สิน"
     >
       <div className="lx-map-sheet-head">
-        <div className="lx-map-sheet-title">{title}</div>
+        <div className="lx-map-sheet-title">
+          {title}
+          {/* (ออปชัน) ถ้าอยากให้เห็นจำนวนด้วย */}
+          {safeItems.length ? (
+            <span style={{ opacity: 0.7, marginLeft: 8 }}>
+              ({safeItems.length})
+            </span>
+          ) : null}
+        </div>
 
         <button
           type="button"
@@ -69,15 +71,11 @@ export default function HomeMapSelectionPanel({ selection, onClose }) {
       </div>
 
       <div className="lx-map-sheet-body">
-        {showItems.map((it) => (
-          <ListingPopupCard key={it.id} item={it} />
-        ))}
-
-        {safeItems.length > MAX_SHOW ? (
-          <div className="lx-map-sheet-more">
-            และอีก {safeItems.length - MAX_SHOW} รายการ (เลื่อนดูได้)
-          </div>
-        ) : null}
+        {showItems.length ? (
+          showItems.map((it) => <ListingPopupCard key={it.id} item={it} />)
+        ) : (
+          <div className="lx-map-sheet-empty">ไม่พบรายการ</div>
+        )}
       </div>
     </div>
   );
