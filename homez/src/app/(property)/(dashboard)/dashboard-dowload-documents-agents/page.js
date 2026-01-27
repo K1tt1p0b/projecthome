@@ -18,8 +18,11 @@ const DashboardDowloadDocumentsAgentsPage = () => {
         <div className="dashboard dashboard_wrapper pr30 pr0-md">
           <SidebarDashboard />
 
-          <div className="dashboard__main pl0-md">
-            <div className="dashboard__content bg-light pt30 pb30">
+          {/* ✅ ทำให้ main เป็น flex column + สูงขั้นต่ำเต็มจอ */}
+          <div className="dashboard__main pl0-md d-flex flex-column min-vh-100">
+            
+            {/* ✅ content กินพื้นที่ที่เหลือ */}
+            <div className="dashboard__content bg-light pt30 pb30 flex-grow-1">
               {/* Header Title */}
               <div className="row align-items-center pb40">
                 <div className="col-lg-12">
@@ -36,6 +39,7 @@ const DashboardDowloadDocumentsAgentsPage = () => {
               <DashboardDowloadDocumentsAgentsContent />
             </div>
 
+            {/* ✅ footer จะถูกดันไปล่างสุดอัตโนมัติ */}
             <Footer />
           </div>
         </div>
