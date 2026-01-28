@@ -13,6 +13,9 @@ import PropertyVideo from "@/components/property/property-single-style/common/Pr
 import ProperytyDescriptions from "@/components/property/property-single-style/common/ProperytyDescriptions";
 import PropertyGallery from "@/components/property/property-single-style/single-v5/property-gallery";
 
+// ✅ เพิ่มตัวนี้
+import PropertyImage from "@/components/property/property-single-style/common/PropertyImage";
+
 // ✅ 1. Import Widget เข้ามา
 import CoBrokeSidebar from "@/components/property/CoBrokeSidebar";
 
@@ -33,8 +36,8 @@ const SingleV5 = async (props) => {
 
       // ✅✅ ค่า Co-Broke ที่ต้องการเทส ✅✅
       acceptCoBroke: true,       // เปิดรับ
-      commissionType: 'percent', // เปอร์เซ็นต์
-      commissionValue: 10,        // 3%
+      commissionType: "percent", // เปอร์เซ็นต์
+      commissionValue: 10,       // 3%
     },
     {
       id: 2,
@@ -42,13 +45,14 @@ const SingleV5 = async (props) => {
       price: 28000000,
 
       acceptCoBroke: true,
-      commissionType: 'amount',
+      commissionType: "amount",
       commissionValue: 50000,
-    }
+    },
   ];
 
   // ✅ ดึงข้อมูลจาก Mock (ถ้าหาไม่เจอ ให้ใช้ตัวแรกเป็น Default)
-  const data = allMockData.find((item) => String(item.id) === String(id)) || allMockData[0];
+  const data =
+    allMockData.find((item) => String(item.id) === String(id)) || allMockData[0];
 
   return (
     <>
@@ -71,7 +75,6 @@ const SingleV5 = async (props) => {
             {/* 🟢 ฝั่งซ้าย */}
             {/* ================================================= */}
             <div className="col-lg-6">
-
               {/* Description & Details */}
               <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
                 <h4 className="title fz17 mb30">รายละเอียด</h4>
@@ -106,6 +109,14 @@ const SingleV5 = async (props) => {
                   <PropertyVideo />
                 </div>
               </div>
+
+              {/* ✅ Images (ใต้ Video) */}
+              <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
+                <h4 className="title fz17 mb30">รูปภาพทรัพย์สิน</h4>
+                <div className="row">
+                  <PropertyImage />
+                </div>
+              </div>
             </div>
 
             {/* ================================================= */}
@@ -113,7 +124,6 @@ const SingleV5 = async (props) => {
             {/* ================================================= */}
             <div className="col-lg-6">
               <div className="column">
-
                 {/* ✅✅ 2. ส่ง Mock Data เข้าไปใน Widget ✅✅ */}
                 <div className="mb30">
                   <CoBrokeSidebar property={data} />
