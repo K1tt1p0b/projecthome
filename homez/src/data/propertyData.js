@@ -16,6 +16,11 @@ export const propertyData = [
     listingTypes: ["sell"],
     propertyType: "house-and-land",
 
+    // 🔥 เพิ่ม Co-Broke
+    acceptCoBroke: true,
+    commissionType: "percent",
+    commissionValue: 3,
+
     announcerStatus: "owner",
     announcerStatus_label: "เจ้าของทรัพย์",
     status: "เผยแพร่แล้ว",
@@ -69,6 +74,11 @@ export const propertyData = [
     priceText: "28,000,000",
     listingTypes: ["sell"],
     propertyType: "house-and-land",
+
+    // 🔥 เพิ่ม Co-Broke
+    acceptCoBroke: true,
+    commissionType: "amount",
+    commissionValue: 100000,
 
     announcerStatus: "owner",
     announcerStatus_label: "เจ้าของทรัพย์",
@@ -131,6 +141,9 @@ export const propertyData = [
     listingTypes: ["rent"],
     propertyType: "house-and-land",
 
+    // ไม่รับ Co-Broke
+    acceptCoBroke: false,
+
     announcerStatus: "owner",
     announcerStatus_label: "เจ้าของทรัพย์",
     status: "ไม่อนุมัติ",
@@ -189,6 +202,11 @@ export const propertyData = [
     listingTypes: ["rent"],
     propertyType: "condo",
 
+    // 🔥 เพิ่ม Co-Broke
+    acceptCoBroke: true,
+    commissionType: "amount",
+    commissionValue: 35000,
+
     announcerStatus: "owner",
     announcerStatus_label: "เจ้าของทรัพย์",
     status: "เผยแพร่แล้ว",
@@ -246,6 +264,8 @@ export const propertyData = [
     listingTypes: ["rent"],
     propertyType: "condo",
 
+    acceptCoBroke: false,
+
     announcerStatus: "owner",
     announcerStatus_label: "เจ้าของทรัพย์",
     status: "เผยแพร่แล้ว",
@@ -261,7 +281,7 @@ export const propertyData = [
       district: "ลาดพร้าว",
       subdistrict: "จอมพล",
       zipCode: "10900",
-      latitude: 13.8039, // ✅ พิกัดเดียวกับ id:5
+      latitude: 13.8039, 
       longitude: 100.5737,
       fullText: "จอมพล ลาดพร้าว กรุงเทพมหานคร",
       neighborhood: "",
@@ -303,6 +323,11 @@ export const propertyData = [
     priceText: "18,000",
     listingTypes: ["rent"],
     propertyType: "room-rent",
+
+    // 🔥 เพิ่ม Co-Broke
+    acceptCoBroke: true,
+    commissionType: "percent",
+    commissionValue: 10,
 
     announcerStatus: "owner",
     announcerStatus_label: "เจ้าของทรัพย์",
@@ -733,3 +758,5 @@ export const propertyData = [
     videos: [],
   },
 ];
+
+export default propertyData;

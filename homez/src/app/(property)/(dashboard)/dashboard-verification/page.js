@@ -5,8 +5,6 @@ import MobileMenu from "@/components/common/mobile-menu";
 import DboardMobileNavigation from "@/components/property/dashboard/DboardMobileNavigation";
 import Footer from "@/components/property/dashboard/Footer";
 import SidebarDashboard from "@/components/property/dashboard/SidebarDashboard";
-
-// Import Component ย่อย
 import VerifyEmailBox from "@/components/property/dashboard/dashboard-profile/VerifyEmailBox";
 import KycBox from "@/components/property/dashboard/dashboard-profile/KycBox";
 
@@ -71,8 +69,6 @@ const VerificationPage = () => {
 
                 </div>
               </div>
-              {/* --- จบเนื้อหาหลัก --- */}
-
             </div>
 
             {/* 3. Footer */}

@@ -4,11 +4,13 @@ import React, { useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import KycModal from "./KycModal";
 
-// --- MOCK DATA ---
+// --- MOCK DATA (จำลองว่าถูก Reject และระบุเจาะจงว่าผิดที่ selfie) ---
 const MOCK_KYC = {
-  status: "verified",
+  status: "rejected",
   updatedAt: "2023-10-25T10:00:00.000Z",
-  rejectReason: "รูปบัตรไม่ชัด",
+  rejectReason: "รูปเซลฟี่ไม่ชัดเจน กรุณาถ่ายใหม่ให้เห็นใบหน้าและบัตรชัดเจน",
+  // ✅ เพิ่มตรงนี้: ระบุว่า field ไหนผิด (idCard ผ่าน, selfie ไม่ผ่าน)
+  invalidFields: ["selfie"],
 };
 
 // --- CONFIG ---
@@ -48,10 +50,10 @@ export default function KycBox() {
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // State สำหรับ Hover ต่างๆ
+  // State สำหรับ Hover
   const [hoverBtn, setHoverBtn] = useState(null);
-  const [hoverCard, setHoverCard] = useState(false); // ✅ 1. State สำหรับกล่องใหญ่
-  const [hoverLink, setHoverLink] = useState(false); // ✅ 2. State สำหรับลิงก์ดูรายละเอียด
+  const [hoverCard, setHoverCard] = useState(false);
+  const [hoverLink, setHoverLink] = useState(false);
 
   // ดึง Config ตามสถานะ
   const currentStatus = useMemo(
@@ -99,6 +101,7 @@ export default function KycBox() {
         status: "pending",
         updatedAt: new Date().toISOString(),
         rejectReason: "",
+        invalidFields: [] // Reset สิ่งที่ผิด
       }));
       toast.success("ส่งข้อมูลเรียบร้อย! รอตรวจสอบ");
       setOpen(false);
@@ -120,7 +123,6 @@ export default function KycBox() {
 
   return (
     <>
-      {/* ✅ 1. เพิ่ม onMouseEnter/Leave และ Style ให้กล่องใหญ่ */}
       <div
         className="ps-widget bg-white bdrs12 p30 position-relative border-0"
         style={{
@@ -135,11 +137,9 @@ export default function KycBox() {
       >
 
         <div className="row align-items-center">
-
           {/* --- ฝั่งซ้าย: ไอคอน & เนื้อหา --- */}
           <div className="col-lg-8">
             <div className="d-flex align-items-start gap-4">
-
               <div
                 className={`d-flex align-items-center justify-content-center flex-shrink-0 rounded-circle ${currentStatus.bgClass} ${currentStatus.colorClass}`}
                 style={{ width: '70px', height: '70px', fontSize: '28px' }}
@@ -150,7 +150,6 @@ export default function KycBox() {
               <div className="flex-grow-1">
                 <div className="d-flex align-items-center gap-3 mb-1">
                   <h4 className="title mb-0 fw-bold fz18">{currentStatus.label}</h4>
-
                   {kyc.updatedAt && (
                     <span className="badge rounded-pill bg-light text-muted fw-normal border fz12">
                       <i className="far fa-calendar-alt me-1"></i>
@@ -166,22 +165,17 @@ export default function KycBox() {
                 {/* --- 🔴 Alert Box กรณี Rejected --- */}
                 {kyc.status === "rejected" && (
                   <div className="bg-danger-subtle border-start border-danger border-4 p-3 rounded-end mt-3 animate-up-1">
-
-                    {/* ส่วนหัวข้อ: จัดไอคอนให้อยู่ 'กึ่งกลาง' กับตัวหนังสือ (align-items-center) */}
                     <div className="d-flex align-items-center gap-2 mb-1">
                       <i className="fas fa-info-circle text-danger" style={{ fontSize: '18px' }}></i>
                       <h6 className="text-danger fw-bold fz15 mb-0" style={{ lineHeight: '1' }}>
                         สาเหตุที่ไม่อนุมัติ:
                       </h6>
                     </div>
-
-                    {/* ส่วนเนื้อหา: เว้นระยะซ้าย (ms-4) ให้ตรงกับแนวตัวหนังสือด้านบน */}
                     <div className="ms-4">
                       <p className="mb-0 text-dark fz14" style={{ lineHeight: '1.5' }}>
                         {kyc.rejectReason}
                       </p>
                     </div>
-
                   </div>
                 )}
 
@@ -197,7 +191,6 @@ export default function KycBox() {
           {/* --- ฝั่งขวา: ปุ่ม Action --- */}
           <div className="col-lg-4 mt-4 mt-lg-0">
             <div className="d-flex flex-column align-items-lg-end gap-2">
-
               {canStart && (
                 <button
                   onClick={openModal}
@@ -226,21 +219,19 @@ export default function KycBox() {
 
               {canView && (
                 <div className="text-lg-end">
-                  {/* ✅ 2. เพิ่ม Hover Effect ให้ปุ่ม Link */}
                   <button
                     onClick={openModal}
                     disabled={submitting}
                     className="btn btn-link fw-bold text-decoration-none p-0"
                     style={{
-                      color: hoverLink ? '#157347' : '#198754', // เปลี่ยนสีเข้มขึ้นเมื่อ Hover
-                      textDecoration: hoverLink ? 'underline !important' : 'none', // ขีดเส้นใต้เมื่อ Hover
+                      color: hoverLink ? '#157347' : '#198754',
+                      textDecoration: hoverLink ? 'underline !important' : 'none',
                       transition: 'all 0.2s ease',
                     }}
                     onMouseEnter={() => setHoverLink(true)}
                     onMouseLeave={() => setHoverLink(false)}
                   >
                     ดูรายละเอียดบัตร
-                    {/* อนิเมชันลูกศรขยับ */}
                     <i
                       className="fal fa-chevron-right ms-1"
                       style={{
@@ -262,10 +253,8 @@ export default function KycBox() {
                   <i className="fal fa-history me-1"></i> Reset Status
                 </button>
               )}
-
             </div>
           </div>
-
         </div>
       </div>
 

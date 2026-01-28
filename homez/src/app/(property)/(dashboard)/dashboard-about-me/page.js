@@ -3,7 +3,7 @@ import AboutMe from "@/components/property/dashboard/dashboard-about-me/aboutme"
 import DashboardHeader from "@/components/common/DashboardHeader";
 import Footer from "@/components/property/dashboard/Footer";
 import SidebarDashboard from "@/components/property/dashboard/SidebarDashboard";
-import MobileMenu from "@/components/common/mobile-menu"; // ✅ ควรเพิ่มตัวนี้เข้ามาด้วยครับ
+import MobileMenu from "@/components/common/mobile-menu";
 
 const MicroSheetPage = () => {
   return (

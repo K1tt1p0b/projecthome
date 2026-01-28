@@ -98,6 +98,7 @@ const SidebarDashboard = () => {
           icon: "flaticon-home",
           text: "ทรัพย์สินของฉัน",
         },
+        { href: "/dashboard-co-broke", icon: "fas fa-handshake", text: "Co-Broke" },
         { href: "/dashboard-banners", icon: "flaticon-house-price", text: "โฆษณาทรัพย์สิน" },
         { href: "/dashboard-my-construction", icon: "fas fa-hard-hat", text: "งานบริการของฉัน" },
         { href: "/dashboard-my-course", icon: "fas fa-book", text: "คอร์สเรียนของฉัน" },

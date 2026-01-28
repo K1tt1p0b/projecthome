@@ -1,171 +1,348 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
+import Select from "react-select";
 
 const ContactAdminContent = () => {
-  // State เก็บข้อความ
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: "admin",
-      text: "สวัสดีครับ 👋 มีปัญหาการใช้งาน หรือต้องการสอบถามเรื่องอะไร แจ้งเจ้าหน้าที่ได้เลยครับ",
-      time: "10:00",
-    },
-  ]);
+  const [view, setView] = useState("list");
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [ticketDetail, setTicketDetail] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const fileInputRef = useRef(null);
 
-  const [inputValue, setInputValue] = useState("");
-  const [isButtonHover, setIsButtonHover] = useState(false);
+  const tickets = [
+    { id: "#TK-8852", subject: "สอบถามเรื่องการลงประกาศ", category: "General", priority: "Low", date: "22/01/2024", status: "Closed", detail: "อยากทราบว่าลงประกาศฟรีได้กี่รายการครับ?" },
+    { id: "#TK-9931", subject: "แจ้งปัญหาอัปโหลดรูปภาพไม่ได้", category: "Technical", priority: "High", date: "25/01/2024", status: "Open", detail: "พอกดอัปโหลดแล้วหมุนติ้วๆ ไม่ไปไหนเลยครับ ช่วยดูหน่อย" },
+    { id: "#TK-9945", subject: "ขอใบกำกับภาษีย้อนหลัง", category: "Billing", priority: "Medium", date: "26/01/2024", status: "Pending", detail: "ต้องการขอใบกำกับภาษีของเดือนธันวาคมครับ" },
+  ];
 
-  const chatBodyRef = useRef(null);
+  const categoryOptions = [
+    { value: 'general', label: 'สอบถามข้อมูลทั่วไป (General Inquiry)' },
+    { value: 'technical', label: 'แจ้งปัญหาการใช้งานระบบ (Technical Support)' },
+    { value: 'billing', label: 'แจ้งชำระเงิน / ใบกำกับภาษี (Billing & Invoice)' },
+    { value: 'account', label: 'จัดการบัญชีผู้ใช้ (Account Management)' },
+    { value: 'complaint', label: 'ข้อเสนอแนะ / ร้องเรียน (Feedback & Complaint)' },
+  ];
 
-  const scrollToBottom = () => {
-    if (chatBodyRef.current) {
-      const { scrollHeight, clientHeight } = chatBodyRef.current;
-      chatBodyRef.current.scrollTop = scrollHeight - clientHeight;
+  const priorityOptions = [
+    { value: 'low', label: 'ทั่วไป (General) - สอบถาม/ขอข้อมูล' },
+    { value: 'medium', label: 'สำคัญ (Medium) - ใช้งานติดขัดบางส่วน' },
+    { value: 'high', label: 'ด่วน (Urgent) - ใช้งานไม่ได้เลย / ระบบล่ม' },
+  ];
+
+  const customStyles = {
+    control: (provided) => ({
+      ...provided,
+      backgroundColor: '#f8f9fa',
+      border: '1px solid #ced4da',
+      borderRadius: '8px',
+      padding: '6px',
+      boxShadow: 'none',
+      cursor: 'pointer',
+      '&:hover': { borderColor: '#a8b3c4' }
+    }),
+    menu: (provided) => ({
+      ...provided,
+      borderRadius: '12px',
+      overflow: 'hidden',
+      zIndex: 9999,
+      marginTop: '8px',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+    }),
+    menuList: (provided) => ({
+      ...provided,
+      maxHeight: '200px',
+      padding: '0',
+      '::-webkit-scrollbar': { width: '6px' },
+      '::-webkit-scrollbar-thumb': { backgroundColor: '#ccc', borderRadius: '3px' }
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.isSelected ? '#212529' : state.isFocused ? '#e9ecef' : 'white',
+      color: state.isSelected ? 'white' : '#212529',
+      padding: '12px 20px',
+      cursor: 'pointer',
+      fontSize: '15px'
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      color: '#212529',
+      fontWeight: '500'
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: '#6c757d',
+    })
+  };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "Open": return <span className="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">Open</span>;
+      case "Pending": return <span className="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill">Pending</span>;
+      case "Closed": return <span className="badge bg-secondary bg-opacity-10 text-secondary px-3 py-2 rounded-pill">Closed</span>;
+      default: return <span className="badge bg-light text-dark">Unknown</span>;
     }
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  // ✅✅ ฟังก์ชันตรวจสอบไฟล์ (กันคนเลือกไฟล์มั่ว) ✅✅
+  const handleFileUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const validImageTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    const maxFileSize = 5 * 1024 * 1024; // 5MB
 
-  const handleSend = (e) => {
-    e.preventDefault();
-    if (!inputValue.trim()) return;
+    const newValidFiles = [];
+    let hasError = false;
 
-    const newUserMsg = {
-      id: Date.now(),
-      sender: "user",
-      text: inputValue,
-      time: new Date().toLocaleTimeString("th-TH", { hour: '2-digit', minute: '2-digit' }),
-    };
+    files.forEach(file => {
+      // 1. เช็คประเภทไฟล์ (ต้องเป็นรูปเท่านั้น)
+      if (!validImageTypes.includes(file.type)) {
+        alert(`ไฟล์ "${file.name}" ไม่ใช่รูปภาพ (รองรับเฉพาะ JPG, PNG)`);
+        hasError = true;
+        return;
+      }
+      // 2. เช็คขนาดไฟล์ (กันไฟล์ใหญ่เกิน)
+      if (file.size > maxFileSize) {
+        alert(`ไฟล์ "${file.name}" ใหญ่เกิน 5MB`);
+        hasError = true;
+        return;
+      }
+      newValidFiles.push(file);
+    });
 
-    setMessages((prev) => [...prev, newUserMsg]);
-    setInputValue("");
+    if (hasError && fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
 
-    setTimeout(() => {
-      const autoReply = {
-        id: Date.now() + 1,
-        sender: "admin",
-        text: "ได้รับข้อความแล้วครับ เดี๋ยวเจ้าหน้าที่ตรวจสอบสักครู่นะครับ...",
-        time: new Date().toLocaleTimeString("th-TH", { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages((prev) => [...prev, autoReply]);
-    }, 1500);
+    setSelectedFiles(prev => [...prev, ...newValidFiles]);
+  };
+
+  const removeFile = (index) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleViewTicket = (ticket) => {
+    setSelectedTicket(ticket);
+    setView("detail");
   };
 
   return (
     <div className="row">
-      {/* ✅ เปลี่ยนเป็น col-lg-12 เพื่อให้เต็มความกว้าง */}
       <div className="col-lg-12 mb30">
-        <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p0 overflow-hidden d-flex flex-column" style={{ height: '700px' }}>
+        <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p0 overflow-hidden d-flex flex-column" style={{ minHeight: '600px' }}>
 
-          {/* --- Chat Header (ปรับใหม่) --- */}
-          <div className="chat-header bg-white border-bottom p-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
-            
-            {/* 1. ฝั่งซ้าย: Admin Profile */}
+          <div className="chat-header bg-white border-bottom p-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
             <div className="d-flex align-items-center">
-              <div className="position-relative">
-                <img src="https://placehold.co/50x50" alt="admin" className="rounded-circle border" width="50" height="50" />
-                <span className="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle" style={{ width: 12, height: 12 }}></span>
+              <div className="bg-light rounded-circle d-flex align-items-center justify-content-center text-primary me-3" style={{ width: 50, height: 50 }}>
+                <i className="fas fa-ticket-alt fz20"></i>
               </div>
-              <div className="ms-3">
-                <h6 className="mb-0 fw600 fz16">Admin Support</h6>
-                <small className="text-success fz13"><i className="fas fa-circle fz10 me-1"></i>กำลังออนไลน์</small>
+              <div>
+                <h4 className="mb-0 fw-bold">Support Tickets</h4>
+                <p className="text-muted mb-0 fz14">ติดตามสถานะและแจ้งปัญหาการใช้งาน</p>
               </div>
             </div>
-
-            {/* 2. ฝั่งขวา: ช่องทางติดต่ออื่นๆ (ย้ายมาจากด้านซ้าย) */}
-            <div className="d-flex align-items-center gap-3 gap-md-4">
-
-                {/* Call */}
-                <div className="d-flex align-items-center gap-2">
-                    <div className="bg-light rounded-circle d-flex align-items-center justify-content-center text-primary" style={{ width: 35, height: 35 }}>
-                        <i className="fas fa-phone-alt fz16"></i>
-                    </div>
-                    <div className="d-none d-md-block">
-                        <div className="fz12 text-muted lh-1">Call Center</div>
-                        <div className="fz13 fw600">02-123-4567</div>
-                    </div>
-                </div>
-
-                {/* Email */}
-                <div className="d-flex align-items-center gap-2">
-                    <div className="bg-light rounded-circle d-flex align-items-center justify-content-center text-danger" style={{ width: 35, height: 35 }}>
-                        <i className="fas fa-envelope fz16"></i>
-                    </div>
-                    <div className="d-none d-md-block">
-                        <div className="fz12 text-muted lh-1">Email</div>
-                        <div className="fz13 fw600">help@homez.com</div>
-                    </div>
-                </div>
-
+            <div>
+              {view === 'list' ? (
+                <button onClick={() => setView('create')} className="ud-btn btn-dark" style={{ padding: '10px 25px', borderRadius: '30px' }}>
+                  <i className="fas fa-plus me-2"></i> สร้างรายการใหม่
+                </button>
+              ) : (
+                <button onClick={() => setView('list')} className="btn btn-outline-secondary" style={{ padding: '10px 25px', borderRadius: '30px' }}>
+                  <i className="fas fa-arrow-left me-2"></i> ย้อนกลับ
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Chat Body */}
+          {/* ✅ แก้จุดที่ 1: บังคับปิด overflow-x และเปิด overflow-y */}
           <div
-            ref={chatBodyRef}
-            className="chat-body flex-grow-1 p-4 bg-light overflow-auto"
-            style={{ scrollBehavior: 'smooth' }}
+            className="chat-body flex-grow-1 p-4 bg-light"
+            style={{ overflowY: 'auto', overflowX: 'hidden' }}
           >
-            {messages.map((msg) => (
-              <div key={msg.id} className={`d-flex mb-3 ${msg.sender === 'user' ? 'justify-content-end' : 'justify-content-start'}`}>
-                {msg.sender === 'admin' && (
-                  <div className="me-2 align-self-end">
-                    <img src="https://placehold.co/30x30" alt="admin-avatar" className="rounded-circle border" width="35" height="35" />
-                  </div>
-                )}
-                <div style={{ maxWidth: '75%' }}>
-                  <div
-                    className={`p-3 bdrs12 fz15 shadow-sm ${msg.sender === 'user'
-                      ? 'bg-dark text-white rounded-bottom-right-0'
-                      : 'bg-white text-dark rounded-bottom-left-0'
-                      }`}
-                  >
-                    {msg.text}
-                  </div>
-                  <div className={`text-muted fz12 mt-1 ${msg.sender === 'user' ? 'text-end' : 'text-start'}`}>
-                    {msg.time}
+
+            {view === 'list' && (
+              <div className="bg-white bdrs12 p-3 shadow-sm">
+                <div className="table-responsive">
+                  <table className="table table-hover mb-0">
+                    <thead className="bg-light">
+                      <tr>
+                        <th className="py-3 ps-3">ID</th>
+                        <th className="py-3">หัวข้อเรื่อง</th>
+                        <th className="py-3">หมวดหมู่</th>
+                        <th className="py-3">ความสำคัญ</th>
+                        <th className="py-3">วันที่แจ้ง</th>
+                        <th className="py-3 text-center">สถานะ</th>
+                        <th className="py-3 text-end pe-3">จัดการ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tickets.map((t, index) => (
+                        <tr key={index} style={{ cursor: 'pointer' }} onClick={() => handleViewTicket(t)}>
+                          <td className="ps-3 fw-bold text-primary align-middle">{t.id}</td>
+                          <td className="align-middle fw600">{t.subject}</td>
+                          <td className="align-middle"><span className="badge bg-light text-dark border">{t.category}</span></td>
+                          <td className="align-middle">
+                            <span className={`fw-bold ${t.priority === 'High' ? 'text-danger' : t.priority === 'Medium' ? 'text-warning' : 'text-success'}`}>{t.priority}</span>
+                          </td>
+                          <td className="align-middle text-muted fz14">{t.date}</td>
+                          <td className="align-middle text-center">{getStatusBadge(t.status)}</td>
+                          <td className="text-end pe-3 align-middle">
+                            <button className="btn btn-sm btn-light rounded-circle" style={{ width: 35, height: 35 }}>
+                              <i className="far fa-eye text-muted"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {view === 'create' && (
+              <div className="row justify-content-center">
+                <div className="col-lg-10">
+                  <div className="bg-white bdrs12 p-4 shadow-sm">
+                    <h5 className="mb-4 fw-bold"><i className="far fa-edit me-2"></i>กรอกรายละเอียดปัญหา</h5>
+                    <form>
+                      <div className="row">
+                        <div className="col-md-12 mb-3">
+                          <label className="form-label fw600">หัวข้อเรื่อง (Subject)</label>
+                          <input type="text" className="form-control form-control-lg bg-light" placeholder="ระบุหัวข้อเรื่อง..." />
+                        </div>
+
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label fw600">หมวดหมู่ (Category)</label>
+                          <Select
+                            options={categoryOptions}
+                            styles={customStyles}
+                            placeholder="-- กรุณาเลือกหมวดหมู่ --"
+                            instanceId="category-select"
+                            isSearchable={false}
+                            maxMenuHeight={200}
+                          />
+                        </div>
+
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label fw600">ความเร่งด่วน (Priority)</label>
+                          <Select
+                            options={priorityOptions}
+                            styles={customStyles}
+                            placeholder="-- ระดับความเร่งด่วน --"
+                            instanceId="priority-select"
+                            isSearchable={false}
+                            maxMenuHeight={200}
+                          />
+                        </div>
+
+                        <div className="col-md-12 mb-4">
+                          <label className="form-label fw600">รายละเอียด</label>
+                          <textarea
+                            className="form-control bg-light"
+                            rows="6"
+                            placeholder="อธิบายรายละเอียดปัญหา หรือสิ่งที่ต้องการให้ช่วยเหลือ..."
+                            value={ticketDetail}
+                            onChange={(e) => setTicketDetail(e.target.value)}
+                            style={{ resize: 'none', borderRadius: '8px' }}
+                          ></textarea>
+                        </div>
+
+                        {/* ✅✅ ส่วนอัปโหลดรูปภาพ (ปรับปรุงใหม่) ✅✅ */}
+                        <div className="col-md-12 mb-4">
+                          <label className="form-label fw600">แนบรูปภาพ (Attachments)</label>
+                          <div className="input-group">
+                            <input
+                              type="file"
+                              className="form-control bg-light"
+                              id="inputGroupFile01"
+                              multiple
+                              accept=".jpg, .jpeg, .png" // 🔒 ล็อกนามสกุลในหน้าต่างเลือกไฟล์
+                              ref={fileInputRef}
+                              onChange={handleFileUpload} // 🔒 เช็คซ้ำด้วย JS
+                              style={{ borderRadius: '8px', padding: '10px' }}
+                            />
+                          </div>
+                          <div className="form-text text-muted ps-1 mt-1">รองรับไฟล์ JPG, PNG (ขนาดไม่เกิน 5MB)</div>
+
+                          {/* แสดงรายการไฟล์ที่เลือก (Preview) */}
+                          {selectedFiles.length > 0 && (
+                            <div className="mt-3 d-flex flex-wrap gap-2">
+                              {selectedFiles.map((file, index) => (
+                                <div key={index} className="position-relative d-inline-block border rounded p-1 bg-white">
+                                  <img
+                                    src={URL.createObjectURL(file)}
+                                    alt="preview"
+                                    style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => removeFile(index)}
+                                    className="btn btn-danger btn-sm position-absolute top-0 start-100 translate-middle rounded-circle p-0 d-flex align-items-center justify-content-center"
+                                    style={{ width: '20px', height: '20px', fontSize: '10px' }}
+                                  >
+                                    <i className="fas fa-times"></i>
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="col-md-12 text-end">
+                          <button type="button" onClick={() => setView('list')} className="ud-btn btn-light btn-lg me-2 rounded-3 border-0 ">ยกเลิก</button>
+                          <button type="button" className="ud-btn btn-thm btn-lg rounded-3 ">ส่งข้อมูล (Submit)</button>
+                        </div>
+
+                        {/* ✅ แก้จุดที่ 2: ใส่กล่องเปล่าๆ ดันพื้นที่สุดท้ายไว้เลย กันเหนียว */}
+                        <div style={{ height: '50px', width: '100%' }}></div>
+
+                      </div>
+                    </form>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+            )}
 
-          {/* Chat Footer */}
-          <div className="chat-footer bg-white border-top p-3">
-            <form onSubmit={handleSend} className="d-flex align-items-center gap-2">
-              <button type="button" className="btn btn-light rounded-circle" title="แนบรูปภาพ" style={{ width: 45, height: 45 }}>
-                <i className="fas fa-paperclip text-muted fz18"></i>
-              </button>
-              <input
-                type="text"
-                className="form-control border-0 bg-light rounded-pill px-4 py-3"
-                placeholder="พิมพ์ข้อความ..."
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-              />
-              <button
-                type="submit"
-                className="btn rounded-circle d-flex align-items-center justify-content-center"
-                onMouseEnter={() => setIsButtonHover(true)}
-                onMouseLeave={() => setIsButtonHover(false)}
-                style={{
-                  width: 50,
-                  height: 50,
-                  backgroundColor: isButtonHover ? '#000000' : '#212529',
-                  borderColor: isButtonHover ? '#000000' : '#212529',
-                  color: 'white',
-                  transition: 'all 0.2s ease'
-                }}
-                disabled={!inputValue.trim()}
-              >
-                <i className="fas fa-paper-plane fz18"></i>
-              </button>
-            </form>
-          </div>
+            {view === 'detail' && selectedTicket && (
+              <div className="row justify-content-center">
+                <div className="col-lg-10">
+                  <div className="bg-white bdrs12 p-4 shadow-sm">
+                    <div className="d-flex justify-content-between align-items-start mb-4 pb-3 border-bottom">
+                      <div>
+                        <div className="d-flex align-items-center gap-2 mb-2">
+                          <span className="text-primary fw-bold fz18">{selectedTicket.id}</span>
+                          {getStatusBadge(selectedTicket.status)}
+                        </div>
+                        <h4 className="fw-bold mb-1">{selectedTicket.subject}</h4>
+                        <p className="text-muted mb-0 fz14"><i className="far fa-calendar-alt me-1"></i> {selectedTicket.date} • {selectedTicket.category}</p>
+                      </div>
+                      <div className="text-end">
+                        <div className="text-muted fz13 mb-1">ความเร่งด่วน</div>
+                        <span className={`fw-bold ${selectedTicket.priority === 'High' ? 'text-danger' : 'text-success'}`}>{selectedTicket.priority}</span>
+                      </div>
+                    </div>
 
+                    <div className="ticket-content mb-5">
+                      <h6 className="fw-bold mb-3">รายละเอียด:</h6>
+                      <p className="text-dark bg-light p-3 rounded-3" style={{ whiteSpace: 'pre-wrap' }}>
+                        {selectedTicket.detail}
+                      </p>
+                    </div>
+
+                    {selectedTicket.status === 'Closed' && (
+                      <div className="admin-reply p-3 rounded-3" style={{ backgroundColor: '#e9ecef' }}>
+                        <div className="d-flex align-items-center mb-2">
+                          <img src="https://placehold.co/30x30" className="rounded-circle me-2" alt="admin" />
+                          <span className="fw-bold">Admin Support</span>
+                          <span className="text-muted ms-2 fz12">ตอบกลับเมื่อ 23/01/2024</span>
+                        </div>
+                        <p className="mb-0 text-dark">ดำเนินการแก้ไขให้เรียบร้อยแล้วครับ ขอบคุณที่แจ้งเข้ามาครับ</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -1330,6 +1330,30 @@ const PropertyDataTable = () => {
                           )}
                         </div>
 
+                        {/* 🔥🔥🔥🔥 เพิ่มส่วน Tag Co-Broke ตรงนี้ 🔥🔥🔥🔥 */}
+                        {property.acceptCoBroke && (
+                          <div className="mt-1 mb-2">
+                            <span
+                              className="badge rounded-pill px-2 py-1"
+                              style={{
+                                background: 'linear-gradient(135deg, #eb6753 0%, #ff8f75 100%)',
+                                color: '#fff',
+                                fontSize: '11px',
+                                fontWeight: '500',
+                                border: 'none',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              <i className="fas fa-handshake"></i>
+                              Co-Broke {Number(property.commissionValue).toLocaleString()} 
+                              {property.commissionType === 'percent' ? '%' : '฿'}
+                            </span>
+                          </div>
+                        )}
+                        {/* 🔥🔥🔥🔥 จบส่วน Tag 🔥🔥🔥🔥 */}
+
                         <p className="list-text mb-0" style={{ marginTop: 2 }}>
                           {property?.location?.province
                             ? `${property.location.province} ${property.location.district ?? ""}`
