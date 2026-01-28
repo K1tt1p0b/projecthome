@@ -66,46 +66,16 @@ const Header = () => {
               <div className="col-auto">
                 <div className="d-flex align-items-center">
                   <a
-                    href="#"
+                    href="/login"
                     className="login-info d-flex align-items-cente"
-                    data-bs-toggle="modal"
-                    data-bs-target="#loginSignupModal"
                     role="button"
                   >
                     <i className="far fa-user-circle fz16 me-2" />{" "}
-                    <span className="d-none d-xl-block">Login / Register</span>
-                  </a>
-                  <Link
-                    className="ud-btn btn-white add-property bdrs60 mx-2 mx-xl-4"
-                    href="/dashboard-add-property"
-                  >
-                    Add Property
-                    <i className="fal fa-arrow-right-long" />
-                  </Link>
-                  <a
-                    className="sidemenu-btn filter-btn-right"
-                    href="#"
-                    data-bs-toggle="offcanvas"
-                    data-bs-target="#SidebarPanel"
-                    aria-controls="SidebarPanelLabel"
-                  >
-                    <Image
-                      width={25}
-                      height={9}
-                      className="img-1"
-                      src="/images/dark-nav-icon.svg"
-                      alt="humberger menu"
-                    />
-                    <Image
-                      width={25}
-                      height={9}
-                      className="img-2"
-                      src="/images/dark-nav-icon.svg"
-                      alt="humberger menu"
-                    />
+                    <span className="d-none d-xl-block">เข้าสู่ระบบ/สมัคร</span>
                   </a>
                 </div>
               </div>
+              
               {/* End .col-auto */}
             </div>
             {/* End .row */}
@@ -113,22 +83,6 @@ const Header = () => {
         </nav>
       </header>
       {/* End Header */}
-
-      {/* Signup Modal */}
-      <div className="signup-modal">
-        <div
-          className="modal fade"
-          id="loginSignupModal"
-          tabIndex={-1}
-          aria-labelledby="loginSignupModalLabel"
-          aria-hidden="true"
-        >
-          <div className="modal-dialog  modal-dialog-scrollable modal-dialog-centered">
-            <LoginSignupModal />
-          </div>
-        </div>
-      </div>
-      {/* End Signup Modal */}
 
       {/* DesktopSidebarMenu */}
       <div

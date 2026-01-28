@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
+const THEME_COLOR = "#eb6753";
+
 const ResetPassword = ({ onBackToLogin }) => {
   const router = useRouter();
 
@@ -12,21 +14,28 @@ const ResetPassword = ({ onBackToLogin }) => {
   });
 
   const [errors, setErrors] = useState({});
-  const [message, setMessage] = useState(null); // { type: "success" | "error", text: "..." }
+  const [message, setMessage] = useState(null); // ใช้เฉพาะ error
   const [loading, setLoading] = useState(false);
+
+  // overlay loader
+  const [overlay, setOverlay] = useState({
+    open: false,
+    text: "กำลังดำเนินการ...",
+  });
+
+  const openOverlay = (text = "กำลังดำเนินการ...") =>
+    setOverlay({ open: true, text });
+
+  const closeOverlay = () =>
+    setOverlay((prev) => ({ ...prev, open: false }));
+
+  const disabled = loading || overlay.open;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    setErrors((prev) => ({
-      ...prev,
-      [name]: "",
-    }));
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
     setMessage(null);
   };
 
@@ -49,9 +58,18 @@ const ResetPassword = ({ onBackToLogin }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const routeWithLoading = (path, text = "กำลังพาไปหน้าใหม่...") => {
+    openOverlay(text);
+    setTimeout(() => {
+      router.replace(path);
+    }, 500);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage(null);
+
+    if (disabled) return;
 
     const isValid = validate();
     if (!isValid) {
@@ -63,10 +81,9 @@ const ResetPassword = ({ onBackToLogin }) => {
     }
 
     setLoading(true);
+    openOverlay("กำลังบันทึกรหัสผ่านใหม่...");
 
     try {
-      // ตรงนี้อนาคตจะมี token จากลิงก์ที่ส่งไปในเมล เช่น ?token=xxxx
-      // ตอนนี้ mock ไว้ก่อน
       const payload = {
         password: form.password,
         // token: "TODO_GET_FROM_URL_OR_PROPS"
@@ -74,117 +91,120 @@ const ResetPassword = ({ onBackToLogin }) => {
 
       console.log("Reset Password Payload:", payload);
 
-      // TODO: ตรงนี้เอาไปต่อกับ API จริง เช่น:
-      // const res = await fetch("https://your-backend/reset-password", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(payload),
-      // });
-      // const data = await res.json();
-      // if (!res.ok) {
-      //   throw new Error(data.message || "ไม่สามารถตั้งรหัสผ่านใหม่ได้");
-      // }
+      // TODO: ต่อ API จริง
+      await new Promise((r) => setTimeout(r, 700));
 
-      setMessage({
-        type: "success",
-        text: "ตั้งรหัสผ่านใหม่สำเร็จแล้ว (mock) คุณสามารถเข้าสู่ระบบด้วยรหัสผ่านใหม่ได้เลย",
-      });
-
-      setForm({
-        password: "",
-        confirmPassword: "",
-      });
+      // ✅ สำเร็จแล้วพาไปหน้า login ทันที (ไม่โชว์ success message)
+      openOverlay("กำลังพาไปหน้าเข้าสู่ระบบ...");
+      setTimeout(() => {
+        if (typeof onBackToLogin === "function") {
+          onBackToLogin(); // modal
+          closeOverlay();
+        } else {
+          router.replace("/login"); // page
+        }
+      }, 600);
     } catch (err) {
       setMessage({
         type: "error",
-        text: err.message || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง",
+        text: err?.message || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง",
       });
+      closeOverlay();
     } finally {
       setLoading(false);
     }
   };
 
   const handleBackClick = () => {
-    if (typeof onBackToLogin === "function") {
-      // ใช้ใน modal → สลับแท็บกลับไปหน้า Login
-      onBackToLogin();
-    } else {
-      // ใช้ในหน้าเต็ม → เด้งไปหน้า /login
-      router.push("/login");
-    }
+    if (disabled) return;
+    routeWithLoading("/login", "กำลังพาไปหน้าเข้าสู่ระบบ...");
   };
 
   return (
-    <form className="form-style1" onSubmit={handleSubmit}>
-      {/* Global message */}
-      {message && (
+    <>
+      {/* Overlay Loader */}
+      {overlay.open && (
         <div
-          className={`alert ${
-            message.type === "success" ? "alert-success" : "alert-danger"
-          } mb20`}
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+          style={{ background: "rgba(255,255,255,0.85)", zIndex: 9999 }}
         >
-          {message.text}
+          <div className="text-center">
+            <div
+              className="spinner-border mb15"
+              style={{
+                width: 48,
+                height: 48,
+                color: THEME_COLOR,
+                borderWidth: 3,
+              }}
+            />
+            <div className="fw600 text-dark">{overlay.text}</div>
+          </div>
         </div>
       )}
 
-      {/* New Password */}
-      <div className="mb20">
-        <label className="form-label fw600 dark-color">New Password</label>
-        <input
-          name="password"
-          type="password"
-          className="form-control"
-          placeholder="Enter new password"
-          value={form.password}
-          onChange={handleChange}
-          required
-        />
-        {errors.password && (
-          <small className="text-danger d-block mt5">{errors.password}</small>
+      <form className="form-style1" onSubmit={handleSubmit}>
+        {/* แสดงเฉพาะ error */}
+        {message && message.type === "error" && (
+          <div className="alert alert-danger mb20">{message.text}</div>
         )}
-      </div>
 
-      {/* Confirm New Password */}
-      <div className="mb20">
-        <label className="form-label fw600 dark-color">
-          Confirm New Password
-        </label>
-        <input
-          name="confirmPassword"
-          type="password"
-          className="form-control"
-          placeholder="Confirm new password"
-          value={form.confirmPassword}
-          onChange={handleChange}
-          required
-        />
-        {errors.confirmPassword && (
-          <small className="text-danger d-block mt5">
-            {errors.confirmPassword}
-          </small>
-        )}
-      </div>
+        <div className="mb20">
+          <label className="form-label fw600 dark-color">รหัสผ่านใหม่</label>
+          <input
+            name="password"
+            type="password"
+            className="form-control"
+            value={form.password}
+            onChange={handleChange}
+            disabled={disabled}
+            placeholder="กรุณากรอกรหัสผ่านใหม่"
+          />
+          {errors.password && (
+            <small className="text-danger d-block mt5">{errors.password}</small>
+          )}
+        </div>
 
-      {/* Submit Button */}
-      <div className="d-grid mb20">
-        <button className="ud-btn btn-thm" type="submit" disabled={loading}>
-          {loading ? "Saving..." : "Reset Password"}{" "}
-          <i className="fal fa-arrow-right-long" />
-        </button>
-      </div>
+        <div className="mb20">
+          <label className="form-label fw600 dark-color">
+            ยืนยันรหัสผ่านใหม่
+          </label>
+          <input
+            name="confirmPassword"
+            type="password"
+            className="form-control"
+            value={form.confirmPassword}
+            onChange={handleChange}
+            disabled={disabled}
+            placeholder="กรุณากรอกยืนยันรหัสผ่านใหม่"
+          />
+          {errors.confirmPassword && (
+            <small className="text-danger d-block mt5">
+              {errors.confirmPassword}
+            </small>
+          )}
+        </div>
 
-      {/* Back to login */}
-      <p className="dark-color text-center mb0 mt10">
-        Remembered your password?{" "}
-        <button
-          type="button"
-          className="btn btn-link dark-color fw600 p-0"
-          onClick={handleBackClick}
-        >
-          Back to login
-        </button>
-      </p>
-    </form>
+        <div className="d-grid mb20">
+          <button className="ud-btn btn-thm" type="submit" disabled={disabled}>
+            {loading ? "กำลังบันทึก..." : "รีเซ็ตรหัสผ่าน"}{" "}
+            <i className="fal fa-arrow-right-long" />
+          </button>
+        </div>
+
+        <p className="dark-color text-center mb0 mt10">
+          จำรหัสผ่านได้แล้วใช่ไหม?{" "}
+          <button
+            type="button"
+            className="btn btn-link dark-color fw600 p-0"
+            onClick={handleBackClick}
+            disabled={disabled}
+          >
+            กลับไปหน้าเข้าสู่ระบบ
+          </button>
+        </p>
+      </form>
+    </>
   );
 };
 
