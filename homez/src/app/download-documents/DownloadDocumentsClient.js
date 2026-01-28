@@ -5,18 +5,12 @@ import MobileMenu from "@/components/common/mobile-menu";
 import Footer from "@/components/home/home-v10/footer";
 import Header from "@/components/home/home-v10/Header";
 
-import {
-  Tabs,
-  UserDocumentList,
-  AgentDocumentList,
-} from "@/components/download";
+import { UserDocumentList } from "@/components/download";
 
 const DownloadDocumentsClient = () => {
-  const [activeTab, setActiveTab] = useState("user");
-
   // state สำหรับค้นหา + filter
   const [searchTerm, setSearchTerm] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");  // category
+  const [typeFilter, setTypeFilter] = useState(""); // category
   const [usageFilter, setUsageFilter] = useState(""); // usage
 
   return (
@@ -35,7 +29,7 @@ const DownloadDocumentsClient = () => {
                   <h2 className="title">ดาวน์โหลดเอกสาร</h2>
                   <p className="paragraph mb-0">
                     เอกสารสัญญา แบบฟอร์ม และคู่มือที่เกี่ยวข้องกับการซื้อขาย/เช่าที่ดิน
-                    ทั้งผู้ใช้ทั่วไปและตัวแทน/นายหน้า
+                    สำหรับผู้ใช้ทั่วไป
                   </p>
                 </div>
               </div>
@@ -45,19 +39,11 @@ const DownloadDocumentsClient = () => {
       </section>
 
       {/* Main Content */}
-      <section className="pb90 pb20-md">
+      <section className="pt20 pb110">
         <div className="container">
-
-          {/* Tabs */}
-          <div className="row" data-aos="fade-up" data-aos-delay="50">
-            <div className="col-lg-12">
-              <Tabs active={activeTab} onChange={setActiveTab} />
-            </div>
-          </div>
-
           {/* Search + Filters + Clear Button */}
           <div
-            className="row align-items-center mb30"
+            className="row align-items-center mb20"
             data-aos="fade-up"
             data-aos-delay="100"
           >
@@ -97,7 +83,6 @@ const DownloadDocumentsClient = () => {
                 <option value="ซื้อขาย">ซื้อขาย</option>
                 <option value="เช่า">เช่า</option>
                 <option value="ทั่วไป">ทั่วไป</option>
-                <option value="รับทรัพย์">รับทรัพย์</option>
               </select>
             </div>
 
@@ -124,30 +109,19 @@ const DownloadDocumentsClient = () => {
             </div>
           </div>
 
-          {/* Document List */}
+          {/* Document List (User Only) */}
           <div data-aos="fade-up" data-aos-delay="150">
-            {activeTab === "user" && (
-              <UserDocumentList
-                searchTerm={searchTerm}
-                typeFilter={typeFilter}
-                usageFilter={usageFilter}
-              />
-            )}
-
-            {activeTab === "agent" && (
-              <AgentDocumentList
-                searchTerm={searchTerm}
-                typeFilter={typeFilter}
-                usageFilter={usageFilter}
-              />
-            )}
+            <UserDocumentList
+              searchTerm={searchTerm}
+              typeFilter={typeFilter}
+              usageFilter={usageFilter}
+            />
           </div>
-
         </div>
       </section>
 
       {/* Footer */}
-      <section className="footer-style1 pt60 pb-0">
+      <section className="footer-style1 pt60 pb-0 mt60">
         <Footer />
       </section>
     </>
