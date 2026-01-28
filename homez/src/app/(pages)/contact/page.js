@@ -1,5 +1,5 @@
 import CallToActions from "@/components/common/CallToActions";
-import DefaultHeader from "@/components/common/DefaultHeader";
+import Header from "@/components/home/home-v10/Header";
 import Footer from "@/components/common/default-footer";
 import MobileMenu from "@/components/common/mobile-menu";
 import Form from "@/components/pages/contact/Form";
@@ -13,7 +13,7 @@ const Contact = () => {
   return (
     <>
       {/* Main Header Nav */}
-      <DefaultHeader />
+      <Header />
       {/* End Main Header Nav */}
 
       {/* Mobile Nav  */}

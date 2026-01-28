@@ -1,4 +1,4 @@
-import DefaultHeader from "@/components/common/DefaultHeader";
+import Header from "@/components/home/home-v10/Header";
 import MobileMenu from "@/components/common/mobile-menu";
 
 import PropertyFilteringMapFour from "@/components/listing/map-style/map-v3/PropertyFilteringMapFour";
@@ -13,7 +13,7 @@ const MapV3 = () => {
   return (
     <>
       {/* Main Header Nav */}
-      <DefaultHeader />
+      <Header />
       {/* End Main Header Nav */}
 
       {/* Mobile Nav  */}

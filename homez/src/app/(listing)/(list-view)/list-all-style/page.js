@@ -1,4 +1,4 @@
-import DefaultHeader from "@/components/common/DefaultHeader";
+import Header from "@/components/home/home-v10/Header";
 import Footer from "@/components/common/default-footer";
 import MobileMenu from "@/components/common/mobile-menu";
 import Listing1 from "@/components/listing/list-view/all-list-style/Listing1";
@@ -19,7 +19,7 @@ const ListV1 = () => {
   return (
     <>
       {/* Main Header Nav */}
-      <DefaultHeader />
+      <Header />
       {/* End Main Header Nav */}
 
       {/* Mobile Nav  */}

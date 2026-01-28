@@ -1,7 +1,7 @@
 import Pagination from "@/components/blog/Pagination";
 import BlogFilter from "@/components/blog/blog-list-v3/BlogFilter";
 import BlogFilterContainer from "@/components/blog/blog-list-v3/BlogFilterContainer";
-import DefaultHeader from "@/components/common/DefaultHeader";
+import Header from "@/components/home/home-v10/Header";
 import Footer from "@/components/common/default-footer";
 import MobileMenu from "@/components/common/mobile-menu";
 
@@ -13,7 +13,7 @@ const BlogV3 = () => {
   return (
     <>
       {/* Main Header Nav */}
-      <DefaultHeader />
+      <Header />
       {/* End Main Header Nav */}
 
       {/* Mobile Nav  */}

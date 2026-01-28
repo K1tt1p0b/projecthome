@@ -1,7 +1,7 @@
 import Pagination from "@/components/blog/Pagination";
 import Blog from "@/components/blog/blog-list-v1/Blog";
 import BlogSidebar from "@/components/blog/sidebar";
-import DefaultHeader from "@/components/common/DefaultHeader";
+import Header from "@/components/home/home-v10/Header";
 import Footer from "@/components/common/default-footer";
 import MobileMenu from "@/components/common/mobile-menu";
 
@@ -13,7 +13,7 @@ const BlogV1 = () => {
   return (
     <div className="bgc-f7">
       {/* Main Header Nav */}
-      <DefaultHeader />
+      <Header />
       {/* End Main Header Nav */}
 
       {/* Mobile Nav  */}

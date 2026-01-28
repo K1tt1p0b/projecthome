@@ -1,5 +1,5 @@
 import CallToActions from "@/components/common/CallToActions";
-import DefaultHeader from "@/components/common/DefaultHeader";
+import Header from "@/components/home/home-v10/Header";
 import Footer from "@/components/common/default-footer";
 import MobileMenu from "@/components/common/mobile-menu";
 import Faq1 from "@/components/pages/faq/Faq1";
@@ -12,7 +12,7 @@ export const metadata = {
 const Faq = () => {
   return (
     <>
-      <DefaultHeader />
+      <Header />
       <MobileMenu />
 
       <section className="breadcumb-section">

@@ -1,4 +1,4 @@
-import DefaultHeader from "@/components/common/DefaultHeader";
+import Header from "@/components/home/home-v10/Header";
 import Footer from "@/components/common/default-footer";
 import MobileMenu from "@/components/common/mobile-menu";
 
@@ -52,7 +52,7 @@ const SingleV5 = async (props) => {
 
   return (
     <>
-      <DefaultHeader />
+      <Header />
       <MobileMenu />
 
       <section className="p-0 bgc-white">
