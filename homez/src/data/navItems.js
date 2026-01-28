@@ -1,17 +1,16 @@
-export const homeItems = [
-];
+export const homeItems = [];
 
 export const listingItems = [
   {
     title: "สินทรัพย์",
     submenu: [
-      { label: "ทั้งหมด", href: "", },
+      { label: "ทั้งหมด", href: "/grid-default" }, // ✅ เปลี่ยนจาก "" กัน Link เพี้ยน
       { label: "บ้าน", href: "/grid-default" },
       { label: "บ้านพร้อมที่ดิน", href: "/grid-full-3-col" },
       { label: "ที่ดินเปล่า", href: "/grid-full-4-col" },
       { label: "คอนโด", href: "/grid-full-2-col" },
-      { label: "ห้องเช่า", href: "/grid-full-1-col-v1", },
-      //{ label: "Banner Search v2", href: "/banner-search-v2" },
+      { label: "ห้องเช่า", href: "/grid-full-1-col-v1" },
+      // { label: "Banner Search v2", href: "/banner-search-v2" },
     ],
   },
   {
@@ -21,19 +20,11 @@ export const listingItems = [
       { label: "รับล้อมรั้ว", href: "/services/fencing" },
       { label: "ต่อเติม/รีโนเวท", href: "/services/renovate" },
       { label: "ตอกเสาเข็ม", href: "/services/piling" },
-      /*{ label: "Map V1", href: "/map-v1" },
-      { label: "Map V2", href: "/map-v2" },
-      { label: "Map V3", href: "/map-v3" },
-      { label: "Map V4", href: "/map-v4" },*/
     ],
   },
   {
     title: "คอร์สเรียน",
-    submenu: [
-      { label: "คอร์สเรียน", href: "/courses" },
-      /*{ label: "List v1", href: "/list-v1" },
-      { label: "List All Style", href: "/list-all-style" },*/
-    ],
+    submenu: [{ label: "คอร์สเรียน", href: "/courses" }],
   },
 ];
 
@@ -90,7 +81,7 @@ export const pageItems = [
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
   { href: "/compare", label: "Compate" },
-  { href: "/faq", label: "Faq" },
+  { href: "/faq", label: "FAQ" },
   { href: "/login", label: "Login" },
   { href: "/register", label: "Register" },
   { href: "/not-found", label: "404" },

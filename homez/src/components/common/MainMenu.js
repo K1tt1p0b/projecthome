@@ -1,178 +1,174 @@
-import {
-  homeItems,
-  blogItems,
-  listingItems,
-  propertyItems,
-  pageItems,
-} from "@/data/navItems";
+import { listingItems, pageItems, blogItems } from "@/data/navItems";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+const getGroup = (title) =>
+  listingItems.find((x) => String(x?.title || "").trim() === title) || {
+    title,
+    submenu: [],
+  };
 
 const MainMenu = () => {
   const pathname = usePathname();
   const [topMenu, setTopMenu] = useState("");
-  const [submenu, setSubmenu] = useState("");
-  const [activeLink, setActiveLink] = useState("");
+
+  // ✅ กลุ่มหลัก
+  const assetsGroup = useMemo(() => getGroup("สินทรัพย์"), []);
+  const servicesGroup = useMemo(() => getGroup("บริการเพิ่มเติม"), []);
+  const coursesGroup = useMemo(() => getGroup("คอร์สเรียน"), []);
+
+  // ✅ หา blog-list-v3 เพื่อเอามาใช้เป็น “บทความ”
+  const articleLink = useMemo(() => {
+    const v3 = (blogItems || []).find((b) => b?.href === "/blog-list-v3");
+    return v3?.href || "/blog-list-v3";
+  }, []);
+
+  // ✅ “ข้อมูลเพิ่มเติม” (กำหนดเองตามที่บอก)
+  const infoItems = useMemo(() => {
+    // ดาวน์โหลดเอกสาร
+    const docs =
+      (pageItems || []).find((x) => x?.href === "/download-documents") || {
+        href: "/download-documents",
+        label: "ดาวน์โหลดเอกสาร",
+      };
+
+    // FAQ (ในรูปคุณใช้ Faq)
+    const faq =
+      (pageItems || []).find((x) => x?.href === "/faq") || {
+        href: "/faq",
+        label: "Faq",
+      };
+
+    // เกี่ยวกับเรา
+    const about =
+      (pageItems || []).find((x) => x?.href === "/about") || {
+        href: "/about",
+        label: "เกี่ยวกับเรา",
+      };
+
+    // บทความ (ใช้ blog list v3)
+    const article = {
+      href: articleLink,
+      label: "บทความ",
+    };
+
+    return [docs, faq, article, about];
+  }, [articleLink]);
 
   useEffect(() => {
-    homeItems.forEach((elm) => {
-      if (elm.href.split("/")[1] == pathname.split("/")[1]) {
-        setTopMenu("home");
-      }
-    });
-    blogItems.forEach((elm) => {
-      if (elm.href.split("/")[1] == pathname.split("/")[1]) {
-        setTopMenu("blog");
-      }
-    });
-    pageItems.forEach((elm) => {
-      if (elm.href.split("/")[1] == pathname.split("/")[1]) {
-        setTopMenu("pages");
-      }
-    });
-    propertyItems.forEach((item) =>
-      item.subMenuItems.forEach((elm) => {
-        if (elm.href.split("/")[1] == pathname.split("/")[1]) {
-          setTopMenu("property");
-          setSubmenu(item.label);
-        }
-      })
-    );
-    listingItems.forEach((item) =>
-      item.submenu.forEach((elm) => {
-        if (elm.href.split("/")[1] == pathname.split("/")[1]) {
-          setTopMenu("listing");
-          setSubmenu(item.title);
-        }
-      })
-    );
-  }, [pathname]);
+    const sameRoot = (href) =>
+      String(href || "").split("/")[1] === pathname.split("/")[1];
 
-  const handleActive = (link) => {
-    // แก้จาก split เป็นเช็คว่าเหมือนกันเป๊ะๆ หรือไม่
-    if (link === pathname) {
-      return "menuActive";
-    }
-  };
+    let nextTop = "";
+
+    if (pathname === "/" || pathname === "") nextTop = "home";
+    else if ((assetsGroup.submenu || []).some((i) => sameRoot(i?.href)))
+      nextTop = "assets";
+    else if ((servicesGroup.submenu || []).some((i) => sameRoot(i?.href)))
+      nextTop = "services";
+    else if ((coursesGroup.submenu || []).some((i) => sameRoot(i?.href)))
+      nextTop = "courses";
+    else if (infoItems.some((i) => sameRoot(i?.href))) nextTop = "info";
+
+    setTopMenu(nextTop);
+  }, [pathname, assetsGroup, servicesGroup, coursesGroup, infoItems]);
+
+  const handleActive = (href) => (href === pathname ? "menuActive" : "");
+
   return (
     <ul className="ace-responsive-menu">
+      {/* หน้าแรก */}
       <li className="visible_list dropitem">
-        <a className="list-item" href="/">
-          <span className={topMenu == "home" ? "title menuActive" : "title"}>
+        <Link className="list-item" href="/">
+          <span className={topMenu === "home" ? "title menuActive" : "title"}>
             หน้าแรก
           </span>
-        </a>
-        {/* Level Two*/}
+        </Link>
       </li>
-      {/* End homeItems */}
 
-      <li className="megamenu_style dropitem">
+      {/* สินทรัพย์ */}
+      <li className="visible_list dropitem">
         <a className="list-item" href="#">
-          <span className={topMenu == "listing" ? "title menuActive" : "title"}>
-            Listing
+          <span className={topMenu === "assets" ? "title menuActive" : "title"}>
+            สินทรัพย์
           </span>
           <span className="arrow"></span>
         </a>
-        <ul className="row dropdown-megamenu sub-menu">
-          {listingItems.map((item, index) => (
-            <li className="col mega_menu_list" key={index}>
-              <h4 className="title">{item.title}</h4>
-              <ul className="sub-menu">
-                {item.submenu.map((submenuItem, subIndex) => (
-                  <li key={subIndex}>
-                    <Link
-                      className={`${handleActive(submenuItem.href)}`}
-                      href={submenuItem.href}
-                    >
-                      {submenuItem.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+        <ul className="sub-menu">
+          {(assetsGroup.submenu || []).map((item, idx) => (
+            <li key={idx}>
+              <Link className={handleActive(item.href)} href={item.href || "/"}>
+                {item.label}
+              </Link>
             </li>
           ))}
         </ul>
       </li>
-      {/* End listings */}
 
+      {/* บริการเพิ่มเติม */}
       <li className="visible_list dropitem">
         <a className="list-item" href="#">
           <span
-            className={topMenu == "property" ? "title menuActive" : "title"}
+            className={topMenu === "services" ? "title menuActive" : "title"}
           >
-            Property
+            บริการเพิ่มเติม
           </span>
           <span className="arrow"></span>
         </a>
         <ul className="sub-menu">
-          {propertyItems.map((item, index) => (
-            <li key={index} className="dropitem">
-              <a href="#">
-                <span
-                  className={
-                    submenu == item.label ? "title menuActive" : "title"
-                  }
-                >
-                  {item.label}
-                </span>
-                <span className="arrow"></span>
-              </a>
-              <ul className="sub-menu">
-                {item.subMenuItems.map((subMenuItem, subIndex) => (
-                  <li key={subIndex}>
-                    <Link
-                      className={`${handleActive(subMenuItem.href)}`}
-                      href={subMenuItem.href}
-                    >
-                      {subMenuItem.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </li>
-          ))}
-        </ul>
-      </li>
-      {/* End property Items */}
-
-      <li className="visible_list dropitem">
-        <a className="list-item" href="#">
-          <span className={topMenu == "blog" ? "title menuActive" : "title"}>
-            Blog
-          </span>
-          <span className="arrow"></span>
-        </a>
-        <ul className="sub-menu">
-          {blogItems.map((item, index) => (
-            <li key={index}>
-              <Link className={`${handleActive(item.href)}`} href={item.href}>
+          {(servicesGroup.submenu || []).map((item, idx) => (
+            <li key={idx}>
+              <Link className={handleActive(item.href)} href={item.href || "/"}>
                 {item.label}
               </Link>
             </li>
           ))}
         </ul>
       </li>
-      {/* End blog Items */}
 
+      {/* คอสเรียน (แสดงตามที่อยากให้โชว์) */}
       <li className="visible_list dropitem">
         <a className="list-item" href="#">
-          <span className={topMenu == "pages" ? "title menuActive" : "title"}>
-            Pages
+          <span
+            className={topMenu === "courses" ? "title menuActive" : "title"}
+          >
+            คอสเรียน
           </span>
           <span className="arrow"></span>
         </a>
         <ul className="sub-menu">
-          {pageItems.map((item, index) => (
-            <li key={index}>
-              <Link className={`${handleActive(item.href)}`} href={item.href}>
+          {(coursesGroup.submenu || []).map((item, idx) => (
+            <li key={idx}>
+              <Link
+                className={handleActive(item.href)}
+                href={item.href || "/courses"}
+              >
                 {item.label}
               </Link>
             </li>
           ))}
         </ul>
       </li>
-      {/* End pages Items */}
+
+      {/* ข้อมูลเพิ่มเติม */}
+      <li className="visible_list dropitem">
+        <a className="list-item" href="#">
+          <span className={topMenu === "info" ? "title menuActive" : "title"}>
+            ข้อมูลเพิ่มเติม
+          </span>
+          <span className="arrow"></span>
+        </a>
+        <ul className="sub-menu">
+          {infoItems.map((item, idx) => (
+            <li key={idx}>
+              <Link className={handleActive(item.href)} href={item.href}>
+                {item.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </li>
     </ul>
   );
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import DefaultHeader from "@/components/common/DefaultHeader";
+import Header from "@/components/home/home-v10/Header";
 import MobileMenu from "@/components/common/mobile-menu";
 import PropertyFilteringTwo from "@/components/listing/map-style/map-v1/PropertyFilteringTwo";
 
@@ -13,7 +13,7 @@ export default function MapV1Page() {
 
   return (
     <>
-      <DefaultHeader />
+      <Header />
       <MobileMenu />
       <PropertyFilteringTwo agentOnly={true} />
     </>

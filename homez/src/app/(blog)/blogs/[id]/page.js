@@ -7,7 +7,7 @@ import Tags from "@/components/blog/blog-single/Tags";
 import TopComments from "@/components/blog/blog-single/TopComments";
 import AllReviews from "@/components/blog/blog-single/reviews";
 import Blog from "@/components/common/Blog";
-import DefaultHeader from "@/components/common/DefaultHeader";
+import Header from "@/components/home/home-v10/Header";
 import Footer from "@/components/common/default-footer";
 import MobileMenu from "@/components/common/mobile-menu";
 import Image from "next/image";
@@ -21,7 +21,7 @@ const BlogSingle = async props => {
   return (
     <>
       {/* Main Header Nav */}
-      <DefaultHeader />
+      <Header />
       {/* End Main Header Nav */}
 
       {/* Mobile Nav  */}

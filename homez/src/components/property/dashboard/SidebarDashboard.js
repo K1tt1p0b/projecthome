@@ -85,9 +85,11 @@ const SidebarDashboard = () => {
         { href: "/dashboard-my-profile", icon: "flaticon-user", text: "โปรไฟล์ของฉัน" },
         { href: "/dashboard-message", icon: "flaticon-chat-1", unreadCount: 5, text: "ข้อความ" },
         { href: "/dashboard-agent-contacts", icon: "flaticon-chat", unreadCount: 2, text: "รายการผู้ติดต่อ" },
-
+        { href: "/map-v1", icon: "flaticon-user", text: "Map Page (แผนที่ของฉัน)" },
+        
         // ✅ Microsite dropdown
         { type: "dropdown", key: "microsite", icon: "fas fa-layer-group", text: "Microsite", children: micrositeItems },
+        { href: "/dashboard-dowload-documents-agents", icon: "fas fa-file-download", text: "เอกสารดาวน์โหลด" }
       ],
     },
     {

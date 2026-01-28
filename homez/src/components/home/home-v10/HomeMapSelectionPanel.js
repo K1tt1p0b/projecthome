@@ -10,23 +10,33 @@ function clamp(n, min, max) {
 export default function HomeMapSelectionPanel({ selection, onClose }) {
   const { title, items, prefer, anchorX, mapW } = selection || {};
 
-  const showItems = useMemo(() => {
-    const arr = Array.isArray(items) ? items : [];
-    return arr.slice(0, 3); // ✅ 1–3 ใบกำลังดี
-  }, [items]);
+  const safeItems = useMemo(
+    () => (Array.isArray(items) ? items : []),
+    [items]
+  );
+
+  // ✅ ไม่จำกัดจำนวน: โชว์ทั้งหมด (ให้ไปคุมความสูง/scroll ที่ CSS แทน)
+  const showItems = safeItems;
 
   if (!selection) return null;
 
-  // ✅ ความกว้าง panel ใน css เป็น min(420px, 100%-24)
-  // เลยคำนวณแบบ conservative เพื่อไม่ให้ล้นจอ
+  // panel width ตาม css: min(420px, 100%-24)
   const panelMaxW = Math.min(420, (mapW || 9999) - 24);
   const half = panelMaxW / 2;
 
-  // ✅ วาง panel ให้กึ่งกลางอยู่ที่ anchorX แต่ clamp ไม่ให้ล้น
-  const left = clamp(anchorX ?? (mapW || 0) / 2, 12 + half, (mapW || 0) - 12 - half);
+  // วาง panel ให้อยู่กึ่งกลาง anchorX แต่ไม่ล้นจอ
+  const left = clamp(
+    anchorX ?? (mapW || 0) / 2,
+    12 + half,
+    (mapW || 0) - 12 - half
+  );
 
-  // ✅ ตำแหน่งลูกศรภายใน panel (0..panelW)
-  const arrowX = clamp((anchorX ?? left) - (left - half), 22, panelMaxW - 22);
+  // ตำแหน่งลูกศร
+  const arrowX = clamp(
+    (anchorX ?? left) - (left - half),
+    22,
+    panelMaxW - 22
+  );
 
   return (
     <div
@@ -39,7 +49,15 @@ export default function HomeMapSelectionPanel({ selection, onClose }) {
       aria-label="รายการทรัพย์สิน"
     >
       <div className="lx-map-sheet-head">
-        <div className="lx-map-sheet-title">{title}</div>
+        <div className="lx-map-sheet-title">
+          {title}
+          {/* (ออปชัน) ถ้าอยากให้เห็นจำนวนด้วย */}
+          {safeItems.length ? (
+            <span style={{ opacity: 0.7, marginLeft: 8 }}>
+              ({safeItems.length})
+            </span>
+          ) : null}
+        </div>
 
         <button
           type="button"
@@ -53,15 +71,11 @@ export default function HomeMapSelectionPanel({ selection, onClose }) {
       </div>
 
       <div className="lx-map-sheet-body">
-        {showItems.map((it) => (
-          <ListingPopupCard key={it.id} item={it} />
-        ))}
-
-        {Array.isArray(items) && items.length > 3 ? (
-          <div className="lx-map-sheet-more">
-            และอีก {items.length - 3} รายการ (เลื่อนดูได้)
-          </div>
-        ) : null}
+        {showItems.length ? (
+          showItems.map((it) => <ListingPopupCard key={it.id} item={it} />)
+        ) : (
+          <div className="lx-map-sheet-empty">ไม่พบรายการ</div>
+        )}
       </div>
     </div>
   );

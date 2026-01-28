@@ -12,7 +12,8 @@ function toNumber(v, fallback = 0) {
 
 function getImageSrc(listing) {
   const legacy = listing?.image;
-  const modern = listing?.imageSrc || (Array.isArray(listing?.gallery) ? listing.gallery[0] : null);
+  const modern =
+    listing?.imageSrc || (Array.isArray(listing?.gallery) ? listing.gallery[0] : null);
   const src = modern || legacy;
   if (!src || String(src).trim() === "") return FALLBACK_IMAGE;
   return src;
@@ -25,7 +26,9 @@ function getLocationText(listing) {
   const fullText = loc?.fullText;
   if (typeof fullText === "string" && fullText.trim()) return fullText;
 
-  const composed = [loc?.address, loc?.district, loc?.province].filter(Boolean).join(" ");
+  const composed = [loc?.address, loc?.district, loc?.province]
+    .filter(Boolean)
+    .join(" ");
   return composed || "—";
 }
 
@@ -60,6 +63,27 @@ function getForWhatLabel(listing) {
   return isForRent(listing) ? "ให้เช่า" : "ขาย";
 }
 
+// ===== Google Maps helpers =====
+const toFixed6 = (v) => (Number.isFinite(Number(v)) ? Number(v).toFixed(6) : "");
+
+function getLatLng(listing) {
+  // รองรับหลายโครงสร้าง
+  const lat = listing?.location?.latitude ?? listing?.lat ?? listing?.latitude ?? null;
+  const lng = listing?.location?.longitude ?? listing?.lng ?? listing?.longitude ?? null;
+
+  const la = Number(lat);
+  const lo = Number(lng);
+  if (!Number.isFinite(la) || !Number.isFinite(lo)) return null;
+
+  return { lat: la, lng: lo };
+}
+
+function buildGoogleMapsUrl(lat, lng) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    `${toFixed6(lat)},${toFixed6(lng)}`
+  )}`;
+}
+
 export default function FeaturedListings({ data = [], colstyle, activeIds = [] }) {
   const safeData = Array.isArray(data) ? data : [];
   const isList = !!colstyle;
@@ -81,6 +105,10 @@ export default function FeaturedListings({ data = [], colstyle, activeIds = [] }
           : "listing-style1";
 
         const isActive = activeSet.has(id);
+
+        // ✅ (เพิ่ม) maps url ถ้ามีพิกัด
+        const ll = getLatLng(listing);
+        const mapsUrl = ll ? buildGoogleMapsUrl(ll.lat, ll.lng) : "";
 
         return (
           <div className={colClass} key={id || `${imgSrc}-${locText}`}>
@@ -133,6 +161,28 @@ export default function FeaturedListings({ data = [], colstyle, activeIds = [] }
                     <span className="flaticon-expand" /> {sqft} ตร.ม.
                   </span>
                 </div>
+
+                {/* ✅ (เพิ่ม) ปุ่มไป Google Maps */}
+                {mapsUrl ? (
+                  <div style={{ marginTop: 10 }}>
+                    <a
+                      href={mapsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="ud-btn btn-light"
+                      style={{
+                        width: "100%",
+                        padding: "8px 10px",
+                        borderRadius: 10,
+                        fontSize: 12,
+                        textAlign: "center",
+                      }}
+                      title="เปิดพิกัดนี้ใน Google Maps"
+                    >
+                      ไป Google Maps
+                    </a>
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>

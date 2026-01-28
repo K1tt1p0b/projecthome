@@ -1,9 +1,20 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { toast } from "react-toastify";
+
+// ✅ ใช้ Popup UI กลาง
+import MarkerPopupCard from "@/components/common/map/MarkerPopupCard";
 
 // ===== Marker Icon Fix =====
 const markerIcon = new L.Icon({
@@ -353,6 +364,18 @@ function UniversalZoomGuard({
   return null;
 }
 
+// ===== Helpers =====
+const toFixed6 = (v) => (Number.isFinite(Number(v)) ? Number(v).toFixed(6) : "");
+
+const copyText = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success("คัดลอกพิกัดแล้ว");
+  } catch {
+    toast.error("คัดลอกไม่สำเร็จ");
+  }
+};
+
 export default function LeafletMapClient({
   lat = 13.9869,
   lng = 100.6184,
@@ -405,6 +428,11 @@ export default function LeafletMapClient({
 
   // ✅ ปิด sheet ใกล้ฉันใน map ได้ (ให้ไปโชว์ list ที่ฝั่งซ้ายแทน)
   nearMeShowSheet = true,
+
+  // ✅ (เพิ่มใหม่แบบ opt-in) ใช้กับหน้ารายละเอียดทรัพย์ / หรือหน้าอื่นที่อยากให้เป็น display
+  displayOnly = false, // ถ้า true จะล็อคการลากหมุด/คลิกย้าย/drag
+  hideAttribution = false, // ซ่อน attribution ล่างขวา
+  markerPopupData = null, // { title?, subtitle?, latLabel?, lngLabel?, extraLines?: string[] }
 }) {
   const mapWrapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -729,6 +757,13 @@ export default function LeafletMapClient({
     }
   };
 
+  // ===== Popup UI (ใช้ component กลาง) =====
+  const popupTitle = markerPopupData?.title ?? "ตำแหน่งทรัพย์สิน";
+  const popupSubtitle = markerPopupData?.subtitle ?? "";
+  const extraLines = Array.isArray(markerPopupData?.extraLines)
+    ? markerPopupData.extraLines
+    : [];
+
   return (
     <div className={className}>
       <div
@@ -814,6 +849,7 @@ export default function LeafletMapClient({
           }}
           maxBounds={restrictToThailand ? SAFE_TH_BOUNDS : undefined}
           maxBoundsViscosity={restrictToThailand ? 1.0 : undefined}
+          attributionControl={hideAttribution ? false : true}
           popupOptions={{
             autoPanPaddingTopLeft: [16, 120],
             autoPanPaddingBottomRight: [16, 16],
@@ -833,12 +869,19 @@ export default function LeafletMapClient({
             hintText={wheelHintText}
           />
 
-          <ClickToMove enabled={_clickToMove && _draggable} onPick={commit} />
+          <ClickToMove
+            enabled={_clickToMove && _draggable && !displayOnly}
+            onPick={commit}
+          />
 
           <BottomRightZoomControl />
 
           {enableFullscreen && (
-            <BottomRightFullscreenControl enabled={true} isOn={isFullscreen} onToggle={toggleFullscreen} />
+            <BottomRightFullscreenControl
+              enabled={true}
+              isOn={isFullscreen}
+              onToggle={toggleFullscreen}
+            />
           )}
 
           {enableNearMe && (
@@ -864,16 +907,30 @@ export default function LeafletMapClient({
           {_showPickerMarker && (
             <Marker
               position={[pos.lat, pos.lng]}
-              draggable={_draggable}
+              draggable={_draggable && !displayOnly}
               icon={markerIcon}
               eventHandlers={{
                 dragend: (e) => {
-                  if (!_draggable) return;
+                  if (!_draggable || displayOnly) return;
                   const latlng = e.target.getLatLng();
                   commit({ lat: latlng.lat, lng: latlng.lng });
                 },
               }}
-            />
+            >
+              {/* ✅ popup (แสดงเฉพาะเมื่อส่ง markerPopupData มา) */}
+              {markerPopupData && (
+                <Popup>
+                  <MarkerPopupCard
+                    title={popupTitle}
+                    subtitle={popupSubtitle}
+                    extraLines={extraLines}
+                    lat={pos.lat}
+                    lng={pos.lng}
+                    buttonText="เปิดใน Google Maps"
+                  />
+                </Popup>
+              )}
+            </Marker>
           )}
         </MapContainer>
 

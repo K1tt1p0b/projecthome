@@ -62,7 +62,7 @@ const ConstructionRequest = ({ initialCategory }) => {
 
             {/* --- ส่วนที่ 2: แสดงรายชื่อช่าง --- */}
             {selectedService ? (
-                <div className="fade-in-animation" style={{ marginTop: "-230px" }}>
+                <div className="fade-in-animation" style={{ marginTop: !initialCategory ? "-230px" : 0 }}>
                     
                     {/* ✅✅✅ เพิ่มส่วน Header หัวข้อตรงนี้ครับ ✅✅✅ */}
                     <div className="row align-items-end mb-5 mt-4">
@@ -76,13 +76,6 @@ const ConstructionRequest = ({ initialCategory }) => {
                                 
                                 <div>
                                     {/* Breadcrumb (เส้นทาง) */}
-                                    <p className="text-muted fz14 mb-1">
-                                        <Link href="/" className="text-decoration-none text-muted">หน้าแรก</Link> 
-                                        <span className="mx-2">/</span>
-                                        <Link href="/services" className="text-decoration-none text-muted">บริการ</Link> 
-                                        <span className="mx-2">/</span>
-                                        <span className="text-thm">{services.find(s => s.id === selectedService)?.title}</span>
-                                    </p>
                                     
                                     {/* ชื่อหัวข้อหลัก */}
                                     <h2 className="fw700 mb-1">

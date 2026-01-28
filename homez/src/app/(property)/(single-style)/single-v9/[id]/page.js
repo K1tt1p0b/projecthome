@@ -1,5 +1,5 @@
 // "use client";
-import DefaultHeader from "@/components/common/DefaultHeader";
+import Header from "@/components/home/home-v10/Header";
 import Footer from "@/components/common/default-footer";
 import MobileMenu from "@/components/common/mobile-menu";
 import EnergyClass from "@/components/property/property-single-style/common/EnergyClass";
@@ -35,7 +35,7 @@ const SingleV9 = async props => {
   return (
     <>
       {/* Main Header Nav */}
-      <DefaultHeader />
+      <Header />
       {/* End Main Header Nav */}
 
       {/* Mobile Nav  */}

@@ -1,4 +1,3 @@
-// PropertyDataTable.js
 "use client";
 
 import Image from "next/image";
@@ -15,14 +14,8 @@ import {
   LS_MANUAL,
   AUTO_FALLBACK,
 } from "../dashboard-boost-property/boost/config/boostStorage";
-import {
-  PACKAGES,
-  getPackage,
-} from "../dashboard-boost-property/boost/config/boostPackages";
-import {
-  readLS,
-  writeLS,
-} from "../dashboard-boost-property/boost/utils/boostUtils";
+import { PACKAGES, getPackage } from "../dashboard-boost-property/boost/config/boostPackages";
+import { readLS, writeLS } from "../dashboard-boost-property/boost/utils/boostUtils";
 
 // =====================
 // ✅ จุดกลางแพ็กเกจผู้ใช้ (mock)
@@ -32,11 +25,20 @@ const DEFAULT_PACKAGE_KEY = "pro";
 
 // ✅ ไปหน้า boost confirm
 const BOOST_URL = (id, mode) =>
-  `/dashboard-boost-property?propertyId=${id}&step=2${
-    mode ? `&mode=${mode}` : ""
-  }`;
+  `/dashboard-boost-property?propertyId=${id}&step=2${mode ? `&mode=${mode}` : ""}`;
 
 const VIDEO_URL = (id) => `/dashboard-video-gallery?propertyId=${id}`;
+
+// =====================
+// ✅ Labels (UI)
+// =====================
+const UI_LABELS = {
+  manualTitle: "ดันทันที",
+  continuousTitle: "ดันทันทีต่อเนื่อง", // ✅ ใช้ใน modal/ปุ่มเลือก
+  continuousShort: "ดันต่อเนื่อง", // ✅ ใช้ใน pill/สถานะสั้น ๆ
+  queue: "เข้าคิว",
+  running: "กำลังทำงาน",
+};
 
 // =====================
 // LocalStorage: Video
@@ -83,9 +85,7 @@ function isValidVideoUrl(url) {
   if (!u) return true;
 
   const isYoutube =
-    u.includes("youtube.com/watch") ||
-    u.includes("youtu.be/") ||
-    u.includes("youtube.com/shorts/");
+    u.includes("youtube.com/watch") || u.includes("youtu.be/") || u.includes("youtube.com/shorts/");
   const isTiktok = u.includes("tiktok.com/");
   return isYoutube || isTiktok;
 }
@@ -96,9 +96,7 @@ function normalizeStoreValueToUrls(v) {
   if (!v) return [];
   if (Array.isArray(v)) {
     if (v.length && typeof v[0] === "object") {
-      return v
-        .map((x) => toTrimmedUrl(x?.url || x?.src || x?.link))
-        .filter(Boolean);
+      return v.map((x) => toTrimmedUrl(x?.url || x?.src || x?.link)).filter(Boolean);
     }
     return v.map((x) => toTrimmedUrl(x)).filter(Boolean);
   }
@@ -149,30 +147,20 @@ function normalizeAutoStore(raw, fallbackPkgKey) {
   const s = raw && typeof raw === "object" ? raw : {};
 
   const pkgKey =
-    typeof s.packageKey === "string" && s.packageKey
-      ? s.packageKey
-      : fallbackPkgKey;
+    typeof s.packageKey === "string" && s.packageKey ? s.packageKey : fallbackPkgKey;
 
   // ---- legacy (เก่า) ----
   const oldItems = s.items && typeof s.items === "object" ? s.items : {};
-  const oldOrder = Array.isArray(s.order)
-    ? s.order.map(String).filter(Boolean)
-    : [];
-  const oldQueue = Array.isArray(s.queue)
-    ? s.queue.map(String).filter(Boolean)
-    : [];
+  const oldOrder = Array.isArray(s.order) ? s.order.map(String).filter(Boolean) : [];
+  const oldQueue = Array.isArray(s.queue) ? s.queue.map(String).filter(Boolean) : [];
 
   const legacyActiveId =
     typeof s.activePropertyId === "string" && s.activePropertyId
       ? s.activePropertyId
-      : oldOrder.find((id) => !!oldItems?.[id]) ||
-        Object.keys(oldItems)[0] ||
-        "";
+      : oldOrder.find((id) => !!oldItems?.[id]) || Object.keys(oldItems)[0] || "";
 
   const legacyQueuedId =
-    typeof s.queuedPropertyId === "string" && s.queuedPropertyId
-      ? s.queuedPropertyId
-      : oldQueue[0] || "";
+    typeof s.queuedPropertyId === "string" && s.queuedPropertyId ? s.queuedPropertyId : oldQueue[0] || "";
 
   const legacyActiveItem = legacyActiveId ? oldItems?.[legacyActiveId] : null;
 
@@ -253,16 +241,11 @@ function getAutoBlockInfo(userPkgKey) {
   const blockedNeedCancelActive = !!activeId && !s.cancelAfterCooldown;
   const blockedNeedCancelQueue = !!queuedId;
 
-  return {
-    activeId,
-    queuedId,
-    blockedNeedCancelActive,
-    blockedNeedCancelQueue,
-  };
+  return { activeId, queuedId, blockedNeedCancelActive, blockedNeedCancelQueue };
 }
 
 // =====================
-// ✅ Status badge (ของคุณ) แต่ใช้ร่วมกับโค้ดใหม่
+// ✅ Status badge
 // =====================
 const baseStatusStyle = {
   display: "inline-flex",
@@ -314,23 +297,8 @@ const SkeletonRow = () => (
           }}
         />
         <div className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4 w-100">
-          <div
-            style={{
-              width: "60%",
-              height: 14,
-              background: "#eee",
-              borderRadius: 6,
-            }}
-          />
-          <div
-            style={{
-              width: "30%",
-              height: 12,
-              background: "#eee",
-              borderRadius: 6,
-              marginTop: 10,
-            }}
-          />
+          <div style={{ width: "60%", height: 14, background: "#eee", borderRadius: 6 }} />
+          <div style={{ width: "30%", height: 12, background: "#eee", borderRadius: 6, marginTop: 10 }} />
         </div>
       </div>
     </th>
@@ -386,14 +354,8 @@ const PropertyDataTable = () => {
   const pkg = useMemo(() => getPackage(userPkgKey), [userPkgKey]);
 
   // ✅ interval ของแพ็ก (ใช้ทั้ง manual/auto ใน mock นี้)
-  const MANUAL_COOLDOWN_MS = useMemo(
-    () => Number(pkg.intervalMs || 0) || 0,
-    [pkg]
-  );
-  const AUTO_INTERVAL_MS = useMemo(
-    () => Number(pkg.intervalMs || 0) || 0,
-    [pkg]
-  );
+  const MANUAL_COOLDOWN_MS = useMemo(() => Number(pkg.intervalMs || 0) || 0, [pkg]);
+  const AUTO_INTERVAL_MS = useMemo(() => Number(pkg.intervalMs || 0) || 0, [pkg]);
 
   const refreshVideoSummaryFromLocal = (propertyIds) => {
     const store = readVideoStore();
@@ -436,8 +398,7 @@ const PropertyDataTable = () => {
 
   useEffect(() => {
     const onStorage = (e) => {
-      if (e.key === VIDEO_STORE_KEY)
-        refreshVideoSummaryFromLocal(properties.map((p) => p.id));
+      if (e.key === VIDEO_STORE_KEY) refreshVideoSummaryFromLocal(properties.map((p) => p.id));
       if (e.key === LS_AUTO || e.key === USER_PACKAGE_LS_KEY) {
         const k = readUserPackageKey();
         setUserPkgKey(k);
@@ -458,9 +419,7 @@ const PropertyDataTable = () => {
   const handleUpdateStatus = (id, newStatus) => {
     const confirm = window.confirm(`ยืนยันการเปลี่ยนสถานะเป็น '${newStatus}'?`);
     if (confirm) {
-      setProperties((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, status: newStatus } : p))
-      );
+      setProperties((prev) => prev.map((p) => (p.id === id ? { ...p, status: newStatus } : p)));
       toast.success("อัปเดตสถานะเรียบร้อย!");
     }
   };
@@ -545,10 +504,7 @@ const PropertyDataTable = () => {
       }
     }
 
-    const cleaned = videoInputs
-      .map((u) => toTrimmedUrl(u))
-      .filter(Boolean)
-      .slice(0, MAX_SLOTS);
+    const cleaned = videoInputs.map((u) => toTrimmedUrl(u)).filter(Boolean).slice(0, MAX_SLOTS);
 
     try {
       setVideoSaving(true);
@@ -653,36 +609,36 @@ const PropertyDataTable = () => {
     const manualLast = Number(manualStore?.[sid]?.lastBoostAt || 0);
 
     const manualNextAt = manualLast ? manualLast + MANUAL_COOLDOWN_MS : 0;
-    const manualRemainSec = manualNextAt
-      ? Math.max(0, Math.floor((manualNextAt - Date.now()) / 1000))
-      : 0;
+    const manualRemainSec = manualNextAt ? Math.max(0, Math.floor((manualNextAt - Date.now()) / 1000)) : 0;
     const manualCooling = manualNextAt ? Date.now() < manualNextAt : false;
 
     // ---- auto status ----
     const autoRaw = readLS(LS_AUTO, AUTO_FALLBACK);
-    const autoStore = normalizeAutoStore(
-      { ...AUTO_FALLBACK, ...autoRaw },
-      userPkgKey
-    );
+    const autoStore = normalizeAutoStore({ ...AUTO_FALLBACK, ...autoRaw }, userPkgKey);
 
-    const isAutoActive =
-      !!autoStore.activePropertyId && String(autoStore.activePropertyId) === sid;
-    const isAutoQueued =
-      !!autoStore.queuedPropertyId && String(autoStore.queuedPropertyId) === sid;
+    const activeId = String(autoStore.activePropertyId || "");
+    const queuedId = String(autoStore.queuedPropertyId || "");
+
+    const isAutoActive = !!activeId && activeId === sid;
+    const isAutoQueued = !!queuedId && queuedId === sid;
 
     if (isAutoActive || isAutoQueued) {
-      const nextAt = Number(autoStore.cooldownEndAt || 0);
-      const nextTimeText = nextAt ? formatThaiTimeOnly(nextAt) : "-";
+      const endAt = Number(autoStore.cooldownEndAt || 0);
+      const remainSec = endAt ? Math.max(0, Math.floor((endAt - Date.now()) / 1000)) : 0;
 
       return {
         has: true,
         mode: "auto",
         isAutoActive,
         isAutoQueued,
-        queuePos: isAutoQueued ? 1 : 0,
 
-        nextAt,
-        nextTimeText,
+        activeId,
+        queuedId,
+        willStartAfterId: isAutoQueued ? activeId : "",
+
+        cooldownEndAt: endAt,
+        remainSec,
+        nextTimeText: endAt ? formatThaiTimeOnly(endAt) : "-",
 
         cancelAfterCooldown: !!autoStore.cancelAfterCooldown,
         lastAt: Number(autoStore.activeStartedAt || 0),
@@ -712,7 +668,7 @@ const PropertyDataTable = () => {
 
     const ui = getBoostUi(property.id);
 
-    // ถ้าอยู่ auto อยู่แล้ว ไม่ต้องเปิด (ให้จัดการจากปุ่มยกเลิก/ยกเลิกคิว)
+    // ถ้าอยู่ auto อยู่แล้ว ไม่ต้องเปิด
     if (ui?.has && ui?.mode === "auto") return;
 
     // ถ้า manual ยังติด cooldown ก็ไม่ให้เปิด
@@ -739,7 +695,7 @@ const PropertyDataTable = () => {
       router.push(BOOST_URL(id, "manual"));
     } catch (e) {
       console.error(e);
-      toast.error("ไปหน้ายืนยันแมนนวลไม่สำเร็จ");
+      toast.error("ไปหน้ายืนยันดันทันทีไม่สำเร็จ");
     } finally {
       setBoostingId(null);
     }
@@ -753,15 +709,13 @@ const PropertyDataTable = () => {
 
     // ✅ 1) ยังไม่กดยกเลิก Active -> ห้ามเลือกโพสอื่น
     if (info.blockedNeedCancelActive && String(info.activeId) !== String(id)) {
-      toast.warn(`ต้องยกเลิกออโต้ของโพส #${info.activeId} ก่อน ถึงจะเลือกโพสอื่นได้`);
+      toast.warn(`ต้องยกเลิก${UI_LABELS.continuousShort}ของโพส #${info.activeId} ก่อน ถึงจะเลือกโพสอื่นได้`);
       return;
     }
 
     // ✅ 2) มีคิวอยู่แล้ว -> ห้าม replace ต้องไปยกเลิกคิวก่อน
     if (info.blockedNeedCancelQueue && String(info.queuedId) !== String(id)) {
-      toast.warn(
-        `ตอนนี้มีโพส #${info.queuedId} อยู่ในคิวแล้ว — ต้องยกเลิกคิวก่อน ถึงจะเลือกโพสอื่นได้`
-      );
+      toast.warn(`ตอนนี้มีโพส #${info.queuedId} อยู่ในคิวแล้ว — ต้องยกเลิกคิวก่อน ถึงจะเลือกโพสอื่นได้`);
       return;
     }
 
@@ -772,7 +726,7 @@ const PropertyDataTable = () => {
       router.push(BOOST_URL(id, "auto"));
     } catch (e) {
       console.error(e);
-      toast.error("ไปหน้ายืนยันออโต้ไม่สำเร็จ");
+      toast.error(`ไปหน้ายืนยัน${UI_LABELS.continuousTitle}ไม่สำเร็จ`);
     } finally {
       setBoostingId(null);
     }
@@ -781,7 +735,7 @@ const PropertyDataTable = () => {
   // ✅ ยกเลิกคิว (queuedPropertyId ตัวเดียว)
   const cancelAutoQueue = async (propertyId) => {
     if (!propertyId) return;
-    const ok = window.confirm("ยืนยันยกเลิกคิวออโต้ของประกาศนี้?");
+    const ok = window.confirm(`ยืนยันยกเลิกคิว${UI_LABELS.continuousShort}ของประกาศนี้?`);
     if (!ok) return;
 
     try {
@@ -807,11 +761,11 @@ const PropertyDataTable = () => {
     }
   };
 
-  // ✅ ยกเลิกออโต้ (ยกเลิกแล้ว “ยังรอให้ cooldown หมด”)
+  // ✅ ยกเลิกดันต่อเนื่อง (ยกเลิกแล้ว “ยังรอให้ cooldown หมด”)
   const cancelAutoActive = async (propertyId) => {
     if (!propertyId) return;
 
-    const ok = window.confirm("ยืนยันยกเลิกออโต้? (จะหยุดหลังครบเวลา)");
+    const ok = window.confirm(`ยืนยันยกเลิก${UI_LABELS.continuousShort}?`);
     if (!ok) return;
 
     try {
@@ -828,10 +782,10 @@ const PropertyDataTable = () => {
 
       const next = { ...store, cancelAfterCooldown: true };
       writeLS(LS_AUTO, next);
-      toast.success("ยกเลิกแล้ว (จะหยุดหลังครบเวลา)");
+      toast.success(`ยกเลิก${UI_LABELS.continuousShort}แล้ว`);
     } catch (e) {
       console.error(e);
-      toast.error("ยกเลิกออโต้ไม่สำเร็จ");
+      toast.error(`ยกเลิก${UI_LABELS.continuousShort}ไม่สำเร็จ`);
     } finally {
       setBoostingId(null);
     }
@@ -1148,12 +1102,12 @@ const PropertyDataTable = () => {
                   <div className="d-flex align-items-center justify-content-between">
                     <div style={{ fontWeight: 900 }}>
                       <span className="fas fa-bolt me-2" />
-                      Manual (ดันทันที)
+                      {UI_LABELS.manualTitle}
                     </div>
                     <div style={{ fontSize: 12, opacity: 0.8 }}>{pkg.manualFreeText}</div>
                   </div>
                   <div style={{ fontSize: 13, opacity: 0.85, marginTop: 6 }}>
-                    ไปหน้ายืนยันแมนนวล แล้วกด “ยืนยันดัน”
+                    ไปหน้ายืนยัน แล้วกด “ยืนยันดัน”
                   </div>
                 </button>
 
@@ -1174,30 +1128,30 @@ const PropertyDataTable = () => {
                   <div className="d-flex align-items-center justify-content-between">
                     <div style={{ fontWeight: 900 }}>
                       <span className="fas fa-robot me-2" />
-                      Auto (ตั้งอัตโนมัติ)
+                      {UI_LABELS.continuousTitle}
                     </div>
 
                     <div style={{ fontSize: 12, opacity: 0.7 }}>
                       {autoBlockInfo.blockedNeedCancelActive &&
                       String(autoBlockInfo.activeId) !== String(boostModalProperty?.id || "")
-                        ? `ต้องยกเลิกออโต้โพส #${autoBlockInfo.activeId} ก่อน`
+                        ? `ต้องยกเลิก${UI_LABELS.continuousShort}โพส #${autoBlockInfo.activeId} ก่อน`
                         : autoBlockInfo.blockedNeedCancelQueue &&
                           String(autoBlockInfo.queuedId) !== String(boostModalProperty?.id || "")
                         ? `ต้องยกเลิกคิวโพส #${autoBlockInfo.queuedId} ก่อน`
                         : autoSlotInfo.isFull
-                        ? `Auto ทำงานอยู่ · ${pkg.intervalLabel}`
-                        : `Auto ได้ 1 โพส · ${pkg.intervalLabel}`}
+                        ? `${UI_LABELS.continuousShort}ทำงานอยู่ · ${pkg.intervalLabel}`
+                        : `${UI_LABELS.continuousShort}ได้ 1 โพส · ${pkg.intervalLabel}`}
                     </div>
                   </div>
 
                   <div style={{ fontSize: 13, opacity: 0.85, marginTop: 6 }}>
                     {autoBlockInfo.blockedNeedCancelActive &&
                     String(autoBlockInfo.activeId) !== String(boostModalProperty?.id || "")
-                      ? `ตอนนี้กำลังดันโพส #${autoBlockInfo.activeId} อยู่ — กรุณายกเลิกก่อน`
+                      ? `ตอนนี้กำลัง${UI_LABELS.continuousShort}โพส #${autoBlockInfo.activeId} อยู่ — กรุณายกเลิกก่อน`
                       : autoBlockInfo.blockedNeedCancelQueue &&
                         String(autoBlockInfo.queuedId) !== String(boostModalProperty?.id || "")
                       ? `ตอนนี้มีโพส #${autoBlockInfo.queuedId} อยู่ในคิว — กรุณายกเลิกคิวก่อน`
-                      : "ไปหน้ายืนยันออโต้ แล้วกด “ยืนยัน”"}
+                      : "ไปหน้ายืนยัน แล้วกด “ยืนยัน”"}
                   </div>
                 </button>
               </div>
@@ -1272,33 +1226,23 @@ const PropertyDataTable = () => {
               const isActive = !!boostUi?.isAutoActive;
 
               const canPressBoost =
-                isPublished &&
-                (!boostUi?.has || (boostUi?.mode === "manual" && !boostUi?.manualCooling));
+                isPublished && (!boostUi?.has || (boostUi?.mode === "manual" && !boostUi?.manualCooling));
 
               const statusMeta = getStatusMeta(property.status);
+
+              // ✅ หลัง “กดยกเลิกดันต่อเนื่อง” -> เอาสถานะออก เหลือแค่ รอบล่าสุด + countdown
+              const hideAutoStatusPill = boostUi?.mode === "auto" && isActive && !!boostUi?.cancelAfterCooldown;
 
               return (
                 <tr key={property.id}>
                   <th scope="row">
                     <div className="listing-style1 dashboard-style d-xxl-flex align-items-center mb-0">
                       <div className="list-thumb">
-                        <Image
-                          width={110}
-                          height={94}
-                          className="w-100"
-                          src={property.imageSrc}
-                          alt="property"
-                        />
+                        <Image width={110} height={94} className="w-100" src={property.imageSrc} alt="property" />
                       </div>
 
-                      <div
-                        className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4"
-                        style={{ minWidth: 0 }}
-                      >
-                        <div
-                          className="h6 list-title d-flex align-items-center gap-2"
-                          style={{ marginBottom: 6 }}
-                        >
+                      <div className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4" style={{ minWidth: 0 }}>
+                        <div className="h6 list-title d-flex align-items-center gap-2" style={{ marginBottom: 6 }}>
                           <Link href={`/single-v1/${property.id}`}>{property.title}</Link>
 
                           {hasVideo && (
@@ -1360,60 +1304,52 @@ const PropertyDataTable = () => {
                             : property.location || "-"}
                         </p>
 
-                        {boostUi?.has && (
-                          <div style={modePillStyle(boostUi.mode)} data-tooltip-id={`boost-mode-${property.id}`}>
-                            {boostUi.mode === "auto" ? (
+                        {/* ✅ ไม่โชว์ pill ของ manual */}
+                        {/* ✅ pill โชว์เฉพาะดันต่อเนื่อง + ไม่ใช่สถานะหลังยกเลิก */}
+                        {boostUi?.has && boostUi.mode === "auto" && !hideAutoStatusPill && (
+                          <div style={modePillStyle("auto")} data-tooltip-id={`boost-mode-${property.id}`}>
+                            <span className="fas fa-robot" />
+
+                            {isQueued ? (
                               <>
-                                <span className="fas fa-robot" />
-                                {isQueued ? (
-                                  <>
-                                    <span>{`ดันออโต้ (เข้าคิว)`}</span>
-                                    <span
-                                      style={{
-                                        marginLeft: 8,
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: 6,
-                                        padding: "0 8px",
-                                        height: 18,
-                                        borderRadius: 999,
-                                        border: "1px solid rgba(29,78,216,0.20)",
-                                        background: "rgba(29,78,216,0.06)",
-                                        fontWeight: 900,
-                                      }}
-                                    >
-                                      {`จะเริ่มเวลา ~ ${boostUi.nextTimeText || "-"}`}
-                                    </span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <span>ดันออโต้ (กำลังทำงาน)</span>
-                                  </>
-                                )}
+                                <span>{`${UI_LABELS.continuousShort} (${UI_LABELS.queue})`}</span>
+                                <span
+                                  style={{
+                                    marginLeft: 8,
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                    padding: "0 8px",
+                                    height: 18,
+                                    borderRadius: 999,
+                                    border: "1px solid rgba(29,78,216,0.20)",
+                                    background: "rgba(29,78,216,0.06)",
+                                    fontWeight: 900,
+                                  }}
+                                >
+                                  {`จะเริ่มดันต่อจากโพส #${boostUi.willStartAfterId || "-"}`}
+                                </span>
                               </>
                             ) : (
-                              <>
-                                <span className="fas fa-bolt" />
-                                ดันแบบแมนนวล
-                              </>
+                              <span>{`${UI_LABELS.continuousShort} (${UI_LABELS.running})`}</span>
                             )}
 
                             <ReactTooltip
                               id={`boost-mode-${property.id}`}
                               place="top"
                               content={
-                                boostUi.mode === "auto"
-                                  ? isQueued
-                                    ? `โพสต์นี้อยู่ในคิว · จะเริ่มหลังเวลา ${boostUi.nextTimeText || "-"}`
-                                    : boostUi.cancelAfterCooldown
-                                    ? `โพสต์นี้เป็น Active · ถูกยกเลิกแล้ว (จะหยุดหลังเวลา ${boostUi.nextTimeText || "-"})`
-                                    : `โพสต์นี้เป็น Active · ดันได้อีกครั้งเวลา ${boostUi.nextTimeText || "-"}`
-                                  : "โพสต์นี้ดันด้วยแมนนวล"
+                                isQueued
+                                  ? `โพสต์นี้เข้าคิว · จะเริ่มดันต่อจากโพส #${boostUi.willStartAfterId || "-"}`
+                                  : `โพสต์นี้กำลัง${UI_LABELS.continuousShort}`
                               }
                             />
                           </div>
                         )}
 
+                        {/* ✅ time line:
+                           - manual: โชว์ “ดันล่าสุด” อย่างเดียว
+                           - auto: โชว์ “รอบล่าสุด”
+                        */}
                         {boostUi?.has && (
                           <div style={timeLineStyle}>
                             <span className="far fa-clock" />
@@ -1450,10 +1386,10 @@ const PropertyDataTable = () => {
                     </div>
                   </th>
 
-                  {/* ราคา (ไม่ซ้ำ) */}
+                  {/* ราคา */}
                   <td className="vam">{property.priceText || property.price?.toLocaleString?.() || "-"}</td>
 
-                  {/* สถานะแบบ badge (ของคุณ) */}
+                  {/* สถานะ */}
                   <td className="vam" style={{ textAlign: "center" }}>
                     <span style={{ ...baseStatusStyle, backgroundColor: statusMeta.bg, color: statusMeta.color }}>
                       {statusMeta.label}
@@ -1560,7 +1496,7 @@ const PropertyDataTable = () => {
                         </button>
                       </div>
                     ) : boostUi?.has && boostUi.mode === "auto" && isActive ? (
-                      /* active -> มีปุ่มยกเลิก */
+                      /* active -> countdown + ปุ่มยกเลิก (ถ้ากดยกเลิกแล้ว ซ่อนปุ่ม/ซ่อนสถานะ) */
                       <div style={manageStackRightStyle}>
                         <div className="dropdown">
                           <button
@@ -1645,29 +1581,28 @@ const PropertyDataTable = () => {
 
                         <div style={boostCountdownStyle()} data-tooltip-id={`boost-next-${property.id}`}>
                           <span className="far fa-clock" />
-                          ดันได้อีกครั้งเวลา {boostUi.nextTimeText || "-"}
-                          <ReactTooltip
-                            id={`boost-next-${property.id}`}
-                            place="top"
-                            content={boostUi.cancelAfterCooldown ? "ถูกยกเลิกแล้ว (จะหยุดหลังครบเวลา)" : "รอบถัดไปของออโต้"}
-                          />
+                          เหลืออีก {formatHMS(boostUi.remainSec || 0)}
+                          <ReactTooltip id={`boost-next-${property.id}`} place="top" content="นับถอยหลังรอบถัดไป" />
                         </div>
 
-                        <button
-                          type="button"
-                          style={cancelActiveBtnStyle(busy || boostingId === property.id || boostUi.cancelAfterCooldown)}
-                          disabled={busy || boostingId === property.id || boostUi.cancelAfterCooldown}
-                          onClick={() => cancelAutoActive(property.id)}
-                          data-tooltip-id={`cancel-active-${property.id}`}
-                        >
-                          <span className="fas fa-ban" />
-                          {boostUi.cancelAfterCooldown ? "ยกเลิกแล้วจะหยุดดันหลังครบเวลา" : "ยกเลิกออโต้"}
-                          <ReactTooltip
-                            id={`cancel-active-${property.id}`}
-                            place="top"
-                            content="ยกเลิกแล้วจะหยุดหลังครบเวลา (ยังต้องรอ cooldown)"
-                          />
-                        </button>
+                        {/* ✅ หลังยกเลิก: ซ่อนปุ่ม/ตัดคำอธิบายทั้งหมดตามที่ขอ */}
+                        {!boostUi.cancelAfterCooldown && (
+                          <button
+                            type="button"
+                            style={cancelActiveBtnStyle(busy || boostingId === property.id)}
+                            disabled={busy || boostingId === property.id}
+                            onClick={() => cancelAutoActive(property.id)}
+                            data-tooltip-id={`cancel-active-${property.id}`}
+                          >
+                            <span className="fas fa-ban" />
+                            ยกเลิก{UI_LABELS.continuousShort}
+                            <ReactTooltip
+                              id={`cancel-active-${property.id}`}
+                              place="top"
+                              content={`ยกเลิก${UI_LABELS.continuousShort}`}
+                            />
+                          </button>
+                        )}
                       </div>
                     ) : boostUi?.has && boostUi.mode === "manual" && boostUi.manualCooling ? (
                       /* manual cooldown */
@@ -1756,7 +1691,7 @@ const PropertyDataTable = () => {
                         <div style={boostCountdownStyle()} data-tooltip-id={`boost-cd-${property.id}`}>
                           <span className="far fa-clock" />
                           เหลืออีก {formatHMS(boostUi.manualRemainSec)}
-                          <ReactTooltip id={`boost-cd-${property.id}`} place="top" content="รอคูลดาวน์แมนนวล" />
+                          <ReactTooltip id={`boost-cd-${property.id}`} place="top" content="รอคูลดาวน์" />
                         </div>
                       </div>
                     ) : (
@@ -1774,7 +1709,7 @@ const PropertyDataTable = () => {
                           <ReactTooltip
                             id={`boost-btn-${property.id}`}
                             place="top"
-                            content={!isPublished ? "ดันไม่ได้ (ต้องเป็นสถานะเผยแพร่แล้ว)" : "ดันโพสต์ (เลือก Manual / Auto)"}
+                            content={!isPublished ? "ดันไม่ได้ (ต้องเป็นสถานะเผยแพร่แล้ว)" : "ดันโพสต์ (เลือก ดันทันที / ดันทันทีต่อเนื่อง)"}
                           />
                         </button>
 

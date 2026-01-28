@@ -1,4 +1,3 @@
-// boot-auto.js
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -6,7 +5,18 @@ import { toast } from "react-toastify";
 
 import { PACKAGES, getPackage } from "./boost/config/boostPackages";
 import { LS_AUTO, AUTO_FALLBACK } from "./boost/config/boostStorage";
-import { readLS, writeLS, formatCountdown } from "./boost/utils/boostUtils";
+import { readLS, writeLS } from "./boost/utils/boostUtils";
+
+// =====================
+// ✅ Labels (UI)
+// =====================
+const UI_LABELS = {
+  modeTitle: "ดันทันทีต่อเนื่อง",
+  modeShort: "ดันต่อเนื่อง",
+  confirmBtn: "ยืนยันดันต่อเนื่อง",
+  queue: "เข้าคิว",
+  running: "กำลังทำงาน",
+};
 
 // ===== Utils =====
 const canBoost = (p) => String(p?.status || "") === "เผยแพร่แล้ว";
@@ -222,13 +232,18 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
     [effectivePkgKey]
   );
 
-  const intervalMs = Number(pkg.intervalMs || 0) || 0;
-
   const cooldownEndAt = Number(autoStore?.cooldownEndAt || 0);
   const remainMs = cooldownEndAt ? Math.max(0, cooldownEndAt - now) : 0;
 
-  // TODO: countdown (future use)
-  // const countdownText = formatCountdown(remainMs);
+  const formatHMS = (ms) => {
+    const s = Math.max(0, Math.floor((ms || 0) / 1000));
+    const hh = String(Math.floor(s / 3600)).padStart(2, "0");
+    const mm = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+    const ss = String(s % 60).padStart(2, "0");
+    return `${hh}:${mm}:${ss}`;
+  };
+
+  const countdownText = useMemo(() => formatHMS(remainMs), [remainMs]);
 
   const nextTimeText = useMemo(() => {
     if (!cooldownEndAt) return "-";
@@ -240,18 +255,18 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
     if (!pId) return { type: "none", label: "ไม่พบโพส" };
     if (!boostable) return { type: "blocked", label: "ดันไม่ได้ (ต้องเผยแพร่แล้ว)" };
 
-    if (!hasAct) return { type: "start", label: "จะเริ่มดันออโต้ด้วยโพสนี้" };
-    if (pId === curActiveId) return { type: "same", label: "โพสนี้กำลังดันอยู่แล้ว" };
+    if (!hasAct) return { type: "start", label: `จะเริ่ม${UI_LABELS.modeShort}ด้วยโพสนี้` };
+    if (pId === curActiveId) return { type: "same", label: "โพสนี้กำลังทำงานอยู่แล้ว" };
 
     // ✅ ต้องยกเลิก Active ก่อนถึงจะเลือกโพสอื่นได้
     if (hasAct && !autoStore?.cancelAfterCooldown) {
       return {
         type: "blocked_need_cancel",
-        label: `ต้องยกเลิกออโต้ของโพส #${curActiveId || "-"} ก่อน ถึงจะเลือกโพสอื่นได้`,
+        label: `ต้องยกเลิก${UI_LABELS.modeShort}ของโพส #${curActiveId || "-"} ก่อน ถึงจะเลือกโพสอื่นได้`,
       };
     }
 
-    // ✅ NEW: ถ้ามีคิวอยู่แล้ว ห้ามทับ ต้องยกเลิกคิวก่อน
+    // ✅ ถ้ามีคิวอยู่แล้ว ห้ามทับ ต้องยกเลิกคิวก่อน
     if (queuedId && queuedId !== pId) {
       return {
         type: "blocked_need_cancel_queue",
@@ -271,14 +286,14 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
     if (isBusy) return;
     if (!pId || !p) return toast.warn("ไม่พบทรัพย์ที่จะดัน");
     if (!boostable) return toast.warn("ดันไม่ได้ (ต้องเป็นสถานะเผยแพร่แล้ว)");
-    if (intent.type === "same") return toast.info("โพสนี้กำลังดันอยู่แล้ว");
+    if (intent.type === "same") return toast.info("โพสนี้กำลังทำงานอยู่แล้ว");
 
     if (intent.type === "blocked_need_cancel") return toast.warn(intent.label);
     if (intent.type === "blocked_need_cancel_queue") return toast.warn(intent.label);
     if (intent.type === "queued_same") return toast.info("โพสนี้อยู่ในคิวแล้ว");
 
     setIsBusy(true);
-    const tid = tLoading("กำลังตั้งค่าออโต้...");
+    const tid = tLoading(`กำลังตั้งค่า${UI_LABELS.modeShort}...`);
 
     try {
       await new Promise((r) => setTimeout(r, 180));
@@ -309,14 +324,14 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
         writeLS(LS_AUTO, next);
         setAutoStore(next);
 
-        tUpdate(tid, "success", `เปิดออโต้แล้ว: ${p.title || `#${pId}`}`);
+        tUpdate(tid, "success", `เปิด${UI_LABELS.modeShort}แล้ว: ${p.title || `#${pId}`}`);
         if (typeof onDone === "function") onDone();
         return;
       }
 
       // 2) already active
       if (pId === store.activePropertyId) {
-        tUpdate(tid, "info", "โพสนี้กำลังดันอยู่แล้ว");
+        tUpdate(tid, "info", "โพสนี้กำลังทำงานอยู่แล้ว");
         return;
       }
 
@@ -325,12 +340,12 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
         tUpdate(
           tid,
           "warning",
-          `ต้องยกเลิกออโต้ของโพส #${store.activePropertyId} ก่อน ถึงจะเลือกโพสอื่นได้`
+          `ต้องยกเลิก${UI_LABELS.modeShort}ของโพส #${store.activePropertyId} ก่อน ถึงจะเลือกโพสอื่นได้`
         );
         return;
       }
 
-      // ✅ NEW: ถ้ามีคิวอยู่แล้ว ห้ามทับ
+      // ✅ ถ้ามีคิวอยู่แล้ว ห้ามทับ
       if (store.queuedPropertyId && String(store.queuedPropertyId) !== String(pId)) {
         tUpdate(
           tid,
@@ -354,7 +369,7 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
       tUpdate(tid, "success", "เพิ่มเข้าคิวแล้ว");
       if (typeof onDone === "function") onDone();
     } catch (e) {
-      tUpdate(tid, "error", "ตั้งค่าออโต้ไม่สำเร็จ");
+      tUpdate(tid, "error", `ตั้งค่า${UI_LABELS.modeShort}ไม่สำเร็จ`);
     } finally {
       setIsBusy(false);
     }
@@ -362,25 +377,27 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
 
   const descText =
     `${pkg.label}: ` +
-    `Auto ได้ ${pkg.autoMaxPosts} โพส · ` +
-    `ออโต้ดัน ${pkg.intervalLabel} · ` +
-    `Manual: ${pkg.manualFreeText}`;
+    `${UI_LABELS.modeShort}ได้ ${pkg.autoMaxPosts} โพส · ` +
+    `ดันซ้ำ ${pkg.intervalLabel} · ` +
+    `ดันทันที: ${pkg.manualFreeText}`;
+
+  const titleText = `ยืนยันการดันขึ้นฟีด (${UI_LABELS.modeTitle})`;
 
   return (
     <Card
-      title="ยืนยันการดันขึ้นฟีด (ออโต้)"
+      title={titleText}
       desc={descText}
       right={
         <div className="d-flex gap-2 flex-wrap justify-content-end">
           <ToneBadge tone="purple">{pkg.label}</ToneBadge>
           {intent.type === "start" ? (
-            <ToneBadge tone="green">เริ่มออโต้</ToneBadge>
+            <ToneBadge tone="green">เริ่ม{UI_LABELS.modeShort}</ToneBadge>
           ) : intent.type === "queue" ? (
-            <ToneBadge tone="purple">เข้าคิว</ToneBadge>
+            <ToneBadge tone="purple">{UI_LABELS.queue}</ToneBadge>
           ) : intent.type === "queued_same" ? (
             <ToneBadge tone="gray">อยู่ในคิวแล้ว</ToneBadge>
           ) : intent.type === "same" ? (
-            <ToneBadge tone="gray">กำลังดันอยู่</ToneBadge>
+            <ToneBadge tone="gray">{UI_LABELS.running}</ToneBadge>
           ) : intent.type === "blocked_need_cancel" ? (
             <ToneBadge tone="red">ต้องยกเลิกก่อน</ToneBadge>
           ) : intent.type === "blocked_need_cancel_queue" ? (
@@ -391,43 +408,43 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
         </div>
       }
     >
-      <div style={{ border: "1px solid #eee", borderRadius: 14, padding: 14, background: "#fafafa" }} className="mb20">
+      <div
+        style={{ border: "1px solid #eee", borderRadius: 14, padding: 14, background: "#fafafa" }}
+        className="mb20"
+      >
         <div className="fw700 mb10">สิทธิ์แพ็กเกจของคุณ</div>
         <InfoRow label="แพ็กเกจ" value={safeText(pkg.label)} />
-        <InfoRow label="Auto ได้สูงสุด" value={`${pkg.autoMaxPosts} โพส`} />
-        <InfoRow label="รอบดันออโต้" value={safeText(pkg.intervalLabel)} />
-        <InfoRow label="Manual" value={safeText(pkg.manualFreeText)} />
+        <InfoRow label={`${UI_LABELS.modeShort}ได้สูงสุด`} value={`${pkg.autoMaxPosts} โพส`} />
+        <InfoRow label="รอบดันซ้ำ" value={safeText(pkg.intervalLabel)} />
+        <InfoRow label="ดันทันที" value={safeText(pkg.manualFreeText)} />
 
         {hasAct ? (
           <div className="text-muted mt10" style={{ fontSize: 12, lineHeight: 1.6 }}>
-            * ตอนนี้มีออโต้กำลังทำงานอยู่ <b>1</b> โพส (Active: <b>#{curActiveId || "-"}</b>)
+            * ตอนนี้มี {UI_LABELS.modeShort} กำลังทำงานอยู่ <b>1</b> โพส (Active: <b>#{curActiveId || "-"}</b>)
             {cooldownEndAt ? (
               <>
                 {" "}
-                · ดันได้อีกครั้งเวลา <b>{nextTimeText}</b>
-                {/* TODO: countdown (future use)
-                    · รอบถัดไปใน <b>{formatCountdown(remainMs)}</b>
-                */}
+                · รอบถัดไปเวลา <b>{nextTimeText}</b> · เหลืออีก <b>{countdownText}</b>
               </>
             ) : null}
             <br />
             {autoStore?.cancelAfterCooldown ? (
               <>
-                * คุณกดยกเลิกแล้ว → เลือกโพสอื่นเข้าคิวได้ <b>1</b> โพส (เริ่มหลังครบเวลา)
+                * ตอนนี้คุณกดยกเลิกแล้ว — สามารถเลือกโพสอื่นเพื่อเข้าคิวได้ (คิวได้ <b>1</b> โพส)
                 {queuedId ? (
                   <>
                     {" "}
-                    · ตอนนี้คิวคือ <b>#{queuedId}</b>
+                    · คิวตอนนี้คือ <b>#{queuedId}</b>
                   </>
                 ) : null}
               </>
             ) : (
-              <>* ต้องกดยกเลิกออโต้ของโพส Active ก่อน ถึงจะเลือกโพสอื่นได้</>
+              <>* ต้องยกเลิก{UI_LABELS.modeShort}ของโพส Active ก่อน ถึงจะเลือกโพสอื่นได้</>
             )}
           </div>
         ) : (
           <div className="text-muted mt10" style={{ fontSize: 12 }}>
-            * ยังไม่มีรายการออโต้ กดยืนยันเพื่อเริ่มรอบแรก
+            * ยังไม่มีรายการ {UI_LABELS.modeShort} กด “{UI_LABELS.confirmBtn}” เพื่อเริ่มรอบแรก
           </div>
         )}
       </div>
@@ -461,7 +478,10 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
             </div>
 
             <div style={{ minWidth: 0, flex: "1 1 260px" }}>
-              <div className="fw700" style={{ fontSize: 15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <div
+                className="fw700"
+                style={{ fontSize: 15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+              >
                 {safeText(p?.title, `ประกาศ #${pId || "-"}`)}
               </div>
               <div className="text-muted mt-1" style={{ fontSize: 12, lineHeight: 1.6 }}>
@@ -489,17 +509,17 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
         <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
           <div className="text-muted" style={{ fontSize: 13 }}>
             {intent.type === "start"
-              ? "กด “ยืนยันออโต้” เพื่อเริ่มดันอัตโนมัติ"
+              ? `กด “${UI_LABELS.confirmBtn}” เพื่อเริ่ม${UI_LABELS.modeShort}`
               : intent.type === "queue"
-              ? "กด “ยืนยันออโต้” เพื่อเข้าคิวรอบถัดไป (คิวได้ 1 โพส)"
+              ? `กด “${UI_LABELS.confirmBtn}” เพื่อเข้าคิวรอบถัดไป (คิวได้ 1 โพส)`
               : intent.type === "queued_same"
               ? "โพสนี้อยู่ในคิวแล้ว"
               : intent.type === "blocked_need_cancel"
-              ? `ต้องยกเลิกออโต้ของโพส #${curActiveId || "-"} ก่อน`
+              ? `ต้องยกเลิก${UI_LABELS.modeShort}ของโพส #${curActiveId || "-"} ก่อน`
               : intent.type === "blocked_need_cancel_queue"
               ? `ต้องยกเลิกคิวโพส #${queuedId || "-"} ก่อน`
               : intent.type === "same"
-              ? "โพสนี้กำลังดันอยู่แล้ว"
+              ? "โพสนี้กำลังทำงานอยู่แล้ว"
               : "ไม่สามารถดันได้"}
           </div>
 
@@ -538,9 +558,9 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
                   : !boostable
                   ? "ต้องเผยแพร่แล้ว"
                   : intent.type === "same"
-                  ? "กำลังดันอยู่แล้ว"
+                  ? "กำลังทำงานอยู่แล้ว"
                   : intent.type === "blocked_need_cancel"
-                  ? `ต้องยกเลิกออโต้ของโพส #${curActiveId || "-"} ก่อน`
+                  ? `ต้องยกเลิก${UI_LABELS.modeShort}ของโพส #${curActiveId || "-"} ก่อน`
                   : intent.type === "blocked_need_cancel_queue"
                   ? `ต้องยกเลิกคิวโพส #${queuedId || "-"} ก่อน`
                   : intent.type === "queued_same"
@@ -548,7 +568,7 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
                   : ""
               }
             >
-              {isBusy ? "กำลังตั้งค่า..." : "ยืนยันออโต้"}
+              {isBusy ? "กำลังตั้งค่า..." : UI_LABELS.confirmBtn}
             </button>
           </div>
         </div>
