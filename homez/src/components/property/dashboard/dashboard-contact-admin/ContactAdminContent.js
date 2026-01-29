@@ -11,9 +11,9 @@ const ContactAdminContent = () => {
   const fileInputRef = useRef(null);
 
   const tickets = [
-    { id: "#TK-8852", subject: "สอบถามเรื่องการลงประกาศ", category: "General", priority: "Low", date: "22/01/2024", status: "Closed", detail: "อยากทราบว่าลงประกาศฟรีได้กี่รายการครับ?" },
-    { id: "#TK-9931", subject: "แจ้งปัญหาอัปโหลดรูปภาพไม่ได้", category: "Technical", priority: "High", date: "25/01/2024", status: "Open", detail: "พอกดอัปโหลดแล้วหมุนติ้วๆ ไม่ไปไหนเลยครับ ช่วยดูหน่อย" },
-    { id: "#TK-9945", subject: "ขอใบกำกับภาษีย้อนหลัง", category: "Billing", priority: "Medium", date: "26/01/2024", status: "Pending", detail: "ต้องการขอใบกำกับภาษีของเดือนธันวาคมครับ" },
+    { id: "#TK-8852", subject: "สอบถามเรื่องการลงประกาศ", category: "General", date: "22/01/2024", status: "Closed", detail: "อยากทราบว่าลงประกาศฟรีได้กี่รายการครับ?" },
+    { id: "#TK-9931", subject: "แจ้งปัญหาอัปโหลดรูปภาพไม่ได้", category: "Technical", date: "25/01/2024", status: "Open", detail: "พอกดอัปโหลดแล้วหมุนติ้วๆ ไม่ไปไหนเลยครับ ช่วยดูหน่อย" },
+    { id: "#TK-9945", subject: "ขอใบกำกับภาษีย้อนหลัง", category: "Billing", date: "26/01/2024", status: "Pending", detail: "ต้องการขอใบกำกับภาษีของเดือนธันวาคมครับ" },
   ];
 
   const categoryOptions = [
@@ -22,12 +22,6 @@ const ContactAdminContent = () => {
     { value: 'billing', label: 'แจ้งชำระเงิน / ใบกำกับภาษี (Billing & Invoice)' },
     { value: 'account', label: 'จัดการบัญชีผู้ใช้ (Account Management)' },
     { value: 'complaint', label: 'ข้อเสนอแนะ / ร้องเรียน (Feedback & Complaint)' },
-  ];
-
-  const priorityOptions = [
-    { value: 'low', label: 'ทั่วไป (General) - สอบถาม/ขอข้อมูล' },
-    { value: 'medium', label: 'สำคัญ (Medium) - ใช้งานติดขัดบางส่วน' },
-    { value: 'high', label: 'ด่วน (Urgent) - ใช้งานไม่ได้เลย / ระบบล่ม' },
   ];
 
   const customStyles = {
@@ -160,34 +154,70 @@ const ContactAdminContent = () => {
           >
 
             {view === 'list' && (
-              <div className="bg-white bdrs12 p-3 shadow-sm">
+              <div className="bg-white bdrs12 shadow-sm border-0 overflow-hidden">
                 <div className="table-responsive">
-                  <table className="table table-hover mb-0">
-                    <thead className="bg-light">
+                  <table className="table table-hover mb-0 align-middle" style={{ tableLayout: 'fixed', minWidth: '800px' }}>
+
+                    {/* --- หัวตาราง (Modern Style) --- */}
+                    <thead style={{ backgroundColor: '#f9f9f9' }}>
                       <tr>
-                        <th className="py-3 ps-3">ID</th>
-                        <th className="py-3">หัวข้อเรื่อง</th>
-                        <th className="py-3">หมวดหมู่</th>
-                        <th className="py-3">ความสำคัญ</th>
-                        <th className="py-3">วันที่แจ้ง</th>
-                        <th className="py-3 text-center">สถานะ</th>
-                        <th className="py-3 text-end pe-3">จัดการ</th>
+                        <th className="py-4 ps-4 text-secondary text-uppercase fz12 fw-bold" style={{ width: '15%', letterSpacing: '0.5px' }}>TICKET ID</th>
+                        <th className="py-4 text-secondary text-uppercase fz12 fw-bold" style={{ width: '30%', letterSpacing: '0.5px' }}>หัวข้อเรื่อง</th>
+                        <th className="py-4 text-secondary text-uppercase fz12 fw-bold" style={{ width: '15%', letterSpacing: '0.5px' }}>หมวดหมู่</th>
+                        <th className="py-4 text-secondary text-uppercase fz12 fw-bold" style={{ width: '15%', letterSpacing: '0.5px' }}>วันที่แจ้ง</th>
+                        <th className="py-4 text-center text-secondary text-uppercase fz12 fw-bold" style={{ width: '10%', letterSpacing: '0.5px' }}>สถานะ</th>
+                        <th className="py-4 text-end pe-4 text-secondary text-uppercase fz12 fw-bold" style={{ width: '15%', letterSpacing: '0.5px' }}>จัดการ</th>
                       </tr>
                     </thead>
+
+                    {/* --- เนื้อหา --- */}
                     <tbody>
                       {tickets.map((t, index) => (
-                        <tr key={index} style={{ cursor: 'pointer' }} onClick={() => handleViewTicket(t)}>
-                          <td className="ps-3 fw-bold text-primary align-middle">{t.id}</td>
-                          <td className="align-middle fw600">{t.subject}</td>
-                          <td className="align-middle"><span className="badge bg-light text-dark border">{t.category}</span></td>
-                          <td className="align-middle">
-                            <span className={`fw-bold ${t.priority === 'High' ? 'text-danger' : t.priority === 'Medium' ? 'text-warning' : 'text-success'}`}>{t.priority}</span>
+                        <tr
+                          key={index}
+                          style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                          onClick={() => handleViewTicket(t)}
+                          className="border-bottom"
+                        >
+
+                          {/* ID: เน้นสีหลัก */}
+                          <td className="ps-4 py-4">
+                            <span className="fw-bold text-primary fz15">{t.id}</span>
                           </td>
-                          <td className="align-middle text-muted fz14">{t.date}</td>
-                          <td className="align-middle text-center">{getStatusBadge(t.status)}</td>
-                          <td className="text-end pe-3 align-middle">
-                            <button className="btn btn-sm btn-light rounded-circle" style={{ width: 35, height: 35 }}>
-                              <i className="far fa-eye text-muted"></i>
+
+                          {/* Subject: ตัวหนา สีเข้ม */}
+                          <td className="py-4">
+                            <div className="text-dark fw-bold text-truncate" style={{ maxWidth: '95%' }} title={t.subject}>
+                              {t.subject}
+                            </div>
+                          </td>
+
+                          {/* Category: Soft Badge (พาสเทล) */}
+                          <td className="py-4">
+                            <span className="badge bg-secondary bg-opacity-10 text-secondary border-0 fw-normal px-3 py-2 rounded-pill">
+                              {t.category}
+                            </span>
+                          </td>
+
+                          {/* Date: สีเทา */}
+                          <td className="py-4">
+                            <div className="text-muted fz14 d-flex align-items-center">
+                              <i className="far fa-clock me-2 fz12"></i> {t.date}
+                            </div>
+                          </td>
+
+                          {/* Status: ตรงกลาง */}
+                          <td className="text-center py-4">
+                            {getStatusBadge(t.status)}
+                          </td>
+
+                          {/* Action Button: มีเงาเล็กน้อยเมื่อ Hover */}
+                          <td className="text-end pe-4 py-4">
+                            <button
+                              className="btn btn-sm btn-light rounded-circle border"
+                              style={{ width: 38, height: 38 }}
+                            >
+                              <i className="far fa-eye text-primary"></i>
                             </button>
                           </td>
                         </tr>
@@ -210,25 +240,13 @@ const ContactAdminContent = () => {
                           <input type="text" className="form-control form-control-lg bg-light" placeholder="ระบุหัวข้อเรื่อง..." />
                         </div>
 
-                        <div className="col-md-6 mb-3">
+                        <div className="col-md-flex mb-3">
                           <label className="form-label fw600">หมวดหมู่ (Category)</label>
                           <Select
                             options={categoryOptions}
                             styles={customStyles}
                             placeholder="-- กรุณาเลือกหมวดหมู่ --"
                             instanceId="category-select"
-                            isSearchable={false}
-                            maxMenuHeight={200}
-                          />
-                        </div>
-
-                        <div className="col-md-6 mb-3">
-                          <label className="form-label fw600">ความเร่งด่วน (Priority)</label>
-                          <Select
-                            options={priorityOptions}
-                            styles={customStyles}
-                            placeholder="-- ระดับความเร่งด่วน --"
-                            instanceId="priority-select"
                             isSearchable={false}
                             maxMenuHeight={200}
                           />

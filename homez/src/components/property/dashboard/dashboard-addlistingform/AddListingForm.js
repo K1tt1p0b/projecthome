@@ -5,7 +5,7 @@ import Select from "react-select";
 import geographyData from "@/components/property/dashboard/dashboard-add-property/LocationField/geography.json";
 import { useRouter } from "next/navigation";
 
-// ✅ Import Rich Text Editor (ที่คุณเพิ่งสร้าง)
+// ✅ Import Rich Text Editor
 import RichTextEditor from "@/components/common/RichTextEditor";
 
 // ✅ toastify
@@ -64,6 +64,7 @@ const AddListingForm = () => {
     provinces: [],
     description: "",
     type: "service",
+    status: "published", // ✅ เพิ่ม Default Status
   });
 
   const [images, setImages] = useState([]);
@@ -123,6 +124,25 @@ const AddListingForm = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // ✅ Config Status Options (เหมือนหน้าคอร์ส)
+  const statusOptions = [
+    { value: "active", label: "เผยแพร่ (Active)", color: "text-success", icon: "fas fa-check-circle" },
+    { value: "hidden", label: "ซ่อน (Hide)", color: "text-muted", icon: "fas fa-eye-slash" },
+  ];
+
+  const handleStatusSelect = (value) => {
+    setFormData((prev) => ({ ...prev, status: value }));
+  };
+
+  const getCurrentStatusLabel = () => {
+    const selected = statusOptions.find((opt) => opt.value === formData.status) || statusOptions[0];
+    return (
+      <span className={`${selected.color} fw600`}>
+        <i className={`${selected.icon} me-2`}></i>{selected.label}
+      </span>
+    );
+  };
+
   // ✅ วิดีโอ: เปลี่ยนค่าทีละช่อง
   const setVideoAt = (idx, value) => {
     setVideoUrls((prev) => {
@@ -146,7 +166,6 @@ const AddListingForm = () => {
     // กันซ้ำ (case-insensitive)
     const lowered = cleaned.map((v) => v.toLowerCase());
     if (new Set(lowered).size !== lowered.length) {
-      // โยน error ให้ทุกช่องที่ซ้ำ (ง่ายสุด: แจ้งรวม)
       toast.error("ลิงก์วิดีโอมีซ้ำกัน กรุณาแก้ไข");
       return { ok: false, errors };
     }
@@ -195,10 +214,9 @@ const AddListingForm = () => {
       return;
     }
 
-    // ส่งเฉพาะลิงก์ที่ไม่ว่าง
     const finalVideoUrls = videoUrls.map((v) => norm(v)).filter(Boolean);
 
-    console.log("Submitting:", { ...formData, images, videoUrls: finalVideoUrls });
+    console.log("Submitting Service:", { ...formData, images, videoUrls: finalVideoUrls });
     toast.success("ลงประกาศเรียบร้อยแล้ว!");
     router.push("/dashboard-my-construction");
   };
@@ -211,6 +229,7 @@ const AddListingForm = () => {
 
       <form className="form-style1" onSubmit={handleSubmit}>
         <div className="row">
+          {/* หัวข้อ */}
           <div className="col-sm-12">
             <div className="mb20">
               <label className="heading-color ff-heading fw600 mb10">หัวข้อประกาศ</label>
@@ -225,7 +244,8 @@ const AddListingForm = () => {
             </div>
           </div>
 
-          <div className="col-sm-6 col-xl-6">
+          {/* พื้นที่ให้บริการ (ปรับเป็นเต็มบรรทัดเพื่อให้เลือกได้เยอะๆ) */}
+          <div className="col-sm-12">
             <div className="mb20">
               <label className="heading-color ff-heading fw600 mb10">
                 พื้นที่ให้บริการ (เลือกได้หลายจังหวัด)
@@ -249,7 +269,7 @@ const AddListingForm = () => {
                     ...base,
                     borderRadius: "8px",
                     borderColor: "#ebebeb",
-                    padding: "2px",
+                    padding: "6px",
                     boxShadow: "none",
                     "&:hover": { borderColor: "#eb6753" },
                   }),
@@ -258,43 +278,97 @@ const AddListingForm = () => {
             </div>
           </div>
 
-          <div className="col-sm-6 col-xl-6">
+          {/* หมวดหมู่ */}
+          <div className="col-sm-6">
             <div className="mb20">
               <label className="heading-color ff-heading fw600 mb10">หมวดหมู่</label>
-              <select
-                className="form-select"
-                name="category"
-                onChange={handleChange}
-                value={formData.category}
-              >
-                <option value="">เลือกหมวดหมู่...</option>
-                <option value="piling">ตอกเสาเข็ม</option>
-                <option value="land-fill">ถมที่ดิน</option>
-                <option value="renovate">รีโนเวท</option>
-                <option value="construction">รับเหมาก่อสร้าง</option>
-                <option value="electrician">ช่างไฟ</option>
-              </select>
+              <div style={{ position: 'relative' }}>
+                <select
+                  className="form-select"
+                  name="category"
+                  onChange={handleChange}
+                  value={formData.category}
+                  style={{
+                    height: "55px",
+                    borderRadius: "8px",
+                    borderColor: "#ebebeb",
+                    cursor: "pointer"
+                  }}
+                >
+                  <option value="">เลือกหมวดหมู่...</option>
+                  <option value="piling">ตอกเสาเข็ม</option>
+                  <option value="land-fill">ถมที่ดิน</option>
+                  <option value="renovate">รีโนเวท</option>
+                  <option value="construction">รับเหมาก่อสร้าง</option>
+                  <option value="electrician">ช่างไฟ</option>
+                </select>
+              </div>
             </div>
           </div>
 
+          {/* ✅ สถานะ (Status) เพิ่มใหม่ */}
+          <div className="col-sm-6">
+            <div className="mb20">
+              <label className="heading-color ff-heading fw600 mb10">การแสดงผล</label>
+              <div className="dropdown">
+                <button
+                  className="btn btn-white w-100 text-start border d-flex justify-content-between align-items-center"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                  style={{
+                    height: "55px",
+                    borderRadius: "8px",
+                    borderColor: "#ebebeb",
+                    color: "#222",
+                  }}
+                >
+                  <span>{getCurrentStatusLabel()}</span>
+                  <i className="fas fa-chevron-down fz12"></i>
+                </button>
+
+                <ul
+                  className="dropdown-menu w-100 p-2 shadow border-0"
+                  style={{ borderRadius: "8px", marginTop: "5px" }}
+                >
+                  {statusOptions.map((option) => (
+                    <li key={option.value}>
+                      <button
+                        type="button"
+                        className={`dropdown-item rounded-2 py-2 ${formData.status === option.value ? "active" : ""}`}
+                        onClick={() => handleStatusSelect(option.value)}
+                        style={{
+                          cursor: "pointer",
+                          backgroundColor: formData.status === option.value ? "#f0fdf4" : "transparent",
+                          color: "#222",
+                        }}
+                      >
+                        <span className={option.color}>
+                          <i className={`${option.icon} me-2`}></i>{option.label}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* รายละเอียด */}
           <div className="col-md-12">
             <div className="mb20">
               <label className="heading-color ff-heading fw600 mb10">รายละเอียด</label>
-              
-              {/* ✅ เปลี่ยนเป็น Rich Text Editor */}
               <RichTextEditor
                 value={formData.description || ""}
                 onChange={(content) => {
-                    // อัปเดต State โดยตรง
-                    setFormData((prev) => ({ ...prev, description: content }));
+                  setFormData((prev) => ({ ...prev, description: content }));
                 }}
                 placeholder="อธิบายรายละเอียดงานของคุณ ประสบการณ์ เครื่องจักรที่มี..."
               />
-              
             </div>
           </div>
 
-          {/* ✅ วิดีโอ 4 ช่องแบบ box (2x2) */}
+          {/* วิดีโอ */}
           <div className="col-md-12">
             <div className="mb20">
               <label className="heading-color ff-heading fw600 mb10">วิดีโอผลงาน (YouTube/TikTok)</label>
@@ -328,7 +402,6 @@ const AddListingForm = () => {
                           <div className="text-danger fz12 mt-2">{videoErrors[idx]}</div>
                         )}
 
-                        {/* Preview เฉพาะ YouTube (thumb) */}
                         {thumb && (
                           <div className="mt-2 position-relative" style={{ aspectRatio: "16/9" }}>
                             <Image
@@ -347,7 +420,7 @@ const AddListingForm = () => {
             </div>
           </div>
 
-          {/* ✅ รูปภาพ */}
+          {/* รูปภาพ */}
           <div className="col-md-12">
             <div className="mb20">
               <label className="heading-color ff-heading fw600 mb10">

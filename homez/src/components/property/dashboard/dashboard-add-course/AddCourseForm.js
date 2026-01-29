@@ -58,6 +58,7 @@ const AddCourseForm = () => {
     description: "",
     type: "course",
     courseType: "",
+    status: "active", // ✅ เพิ่ม Default Status
   });
 
   const [imagePreview, setImagePreview] = useState(null);
@@ -84,20 +85,41 @@ const AddCourseForm = () => {
     e.target.value = "";
   };
 
-  // Dropdown
+  // Dropdown Options: Course Type
   const courseTypeOptions = [
     { value: "hybrid", label: "ผสมผสาน (Hybrid)" },
     { value: "online", label: "เรียนออนไลน์ (Online)" },
     { value: "onsite", label: "เรียนออนไซต์ (On-site)" },
   ];
 
+  // ✅ Dropdown Options: Status
+  const statusOptions = [
+    { value: "active", label: "เผยแพร่ (Active)", color: "text-success", icon: "fas fa-check-circle" },
+    { value: "hidden", label: "ซ่อน (Hide)", color: "text-muted", icon: "fas fa-eye-slash" },
+  ];
+
   const handleDropdownSelect = (value) => {
     setFormData((prev) => ({ ...prev, courseType: value }));
+  };
+
+  // ✅ Handle Status Select
+  const handleStatusSelect = (value) => {
+    setFormData((prev) => ({ ...prev, status: value }));
   };
 
   const getCurrentLabel = () => {
     const selected = courseTypeOptions.find((opt) => opt.value === formData.courseType);
     return selected ? selected.label : "เลือกรูปแบบ...";
+  };
+
+  // ✅ แก้ฟังก์ชันแสดงผลให้เรียบง่าย
+  const getCurrentStatusLabel = () => {
+    const selected = statusOptions.find((opt) => opt.value === formData.status) || statusOptions[0]; // default published
+    return (
+      <span className={`${selected.color} fw600`}>
+        <i className={`${selected.icon} me-2`}></i>{selected.label}
+      </span>
+    );
   };
 
   const setVideoAt = (idx, value) => {
@@ -189,6 +211,7 @@ const AddCourseForm = () => {
 
           <form className="form-style1" onSubmit={handleSubmit}>
             <div className="row">
+              {/* ชื่อคอร์สเรียน */}
               <div className="col-sm-12">
                 <div className="mb20">
                   <label className="heading-color ff-heading fw600 mb10">ชื่อคอร์สเรียน</label>
@@ -203,8 +226,8 @@ const AddCourseForm = () => {
                 </div>
               </div>
 
-              {/* Dropdown */}
-              <div className="col-sm-12 col-xl-12">
+              {/* รูปแบบการเรียน (Course Type) */}
+              <div className="col-sm-6">
                 <div className="mb20">
                   <label className="heading-color ff-heading fw600 mb10">รูปแบบการเรียน</label>
                   <div className="dropdown">
@@ -251,6 +274,54 @@ const AddCourseForm = () => {
                 </div>
               </div>
 
+              {/* ✅ ส่วนเลือกสถานะ (แบบย่อ) */}
+              <div className="col-sm-6">
+                <div className="mb20">
+                  <label className="heading-color ff-heading fw600 mb10">สถานะ</label>
+                  <div className="dropdown">
+                    <button
+                      className="btn btn-white w-100 text-start border d-flex justify-content-between align-items-center"
+                      type="button"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                      style={{
+                        height: "55px",
+                        borderRadius: "8px",
+                        borderColor: "#ebebeb",
+                        color: "#222",
+                      }}
+                    >
+                      <span>{getCurrentStatusLabel()}</span>
+                      <i className="fas fa-chevron-down fz12"></i>
+                    </button>
+
+                    <ul
+                      className="dropdown-menu w-100 p-2 shadow border-0"
+                      style={{ borderRadius: "8px", marginTop: "5px" }}
+                    >
+                      {statusOptions.map((option) => (
+                        <li key={option.value}>
+                          <button
+                            type="button"
+                            className={`dropdown-item rounded-2 py-2 ${formData.status === option.value ? "active" : ""}`}
+                            onClick={() => handleStatusSelect(option.value)}
+                            style={{
+                              cursor: "pointer",
+                              backgroundColor: formData.status === option.value ? "#f0fdf4" : "transparent", // สีเขียวอ่อนๆ ตอนเลือก
+                              color: "#222",
+                            }}
+                          >
+                            <span className={option.color}>
+                              <i className={`${option.icon} me-2`}></i>{option.label}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
               {/* Instructor */}
               <div className="col-sm-12">
                 <div className="mb20">
@@ -266,21 +337,17 @@ const AddCourseForm = () => {
                 </div>
               </div>
 
-              {/* Description - เปลี่ยนเป็น Rich Text Editor */}
+              {/* Description - Rich Text Editor */}
               <div className="col-md-12">
                 <div className="mb20">
                   <label className="heading-color ff-heading fw600 mb10">รายละเอียดบทเรียน</label>
-
-                  {/* ✅ 2. ใช้งาน Component RichTextEditor */}
                   <RichTextEditor
                     value={formData.description || ""}
                     onChange={(content) => {
-                      // อัปเดต State โดยตรง
                       setFormData((prev) => ({ ...prev, description: content }));
                     }}
                     placeholder="รายละเอียดสิ่งที่จะได้รับ, เนื้อหาที่สอน..."
                   />
-
                 </div>
               </div>
 

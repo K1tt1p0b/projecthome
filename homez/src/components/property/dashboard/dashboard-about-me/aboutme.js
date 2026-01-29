@@ -5,8 +5,11 @@ import Image from "next/image";
 import { toast } from "react-toastify";
 import agents from "@/data/agents";
 
+// ✅ 1. Import Rich Text Editor
+import RichTextEditor from "@/components/common/RichTextEditor";
+
 const AboutMe = () => {
-  // 1. เก็บข้อมูลต้นฉบับไว้ในตัวแปร (เพื่อใช้ตอนกด Reset)
+  // 1. เก็บข้อมูลต้นฉบับ
   const originalData = (agents && agents.length > 0) ? agents[0] : {};
 
   // 2. State สำหรับ Form
@@ -14,7 +17,7 @@ const AboutMe = () => {
     name: originalData.name || "",
     position: originalData.category || "",
     city: originalData.city || "",
-    desc: originalData.desc || "",
+
     mobile: originalData.mobile || "",
     email: originalData.email || "",
     lineId: "@agent_line",
@@ -35,6 +38,11 @@ const AboutMe = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // ✅ ฟังก์ชันอัปเดตจาก Rich Text Editor
+  const handleEditorChange = (content) => {
+    setFormData(prev => ({ ...prev, desc: content }));
+  };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -47,9 +55,7 @@ const AboutMe = () => {
     }
   };
 
-  // ✅ ฟังก์ชันปุ่ม "ยกเลิก" (Reset ค่ากลับเป็นเดิม)
   const handleCancel = () => {
-    // คืนค่า Form เป็นค่าเริ่มต้น
     setFormData({
       name: originalData.name || "",
       position: originalData.category || "",
@@ -61,21 +67,17 @@ const AboutMe = () => {
       experience: "5",
       closedSales: "50+"
     });
-    // คืนค่ารูปภาพ
     setImagePreview(originalData.img || originalData.image || "/images/team/agent-1.jpg");
-
     toast.info("คืนค่าข้อมูลเดิมแล้ว");
-  };
-
-  // ✅ ฟังก์ชันปุ่ม "ดูตัวอย่าง" (เปิดหน้าใหม่)
-  const handlePreview = () => {
-    // สมมติว่าหน้า Agent Single คือ /agent-single/1
-    window.open('/agent-single/1', '_blank');
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
     setIsSaving(true);
+
+    // จำลองการบันทึก (เอาค่า HTML ไปใช้ได้เลย)
+    console.log("Saving Bio:", formData.desc);
+
     await new Promise(r => setTimeout(r, 1500));
     setIsSaving(false);
     toast.success("บันทึกข้อมูลเรียบร้อยแล้ว!");
@@ -90,7 +92,7 @@ const AboutMe = () => {
       </div>
 
       <div className="row">
-        {/* ... (ส่วนรูปโปรไฟล์เหมือนเดิม) ... */}
+        {/* รูปโปรไฟล์ */}
         <div className="col-xl-3 col-lg-4 text-center mb-4 mb-lg-0 border-end-lg">
           <div className="position-relative d-inline-block">
             <div
@@ -116,7 +118,7 @@ const AboutMe = () => {
           <div className="mt-3 text-muted fz12">แนะนำรูปสี่เหลี่ยมจัตุรัส <br /> (JPG, PNG ไม่เกิน 2MB)</div>
         </div>
 
-        {/* ... (ส่วน Form Inputs เหมือนเดิม) ... */}
+        {/* Form Inputs */}
         <div className="col-xl-9 col-lg-8">
           <div className="row g-3">
             <div className="col-md-12">
@@ -127,9 +129,15 @@ const AboutMe = () => {
               <label className="form-label fw600 fz14">พื้นที่ให้บริการ</label>
               <input type="text" className="form-control" name="city" value={formData.city} onChange={handleChange} />
             </div>
+
+            {/* ✅ 2. แทนที่ Textarea ด้วย RichTextEditor */}
             <div className="col-12">
               <label className="form-label fw600 fz14">เกี่ยวกับฉัน (Bio)</label>
-              <textarea className="form-control" rows="4" name="desc" value={formData.desc} onChange={handleChange}></textarea>
+              <RichTextEditor
+                value={formData.desc}
+                onChange={handleEditorChange}
+                placeholder="แนะนำตัวของคุณ ประสบการณ์ทำงาน หรือทักษะพิเศษ..."
+              />
             </div>
 
             <div className="col-12 mt-2"><hr className="opacity-50" /><h5 className="title fz15 mb-3">ข้อมูลการติดต่อ</h5></div>
@@ -151,7 +159,7 @@ const AboutMe = () => {
           {/* Action Buttons */}
           <div className="row mt-4 pt-3 border-top">
             <div className="col-12 text-end">
-              <button type="button" className="btn btn-light border me-2">ยกเลิก</button>
+              <button type="button" onClick={handleCancel} className="btn btn-light border me-2">ยกเลิก</button>
               <button
                 type="submit"
                 className="btn btn-light border me-2"
