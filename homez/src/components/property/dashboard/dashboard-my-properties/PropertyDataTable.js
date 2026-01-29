@@ -36,7 +36,6 @@ const UI_LABELS = {
   manualTitle: "ดันทันที",
   continuousTitle: "ดันทันทีต่อเนื่อง", // ✅ ใช้ใน modal/ปุ่มเลือก
   continuousShort: "ดันต่อเนื่อง", // ✅ ใช้ใน pill/สถานะสั้น ๆ
-  queue: "เข้าคิว",
   running: "กำลังทำงาน",
 };
 
@@ -160,7 +159,9 @@ function normalizeAutoStore(raw, fallbackPkgKey) {
       : oldOrder.find((id) => !!oldItems?.[id]) || Object.keys(oldItems)[0] || "";
 
   const legacyQueuedId =
-    typeof s.queuedPropertyId === "string" && s.queuedPropertyId ? s.queuedPropertyId : oldQueue[0] || "";
+    typeof s.queuedPropertyId === "string" && s.queuedPropertyId
+      ? s.queuedPropertyId
+      : oldQueue[0] || "";
 
   const legacyActiveItem = legacyActiveId ? oldItems?.[legacyActiveId] : null;
 
@@ -189,8 +190,15 @@ function normalizeAutoStore(raw, fallbackPkgKey) {
     cooldownEndAt: Number(cooldownEndAt || 0),
 
     cancelAfterCooldown: !!s.cancelAfterCooldown,
+
+    // ✅ NEW: เก็บเวลารอบล่าสุดรายโพส (timestamp)
+    lastRunAtById:
+      s?.lastRunAtById && typeof s.lastRunAtById === "object"
+        ? s.lastRunAtById
+        : {},
   };
 }
+
 
 // migrate auto store เมื่อเปลี่ยนแพ็ก (sync packageKey อย่างเดียว)
 function migrateAutoStoreToPackage(newPkgKey) {
@@ -571,6 +579,12 @@ const PropertyDataTable = () => {
       next.activeStartedAt = now;
       next.cooldownEndAt = now + AUTO_INTERVAL_MS;
 
+      // ✅ NEW: บันทึกเวลารอบล่าสุดของโพสที่เพิ่งเริ่มดันจริง
+      next.lastRunAtById = {
+        ...(next.lastRunAtById || {}),
+        [String(next.activePropertyId)]: now,
+      };
+
       writeLS(LS_AUTO, next);
       return;
     }
@@ -592,6 +606,14 @@ const PropertyDataTable = () => {
     // ไม่มีคิวและไม่ยกเลิก -> รีสตาร์ทรอบ
     next.activeStartedAt = now;
     next.cooldownEndAt = now + AUTO_INTERVAL_MS;
+
+    // ✅ NEW
+    if (next.activePropertyId) {
+    next.lastRunAtById = {
+        ...(next.lastRunAtById || {}),
+        [String(next.activePropertyId)]: now,
+      };
+    }
 
     writeLS(LS_AUTO, next);
   }, [tick, userPkgKey, AUTO_INTERVAL_MS]);
@@ -641,7 +663,7 @@ const PropertyDataTable = () => {
         nextTimeText: endAt ? formatThaiTimeOnly(endAt) : "-",
 
         cancelAfterCooldown: !!autoStore.cancelAfterCooldown,
-        lastAt: Number(autoStore.activeStartedAt || 0),
+        lastAt: Number(autoStore?.lastRunAtById?.[sid] || 0),
 
         manualCooling,
       };
@@ -1312,7 +1334,7 @@ const PropertyDataTable = () => {
 
                             {isQueued ? (
                               <>
-                                <span>{`${UI_LABELS.continuousShort} (${UI_LABELS.queue})`}</span>
+                                <span>{`${UI_LABELS.continuousShort}`}</span>
                                 <span
                                   style={{
                                     marginLeft: 8,
@@ -1333,6 +1355,8 @@ const PropertyDataTable = () => {
                             ) : (
                               <span>{`${UI_LABELS.continuousShort} (${UI_LABELS.running})`}</span>
                             )}
+                            
+                            
 
                             <ReactTooltip
                               id={`boost-mode-${property.id}`}
@@ -1358,13 +1382,17 @@ const PropertyDataTable = () => {
                                 <>
                                   {boostUi.lastAt ? (
                                     <>
-                                      รอบล่าสุด:{" "}
+                                      ดันล่าสุด:{" "}
                                       <b style={{ color: "#374151", fontWeight: 700 }}>
                                         {formatThaiDateTime(boostUi.lastAt)}
                                       </b>
                                     </>
+                                  ) : boostUi.isAutoQueued ? (
+                                    <>
+                                      -
+                                    </>
                                   ) : (
-                                    <>—</>
+                                    <></>
                                   )}
                                 </>
                               ) : (
