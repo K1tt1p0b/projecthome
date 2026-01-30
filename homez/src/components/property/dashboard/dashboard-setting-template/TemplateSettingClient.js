@@ -6,7 +6,7 @@ import Link from "next/link";
 import { toast } from "react-toastify";
 import s from "./template-setting.module.css";
 
-// ✅ Templates 6 อัน (Mock) + รูปในสไลด์หลายรูป
+// ... (TEMPLATES และ SECTIONS คงเดิม ไม่ต้องแก้) ...
 const TEMPLATES = [
   {
     id: "sellpage-a",
@@ -52,8 +52,6 @@ const TEMPLATES = [
   },
 ];
 
-// ✅ Sections (Mock) — ตัด contact + property_map ออก
-// ✅ เพิ่ม href ให้แต่ละอันเพื่อทำเป็นลิงก์ใต้ description
 const SECTIONS = [
   { key: "about", title: "เกี่ยวกับฉัน", desc: "แนะนำตัว/ประสบการณ์/บริษัท", icon: "flaticon-user", href: "/dashboard-about-me" },
   { key: "properties", title: "ทรัพย์สินของฉัน", desc: "รายการทรัพย์ (ขาย/เช่า/แนะนำ)", icon: "flaticon-home", href: "/dashboard-my-properties" },
@@ -65,15 +63,6 @@ const SECTIONS = [
 
 const LS_KEY = "microsite_template_setting_v1";
 const DEFAULT_TEMPLATE_ID = "sellpage-a";
-
-/**
- * เก็บค่าใน localStorage:
- * {
- *   selectedTemplateId: string | null,
- *   hasEverVisited: boolean,
- *   enabledSections: Record<string, boolean>
- * }
- */
 
 export default function TemplateSettingClient() {
   const initialSections = useMemo(
@@ -88,22 +77,22 @@ export default function TemplateSettingClient() {
     []
   );
 
-  // ✅ เลือกได้/ไม่เลือกก็ได้
-  const [selectedTemplate, setSelectedTemplate] = useState(null); // string | null
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [enabledSections, setEnabledSections] = useState(initialSections);
-
-  // ใช้ไว้โชว์ว่า default เพราะ “เข้าครั้งแรก”
   const [isFirstTimeDefault, setIsFirstTimeDefault] = useState(false);
 
-  // ===== Load from localStorage (ครั้งแรกให้ default) =====
+  // ✅ 1. เพิ่ม State สำหรับ Slug
+  const [micrositeSlug, setMicrositeSlug] = useState("");
+
+  // ===== Load from localStorage =====
   useEffect(() => {
     try {
       const raw = localStorage.getItem(LS_KEY);
       if (!raw) {
-        // ✅ เข้าครั้งแรก → ให้ default ไปก่อน
         setSelectedTemplate(DEFAULT_TEMPLATE_ID);
         setEnabledSections(initialSections);
         setIsFirstTimeDefault(true);
+        setMicrositeSlug(""); // ค่าเริ่มต้น
 
         localStorage.setItem(
           LS_KEY,
@@ -111,6 +100,7 @@ export default function TemplateSettingClient() {
             selectedTemplateId: DEFAULT_TEMPLATE_ID,
             hasEverVisited: true,
             enabledSections: initialSections,
+            micrositeSlug: "", // บันทึกค่าว่าง
           })
         );
         return;
@@ -119,32 +109,44 @@ export default function TemplateSettingClient() {
       const parsed = JSON.parse(raw);
       const tplId = parsed?.selectedTemplateId ?? null;
       const sec = parsed?.enabledSections ?? initialSections;
+      const slug = parsed?.micrositeSlug ?? ""; // โหลดค่า slug
 
       setSelectedTemplate(tplId);
       setEnabledSections(sec);
       setIsFirstTimeDefault(false);
+      setMicrositeSlug(slug);
     } catch {
-      // ถ้า parse พัง ให้ fallback เป็น default
       setSelectedTemplate(DEFAULT_TEMPLATE_ID);
       setEnabledSections(initialSections);
       setIsFirstTimeDefault(true);
+      setMicrositeSlug("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ✅ 2. อัปเดต persist ให้บันทึก slug ด้วย
   const persist = (next) => {
     try {
       localStorage.setItem(
         LS_KEY,
         JSON.stringify({
-          selectedTemplateId: next.selectedTemplateId ?? null,
+          selectedTemplateId: next.selectedTemplateId ?? selectedTemplate,
           hasEverVisited: true,
           enabledSections: next.enabledSections ?? enabledSections,
+          micrositeSlug: next.micrositeSlug ?? micrositeSlug, // บันทึก slug
         })
       );
     } catch {
       // ignore
     }
+  };
+
+  // ✅ 3. ฟังก์ชันจัดการการพิมพ์ Slug (กรองตัวอักษร)
+  const handleSlugChange = (e) => {
+    // อนุญาตแค่ a-z, 0-9, -, _
+    const value = e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, "");
+    setMicrositeSlug(value);
+    persist({ micrositeSlug: value });
   };
 
   const currentTpl = useMemo(() => {
@@ -157,12 +159,12 @@ export default function TemplateSettingClient() {
   const toggleSection = (key) => {
     setEnabledSections((prev) => {
       const next = { ...prev, [key]: !prev[key] };
-      persist({ selectedTemplateId: selectedTemplate, enabledSections: next });
+      persist({ enabledSections: next });
       return next;
     });
   };
 
-  // ===== Slider state (อยู่ด้านบน) =====
+  // ===== Slider state =====
   const slides = useMemo(() => {
     if (!currentTpl) return [];
     const arr = Array.isArray(currentTpl.slides) && currentTpl.slides.length ? currentTpl.slides : [currentTpl.cover];
@@ -183,11 +185,9 @@ export default function TemplateSettingClient() {
 
   const pickTemplate = (tplId) => {
     setIsFirstTimeDefault(false);
-
-    // ✅ คลิกอันเดิมซ้ำ = ยกเลิกเลือก (ตามที่อยากให้ไม่เลือกได้)
     setSelectedTemplate((prevId) => {
       const nextId = prevId === tplId ? null : tplId;
-      persist({ selectedTemplateId: nextId, enabledSections });
+      persist({ selectedTemplateId: nextId });
       return nextId;
     });
   };
@@ -195,7 +195,7 @@ export default function TemplateSettingClient() {
   const clearTemplate = () => {
     setIsFirstTimeDefault(false);
     setSelectedTemplate(null);
-    persist({ selectedTemplateId: null, enabledSections });
+    persist({ selectedTemplateId: null });
     toast.info("ยกเลิกการเลือกเทมเพลตแล้ว");
   };
 
@@ -204,13 +204,17 @@ export default function TemplateSettingClient() {
     setEnabledSections(initialSections);
     setIsFirstTimeDefault(true);
     setSlideIndex(0);
+    setMicrositeSlug(""); // รีเซ็ต slug
 
-    persist({ selectedTemplateId: DEFAULT_TEMPLATE_ID, enabledSections: initialSections });
+    persist({ selectedTemplateId: DEFAULT_TEMPLATE_ID, enabledSections: initialSections, micrositeSlug: "" });
     toast.info("รีเซ็ตค่า (Mock)");
   };
 
   const saveMock = () => {
-    // บันทึก mock: ณ จุดนี้เราก็ persist ไว้แล้วระหว่างทาง
+    if (!micrositeSlug) {
+      toast.error("กรุณาตั้งชื่อลิงก์ Microsite ก่อนบันทึก");
+      return;
+    }
     toast.success("บันทึกการตั้งค่า (Mock)");
   };
 
@@ -236,14 +240,66 @@ export default function TemplateSettingClient() {
         </div>
       </div>
 
-      {/* ================= PREVIEW (อยู่บนสุด) ================= */}
+      {/* ✅ 4. เพิ่ม Box ตั้งชื่อ URL (อยู่บนสุด ก่อน Preview) */}
+      <div className={s.block}>
+        <div className={s.blockTitle}>
+          <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            ตั้งชื่อลิงก์ Microsite ของคุณ
+            <span style={{ color: 'red', fontSize: '14px' }}>* จำเป็น</span>
+          </h4>
+          <span className={s.miniHint}>กำหนด URL เพื่อใช้แชร์หน้าเว็บของคุณ (พิมพ์ภาษาอังกฤษ ตัวเลข หรือ - เท่านั้น)</span>
+        </div>
+
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          backgroundColor: "#f7f7f7",
+          border: "1px solid #ddd",
+          borderRadius: "8px",
+          padding: "8px 16px",
+          marginTop: "10px",
+          maxWidth: "600px"
+        }}>
+          <span style={{
+            color: "#666",
+            fontWeight: 500,
+            fontSize: "16px",
+            whiteSpace: "nowrap"
+          }}>
+            https://yoursite.com/
+          </span>
+          <input
+            type="text"
+            value={micrositeSlug}
+            onChange={handleSlugChange}
+            placeholder="your-name"
+            style={{
+              flex: 1,
+              border: "none",
+              background: "transparent",
+              outline: "none",
+              fontSize: "16px",
+              fontWeight: 600,
+              color: "#eb6753",
+              marginLeft: "4px"
+            }}
+          />
+          {micrositeSlug && (
+            <i className="fas fa-check-circle" style={{ color: "green", marginLeft: "10px" }}></i>
+          )}
+        </div>
+        {!micrositeSlug && (
+          <div style={{ color: "red", fontSize: "12px", marginTop: "5px" }}>* กรุณาระบุชื่อลิงก์ของคุณ</div>
+        )}
+      </div>
+
+      {/* ================= PREVIEW ================= */}
       <div className={s.block}>
         <div className={s.blockTitle}>
           <h4>ตัวอย่าง Template</h4>
           <span className={s.miniHint}>เลือกเทมเพลตด้านล่างเพื่อดูตัวอย่าง · สามารถ “ไม่เลือก” ได้</span>
         </div>
 
-        {/* ✅ ถ้ายังไม่เลือก ให้เป็น placeholder ข้อความ */}
         {!currentTpl ? (
           <div
             className={s.sliderWrap}
@@ -419,11 +475,10 @@ export default function TemplateSettingClient() {
                     <h5 className={s.sectionTitle}>{sec.title}</h5>
                     <p className={s.sectionDesc}>{sec.desc}</p>
 
-                    {/* ✅ ลิงก์ใต้ description */}
                     {sec.href ? (
                       <Link
                         href={sec.href}
-                        onClick={(e) => e.stopPropagation()} // ✅ กันไม่ให้ toggle ตอนกดลิงก์
+                        onClick={(e) => e.stopPropagation()}
                         className={s.sectionLink}
                       >
                         ไปยังหน้าเมนูนี้ →

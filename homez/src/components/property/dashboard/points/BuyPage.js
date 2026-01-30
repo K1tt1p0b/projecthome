@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import Image from "next/image";
+import Select from "react-select";
 
 const BuyPackagePage = () => {
   return (
@@ -14,7 +14,7 @@ const BuyPackagePage = () => {
   );
 };
 
-// --- Component ย่อย: Custom Dropdown เลือกเวลา ---
+// --- Custom Time Dropdown (คงเดิม) ---
 const CustomTimeDropdown = ({ options, value, onChange, name }) => {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef(null);
@@ -31,43 +31,43 @@ const CustomTimeDropdown = ({ options, value, onChange, name }) => {
 
   useEffect(() => {
     if (isOpen) {
-        const selectedEl = document.getElementById(`option-${name}-${value}`);
-        if (selectedEl) {
-            selectedEl.scrollIntoView({ block: 'center' });
-        }
+      const selectedEl = document.getElementById(`option-${name}-${value}`);
+      if (selectedEl) {
+        selectedEl.scrollIntoView({ block: 'center' });
+      }
     }
   }, [isOpen, value, name]);
 
   return (
     <div className="position-relative" ref={wrapperRef} style={{ width: '80px' }}>
-      <div 
+      <div
         className="form-control text-center fw-bold border-2 cursor-pointer d-flex align-items-center justify-content-center"
         onClick={() => setIsOpen(!isOpen)}
-        style={{ 
-            height: '50px', 
-            fontSize: '18px',
-            borderRadius: '10px',
-            backgroundColor: '#f8f9fa',
-            userSelect: 'none',
-            border: isOpen ? '2px solid #eb6753' : '1px solid #dee2e6'
+        style={{
+          height: '50px',
+          fontSize: '18px',
+          borderRadius: '10px',
+          backgroundColor: '#f8f9fa',
+          userSelect: 'none',
+          border: isOpen ? '2px solid #eb6753' : '1px solid #dee2e6'
         }}
       >
-        {value} 
-        <i className={`fas fa-chevron-down ms-2 fz10 text-muted`} style={{ 
-            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: '0.2s'
+        {value}
+        <i className={`fas fa-chevron-down ms-2 fz10 text-muted`} style={{
+          transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+          transition: '0.2s'
         }}></i>
       </div>
 
       {isOpen && (
-        <div 
-            className="position-absolute start-0 w-100 bg-white border rounded shadow-sm custom-scrollbar" 
-            style={{ 
-                top: '110%', 
-                zIndex: 1000, 
-                maxHeight: '200px', 
-                overflowY: 'auto' 
-            }}
+        <div
+          className="position-absolute start-0 w-100 bg-white border rounded shadow-sm custom-scrollbar"
+          style={{
+            top: '110%',
+            zIndex: 1000,
+            maxHeight: '200px',
+            overflowY: 'auto'
+          }}
         >
           {options.map((opt) => (
             <div
@@ -78,13 +78,13 @@ const CustomTimeDropdown = ({ options, value, onChange, name }) => {
                 onChange({ target: { name, value: opt } });
                 setIsOpen(false);
               }}
-              style={{ 
-                  backgroundColor: value === opt ? '#fff0ec' : 'transparent',
-                  color: value === opt ? '#eb6753' : '#333',
-                  fontWeight: value === opt ? 'bold' : 'normal',
+              style={{
+                backgroundColor: value === opt ? '#fff0ec' : 'transparent',
+                color: value === opt ? '#eb6753' : '#333',
+                fontWeight: value === opt ? 'bold' : 'normal',
               }}
-              onMouseEnter={(e) => { if(value !== opt) e.target.style.backgroundColor = '#f8f9fa' }}
-              onMouseLeave={(e) => { if(value !== opt) e.target.style.backgroundColor = 'transparent' }}
+              onMouseEnter={(e) => { if (value !== opt) e.target.style.backgroundColor = '#f8f9fa' }}
+              onMouseLeave={(e) => { if (value !== opt) e.target.style.backgroundColor = 'transparent' }}
             >
               {opt}
             </div>
@@ -93,6 +93,49 @@ const CustomTimeDropdown = ({ options, value, onChange, name }) => {
       )}
     </div>
   );
+};
+
+// --- Style React-Select ---
+const customSelectStyles = {
+  control: (provided, state) => ({
+    ...provided,
+    backgroundColor: '#fff',
+    borderColor: state.isFocused ? '#eb6753' : '#dee2e6',
+    minHeight: '50px',
+    height: '50px',
+    borderRadius: '8px',
+    boxShadow: state.isFocused ? '0 0 0 1px #eb6753' : null,
+    '&:hover': { borderColor: '#eb6753' },
+    cursor: 'pointer'
+  }),
+  valueContainer: (provided) => ({
+    ...provided,
+    height: '50px',
+    padding: '0 6px',
+    display: 'flex',
+    alignItems: 'center'
+  }),
+  input: (provided) => ({ ...provided, margin: '0px', paddingTop: '0' }),
+  indicatorSeparator: () => ({ display: 'none' }),
+  indicatorsContainer: (provided) => ({ ...provided, height: '50px' }),
+  menu: (provided) => ({
+    ...provided,
+    borderRadius: '8px',
+    overflow: 'hidden',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+    zIndex: 9999
+  }),
+  option: (provided, state) => ({
+    ...provided,
+    backgroundColor: state.isSelected ? '#eb6753' : state.isFocused ? '#f8f9fa' : '#fff',
+    color: state.isSelected ? '#fff' : '#333',
+    cursor: 'pointer',
+    padding: '10px 15px',
+    fontSize: '15px',
+    '&:active': { backgroundColor: '#eb6753' },
+  }),
+  placeholder: (provided) => ({ ...provided, color: '#777', fontSize: '14px' }),
+  singleValue: (provided) => ({ ...provided, color: '#333', fontSize: '15px', fontWeight: '500' })
 };
 
 const BuyPackageContent = () => {
@@ -104,18 +147,18 @@ const BuyPackageContent = () => {
   const cycle = searchParams.get('cycle') || "-";
   const priceRaw = searchParams.get('price') || "0";
   const type = searchParams.get('type') || "package";
-  
-  const amount = priceRaw.replace(/[^0-9.]/g, ''); 
+
+  const amount = priceRaw.replace(/[^0-9.]/g, '');
   const incomingRefId = searchParams.get('ref_id');
 
-  // ✅ แก้ไข Hydration Error: ใช้ State แทนการสุ่มตัวเลขตรงๆ
-  const [orderId, setOrderId] = useState(incomingRefId || ""); 
+  const [orderId, setOrderId] = useState(incomingRefId || "");
 
-  // --- State & Form ---
+  // ✅ เพิ่ม field 'otherBank' ใน state
   const [form, setForm] = useState({
-    name: "",  
+    name: "",
     phone: "",
     bank: "",
+    otherBank: "", // เก็บชื่อธนาคารอื่น
     date: "",
     hour: "12",
     minute: "00",
@@ -129,21 +172,15 @@ const BuyPackageContent = () => {
   const today = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
-    // ✅ สร้าง Order ID ใน useEffect (เพื่อให้รันเฉพาะฝั่ง Client ไม่ชนกับ Server)
     if (!incomingRefId) {
-        setOrderId("INV-" + Math.floor(100000 + Math.random() * 900000));
+      setOrderId("INV-" + Math.floor(100000 + Math.random() * 900000));
     }
-
     const now = new Date();
-    const dateStr = now.toISOString().split("T")[0];
-    const currentHour = String(now.getHours()).padStart(2, '0');
-    const currentMinute = String(now.getMinutes()).padStart(2, '0');
-    
-    setForm((prev) => ({ 
-        ...prev, 
-        date: dateStr, 
-        hour: currentHour, 
-        minute: currentMinute 
+    setForm((prev) => ({
+      ...prev,
+      date: now.toISOString().split("T")[0],
+      hour: String(now.getHours()).padStart(2, '0'),
+      minute: String(now.getMinutes()).padStart(2, '0')
     }));
   }, [incomingRefId]);
 
@@ -161,6 +198,16 @@ const BuyPackageContent = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleBankChange = (selectedOption) => {
+    const val = selectedOption ? selectedOption.value : "";
+    setForm((prev) => ({
+      ...prev,
+      bank: val,
+      // ถ้าเปลี่ยนใจไม่เลือก 'other' ให้เคลียร์ค่าที่เคยพิมพ์ไว้
+      otherBank: val === 'other' ? prev.otherBank : ""
+    }));
+  };
+
   const handleSlipChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -176,12 +223,23 @@ const BuyPackageContent = () => {
 
   const handleConfirm = async () => {
     if (!form.name.trim()) { toast.warn("กรุณากรอกชื่อผู้โอน"); return; }
+    if (!form.phone.trim()) { toast.warn("กรุณากรอกเลขบัญชีผู้โอน"); return; }
     if (!form.bank) { toast.warn("กรุณาเลือกธนาคารที่โอน"); return; }
+
+    // ✅ เพิ่มการตรวจสอบ: ถ้าเลือก "อื่นๆ" ต้องระบุชื่อด้วย
+    if (form.bank === 'other' && !form.otherBank.trim()) {
+      toast.warn("กรุณาระบุชื่อธนาคารหรือช่องทางอื่นๆ");
+      return;
+    }
+
     if (!form.date) { toast.warn("กรุณาระบุวันที่โอน"); return; }
     if (!slipFile) { toast.warn("กรุณาแนบสลิปโอนเงิน"); return; }
 
+    // รวมข้อมูลส่งไป Backend
+    const finalBank = form.bank === 'other' ? `Other: ${form.otherBank}` : form.bank;
     const finalTime = `${form.hour}:${form.minute}`;
-    console.log("Submitting:", { ...form, time: finalTime, orderId }); // ส่ง orderId ไปด้วย
+
+    console.log("Submitting:", { ...form, bank: finalBank, time: finalTime, orderId });
 
     setIsSubmitting(true);
     await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -197,29 +255,33 @@ const BuyPackageContent = () => {
 
   const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
   const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
-  
-  const banks = [
-    { id: "kbank", name: "ธนาคารกสิกรไทย (KBANK)" },
-    { id: "scb", name: "ธนาคารไทยพาณิชย์ (SCB)" },
-    { id: "bbl", name: "ธนาคารกรุงเทพ (BBL)" },
-    { id: "ktb", name: "ธนาคารกรุงไทย (KTB)" },
-    { id: "bay", name: "ธนาคารกรุงศรีอยุธยา (BAY)" },
-    { id: "ttb", name: "ธนาคารทหารไทยธนชาต (TTB)" },
-    { id: "gsb", name: "ธนาคารออมสิน (GSB)" },
-    { id: "other", name: "ช่องทางอื่นๆ / ธนาคารอื่น" }
+
+  const bankOptions = [
+    { value: "kbank", label: "ธนาคารกสิกรไทย (KBANK)" },
+    { value: "scb", label: "ธนาคารไทยพาณิชย์ (SCB)" },
+    { value: "bbl", label: "ธนาคารกรุงเทพ (BBL)" },
+    { value: "ktb", label: "ธนาคารกรุงไทย (KTB)" },
+    { value: "bay", label: "ธนาคารกรุงศรีอยุธยา (BAY)" },
+    { value: "ttb", label: "ธนาคารทหารไทยธนชาต (TTB)" },
+    { value: "gsb", label: "ธนาคารออมสิน (GSB)" },
+    { value: "baac", label: "ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร (BAAC)" },
+    { value: "ghb", label: "ธนาคารอาคารสงเคราะห์ (GHB)" },
+    { value: "kkp", label: "ธนาคารเกียรตินาคินภัทร (KKP)" },
+    { value: "cimb", label: "ธนาคารซีไอเอ็มบี ไทย (CIMBT)" },
+    { value: "uob", label: "ธนาคารยูโอบี (UOB)" },
+    { value: "tisco", label: "ธนาคารทิสโก้ (TISCO)" },
+    { value: "lh", label: "ธนาคารแลนด์ แอนด์ เฮ้าส์ (LH Bank)" },
+    { value: "ibank", label: "ธนาคารอิสลามแห่งประเทศไทย (IBANK)" },
+    { value: "other", label: "ช่องทางอื่นๆ / ธนาคารอื่น" }
   ];
 
   return (
     <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden">
-      {/* --- HEADER --- */}
+      {/* ... Header ... */}
       <div className="row mb30 align-items-center">
         <div className="col-lg-8">
           <div className="d-flex align-items-center">
-            <button
-              onClick={() => router.back()}
-              className="btn btn-sm btn-light rounded-circle me-3 border"
-              title="ย้อนกลับ"
-            >
+            <button onClick={() => router.back()} className="btn btn-sm btn-light rounded-circle me-3 border">
               <i className="fas fa-arrow-left"></i>
             </button>
             <div>
@@ -232,11 +294,9 @@ const BuyPackageContent = () => {
           </div>
         </div>
         <div className="col-lg-4 text-lg-end">
-          {/* แสดง Order ID จาก State */}
           <div className="text-muted fz13">Ref Order: {orderId || "..."}</div>
         </div>
       </div>
-
       <hr className="opacity-25 mb30" />
 
       <div className="row g-4">
@@ -251,24 +311,16 @@ const BuyPackageContent = () => {
                 <span className="fw600 text-dark">สแกนจ่าย</span>
               </div>
               <div className="qr-container mx-auto mb-3" style={{ width: 200, height: 200 }}>
-                {/* ใช้ orderId จาก state ในการสร้าง QR */}
                 {orderId && (
-                    <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=PAYMENT-${orderId}-${amount}`}
-                    alt="QR Code"
-                    className="img-fluid border p-1 rounded"
-                    />
+                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=PAYMENT-${orderId}-${amount}`} alt="QR Code" className="img-fluid border p-1 rounded" />
                 )}
               </div>
               <p className="fz16 text-dark fw700 mb-1">บจก. โฮมส์ เอเจนซี่</p>
               <p className="text-muted fz13 mb-0">Ref: {orderId || "..."}</p>
               <hr className="my-3 opacity-50" />
-              <div 
-                className="d-flex justify-content-center align-items-center gap-2 py-3 rounded position-relative"
-                style={{ backgroundColor: '#fff0ec', border: '1px dashed #eb6753' }}
-              >
+              <div className="d-flex justify-content-center align-items-center gap-2 py-3 rounded position-relative" style={{ backgroundColor: '#fff0ec', border: '1px dashed #eb6753' }}>
                 <span className="text-dark fw700 fz20 letter-spacing-1">012-3-45678-9</span>
-                <i className="fas fa-copy cursor-pointer text-thm fz18 ms-2 hover-scale" title="คัดลอก" onClick={() => { navigator.clipboard.writeText("0123456789"); toast.info("คัดลอกเลขบัญชีแล้ว") }}></i>
+                <i className="fas fa-copy cursor-pointer text-thm fz18 ms-2 hover-scale" onClick={() => { navigator.clipboard.writeText("0123456789"); toast.info("คัดลอกเลขบัญชีแล้ว") }}></i>
               </div>
               <div className="text-muted fz15 mt-2">ธนาคารกสิกรไทย (KBANK)</div>
             </div>
@@ -284,76 +336,72 @@ const BuyPackageContent = () => {
             </h5>
 
             <div className="row g-3 mb-4">
-                {/* 1. ชื่อผู้โอน */}
-                <div className="col-md-6">
-                    <label className="form-label fw600 fz14">ชื่อผู้โอน (ตามสลิป) <span className="text-danger">*</span></label>
-                    <input type="text" name="name" className="form-control" placeholder="ระบุชื่อ-นามสกุล" value={form.name} onChange={handleInputChange} />
-                </div>
+              <div className="col-md-6">
+                <label className="form-label fw600 fz14">ชื่อผู้โอน (ตามสลิป) <span className="text-danger">*</span></label>
+                <input type="text" name="name" className="form-control" placeholder="ระบุชื่อ-นามสกุล" value={form.name} onChange={handleInputChange} />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label fw600 fz14">เลขบัญชีธนาคารของผู้โอน <span className="text-danger">*</span></label>
+                <input type="tel" name="phone" className="form-control" placeholder="xxx-xxx-xxxx" value={form.phone} onChange={handleInputChange} />
+              </div>
 
-                {/* 2. เบอร์ติดต่อ */}
-                <div className="col-md-6">
-                    <label className="form-label fw600 fz14">เบอร์ติดต่อกลับ</label>
-                    <input type="tel" name="phone" className="form-control" placeholder="08x-xxx-xxxx" value={form.phone} onChange={handleInputChange} />
-                </div>
+              <div className="col-12">
+                <label className="form-label fw600 fz14">ธนาคารที่โอน <span className="text-danger">*</span></label>
+                <Select
+                  instanceId="bank-select"
+                  options={bankOptions}
+                  value={bankOptions.find(opt => opt.value === form.bank)}
+                  onChange={handleBankChange}
+                  styles={customSelectStyles}
+                  placeholder="-- เลือกธนาคาร --"
+                  isSearchable={true}
+                />
 
-                {/* 3. ธนาคาร */}
-                <div className="col-12">
-                    <label className="form-label fw600 fz14">ธนาคารที่โอน <span className="text-danger">*</span></label>
-                    <select 
-                        name="bank" 
-                        className="form-select cursor-pointer" 
-                        value={form.bank} 
-                        onChange={handleInputChange}
-                        style={{ fontSize: '15px', height: '50px' }}
-                    >
-                        <option value="">-- เลือกธนาคาร --</option>
-                        {banks.map((b) => (
-                            <option key={b.id} value={b.id}>{b.name}</option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* 4. วันที่ */}
-                <div className="col-md-6">
-                    <label className="form-label fw600 fz14">วันที่โอน <span className="text-danger">*</span></label>
-                    <input 
-                        type="date" 
-                        name="date"
-                        className="form-control cursor-pointer"
-                        value={form.date}
-                        onChange={handleInputChange}
-                        max={today}
-                        style={{ fontSize: '16px', height: '50px' }}
+                {/* ✅ ช่องกรอกเพิ่มเติม (จะโผล่มาเมื่อเลือก 'other') */}
+                {form.bank === 'other' && (
+                  <div className="mt-3 ps-3 border-3 border-danger bg-light p-2 rounded">
+                    <label className="form-label fw600 fz13 text-danger">โปรดระบุธนาคาร / ช่องทางอื่นๆ <span className="text-danger">*</span></label>
+                    <input
+                      type="text"
+                      name="otherBank"
+                      className="form-control"
+                      placeholder="เช่น TrueWallet, เป๋าตัง ฯลฯ"
+                      value={form.otherBank}
+                      onChange={handleInputChange}
+                      style={{ height: '45px', fontSize: '14px' }}
                     />
-                    {form.date && (
-                        <div className="text-thm fz13 mt-2 fw600 bg-light px-2 py-1 rounded d-inline-block border">
-                            <i className="far fa-calendar-check me-1"></i> {formatThaiDate(form.date)}
-                        </div>
-                    )}
-                </div>
+                  </div>
+                )}
+              </div>
 
-                {/* 5. เวลา (Custom) */}
-                <div className="col-md-6">
-                    <label className="form-label fw600 fz14">เวลาที่โอน <span className="text-danger">*</span></label>
-                    
-                    <div className="d-flex align-items-center gap-2">
-                        <CustomTimeDropdown options={hours} value={form.hour} name="hour" onChange={handleInputChange} />
-                        <span className="fw-bold fz20">:</span>
-                        <CustomTimeDropdown options={minutes} value={form.minute} name="minute" onChange={handleInputChange} />
-                        <span className="text-muted ms-2 fz16 fw600">น.</span>
-                    </div>
+              <div className="col-md-6">
+                <label className="form-label fw600 fz14">วันที่โอน <span className="text-danger">*</span></label>
+                <input type="date" name="date" className="form-control cursor-pointer" value={form.date} onChange={handleInputChange} max={today} style={{ fontSize: '16px', height: '50px' }} />
+                {form.date && (
+                  <div className="text-thm fz13 mt-2 fw600 bg-light px-2 py-1 rounded d-inline-block border">
+                    <i className="far fa-calendar-check me-1"></i> {formatThaiDate(form.date)}
+                  </div>
+                )}
+              </div>
 
-                    <div className="text-muted fz12 mt-2">* ระบุเวลาตามสลิป (24 ชม.)</div>
+              <div className="col-md-6">
+                <label className="form-label fw600 fz14">เวลาที่โอน <span className="text-danger">*</span></label>
+                <div className="d-flex align-items-center gap-2">
+                  <CustomTimeDropdown options={hours} value={form.hour} name="hour" onChange={handleInputChange} />
+                  <span className="fw-bold fz20">:</span>
+                  <CustomTimeDropdown options={minutes} value={form.minute} name="minute" onChange={handleInputChange} />
+                  <span className="text-muted ms-2 fz16 fw600">น.</span>
                 </div>
+                <div className="text-muted fz12 mt-2">* ระบุเวลาตามสลิป (24 ชม.)</div>
+              </div>
 
-                {/* 6. ยอดเงิน */}
-                <div className="col-12">
-                    <label className="form-label fw600 fz14">จำนวนเงินที่โอน</label>
-                    <div className="input-group">
-                        <span className="input-group-text bg-light fw-bold">฿</span>
-                        <input type="text" className="form-control bg-light fw-bold text-dark" value={Number(amount).toLocaleString()} readOnly />
-                    </div>
+              <div className="col-12">
+                <label className="form-label fw600 fz14">จำนวนเงินที่โอน</label>
+                <div className="input-group">
+                  <span className="input-group-text bg-light fw-bold">฿</span>
+                  <input type="text" className="form-control bg-light fw-bold text-dark" value={Number(amount).toLocaleString()} readOnly />
                 </div>
+              </div>
             </div>
 
             <h6 className="fw600 mb-2 fz14">หลักฐานการโอน (สลิป) <span className="text-danger">*</span></h6>

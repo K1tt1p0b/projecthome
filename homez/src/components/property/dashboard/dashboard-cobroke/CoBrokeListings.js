@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { propertyData } from "@/data/propertyData";
 import Image from "next/image";
 import Link from "next/link";
-import Select from "react-select"; // ✅ 1. Import react-select
+import Select from "react-select";
 
 const PRIMARY = "#eb6753";
 const PILL_BG = "#fff";

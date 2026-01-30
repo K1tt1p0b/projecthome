@@ -4,11 +4,98 @@ import MainMenu from "@/components/common/MainMenu";
 import SidebarPanel from "@/components/common/sidebar-panel";
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 const DashboardHeader = () => {
   const pathname = usePathname();
+
+  // =================================================================
+  // 🔔 ส่วนที่เพิ่มใหม่: Logic การแจ้งเตือน (Notification)
+  // =================================================================
+  const [notifs, setNotifs] = useState([]);
+
+  // 1. ฟังก์ชันโหลดข้อมูลจาก LocalStorage
+  const loadNotifs = () => {
+    try {
+      let saved = JSON.parse(localStorage.getItem('my_notifications') || "[]");
+
+      // ------------------------------------------------------------------
+      // 🛠️ [TEST MODE] ส่วนนี้เพิ่มมาเพื่อการเทส: ถ้าไม่มีข้อมูล ให้สร้างข้อมูลจำลองขึ้นมา
+      // ------------------------------------------------------------------
+      if (saved.length === 0) {
+        saved = [
+          {
+            id: 1,
+            title: "Darlene Robertson",
+            message: "ส่งคำขอ Co-broke ทรัพย์ Rhythm...",
+            time: new Date().toISOString(),
+            type: "cobroke",
+            isRead: false,
+            // ลิ้งค์ไปหน้าแชทพร้อมส่ง ID ทรัพย์และประเภท
+            url: "/dashboard-message?interest_property=101&type=cobroke"
+          },
+          {
+            id: 2,
+            title: "Jane Cooper",
+            message: "สนใจคอนโด Life Ladprao ครับ...",
+            time: new Date().toISOString(),
+            type: "buyer",
+            isRead: false,
+            // ลิ้งค์ไปหน้าแชทแบบลูกค้าทั่วไป
+            url: "/dashboard-message?interest_property=102&type=buyer"
+          }
+        ];
+        // บันทึกลงเครื่องเพื่อให้กดอ่านแล้วสถานะเปลี่ยนจริง
+        localStorage.setItem('my_notifications', JSON.stringify(saved));
+      }
+      // ------------------------------------------------------------------
+
+      setNotifs(saved);
+    } catch (e) {
+      console.error("Error loading notifications", e);
+    }
+  };
+
+  // 2. ทำงานเมื่อโหลดหน้าเว็บ + เฝ้าฟัง Event
+  useEffect(() => {
+    loadNotifs(); // โหลดครั้งแรก
+
+    // ✅ ตั้งหูรอฟังเสียง "storage_update" จาก Sidebar
+    window.addEventListener("storage_update", loadNotifs);
+    // ฟังเผื่อเปิดหลาย Tab
+    window.addEventListener("storage", loadNotifs);
+
+    return () => {
+      window.removeEventListener("storage_update", loadNotifs);
+      window.removeEventListener("storage", loadNotifs);
+    };
+  }, []);
+
+  // 3. นับจำนวนที่ยังไม่อ่าน (isRead = false)
+  const unreadCount = notifs.filter(n => !n.isRead).length;
+
+  // 4. ฟังก์ชันกดกระดิ่ง (เคลียร์เลขแจ้งเตือน)
+  const handleRead = () => {
+    // หน่วงเวลานิดนึงเพื่อให้คนเห็นตัวเลขก่อนหาย (Option) หรือเคลียร์เลยก็ได้
+    if (unreadCount > 0) {
+      const readAll = notifs.map(n => ({ ...n, isRead: true }));
+      setNotifs(readAll);
+      localStorage.setItem('my_notifications', JSON.stringify(readAll));
+    }
+  };
+
+  // 5. ฟังก์ชันแปลงเวลา
+  const timeAgo = (dateString) => {
+    if (!dateString) return "";
+    const diff = Math.floor((new Date() - new Date(dateString)) / 1000);
+    if (diff < 60) return "เมื่อสักครู่";
+    if (diff < 3600) return `${Math.floor(diff / 60)} นาทีที่แล้ว`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} ชม. ที่แล้ว`;
+    return "นานมาแล้ว";
+  };
+  // =================================================================
+
 
   const menuItems = [
     {
@@ -122,24 +209,29 @@ const DashboardHeader = () => {
                 <div className="text-center text-lg-end header_right_widgets">
                   <ul className="mb0 d-flex justify-content-center justify-content-sm-end p-0">
 
-                    {/* 🎯 กระดิ่งแจ้งเตือน — คงไว้เหมือนเดิมทุกอย่าง */}
+                    {/* 🎯 กระดิ่งแจ้งเตือน (Updated Logic) */}
                     <li className="d-none d-sm-block">
                       <div className="dropdown">
                         <a
                           className="text-center mr20 notif position-relative"
                           href="#"
                           data-bs-toggle="dropdown"
+                          onClick={handleRead} // ✅ กดปุ๊บ ตัวเลขหาย (เพราะ set isRead = true)
                         >
                           <span
                             className="flaticon-bell"
                             style={{ fontSize: "22px" }}
                           />
-                          <span
-                            className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                            style={{ fontSize: "10px", marginTop: "5px" }}
-                          >
-                            3
-                          </span>
+
+                          {/* ✅ โชว์เลขเฉพาะตอนมีข้อความใหม่ */}
+                          {unreadCount > 0 && (
+                            <span
+                              className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                              style={{ fontSize: "10px", marginTop: "5px" }}
+                            >
+                              {unreadCount}
+                            </span>
+                          )}
                         </a>
 
                         <div
@@ -161,7 +253,7 @@ const DashboardHeader = () => {
                             </h6>
                             <Link
                               href="/dashboard-message"
-                              className="text-primary text-decoration-none me-3" // เพิ่ม text-decoration-none ไม่ให้มีขีดเส้นใต้
+                              className="text-primary text-decoration-none me-3"
                               style={{
                                 cursor: "pointer",
                                 fontSize: "13px",
@@ -173,265 +265,109 @@ const DashboardHeader = () => {
                             </Link>
                           </div>
 
-                          <div
-                            style={{ maxHeight: "350px", overflowY: "auto" }}
-                          >
-                            <Link
-                              href="/dashboard-agent-contacts"
-                              className="dropdown-item border-bottom"
-                              style={{
-                                height: "auto",
-                                width: "100%",
-                                lineHeight: "normal",
-                                whiteSpace: "normal",
-                                padding: "15px 20px",
-                                display: "block",
-                                backgroundColor: "#fff",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "flex-start",
-                                  width: "100%",
-                                }}
-                              >
-                                <div
+                          <div style={{ maxHeight: "350px", overflowY: "auto" }}>
+
+                            {/* ✅ วนลูปแสดงข้อมูลจริง */}
+                            {notifs.length === 0 ? (
+                              <div className="p-4 text-center text-muted fz14">ไม่มีการแจ้งเตือนใหม่</div>
+                            ) : (
+                              notifs.map((item) => (
+                                <Link
+                                  key={item.id}
+                                  // ✅✅ แก้ไขตรงนี้: ใช้ item.url ที่เราสร้างไว้ใน Mock Data
+                                  href={item.url || "/dashboard-message"}
+                                  className="dropdown-item border-bottom"
                                   style={{
-                                    flexShrink: 0,
-                                    width: "45px",
-                                    height: "45px",
-                                    backgroundColor: "#eef2ff",
-                                    color: "#4f46e5",
-                                    borderRadius: "50%",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    marginRight: "15px",
+                                    height: "auto",
+                                    width: "100%",
+                                    lineHeight: "normal",
+                                    whiteSpace: "normal",
+                                    padding: "15px 20px",
+                                    display: "block",
+                                    // ถ้ายังไม่อ่าน ให้พื้นหลังเป็นสีฟ้าอ่อน
+                                    backgroundColor: item.isRead ? "#fff" : "#f0f9ff",
                                   }}
                                 >
-                                  <i
-                                    className="flaticon-chat"
-                                    style={{ fontSize: "20px" }}
-                                  />
-                                </div>
-
-                                <div style={{ flex: 1, minWidth: 0 }}>
                                   <div
                                     style={{
                                       display: "flex",
-                                      justifyContent: "space-between",
-                                      alignItems: "baseline",
-                                      marginBottom: "4px",
+                                      alignItems: "flex-start",
+                                      width: "100%",
                                     }}
                                   >
-                                    <span
+                                    {/* ไอคอนเปลี่ยนสีตามประเภท */}
+                                    <div
                                       style={{
-                                        fontSize: "15px",
-                                        fontWeight: "bold",
-                                        color: "#333",
+                                        flexShrink: 0,
+                                        width: "45px",
+                                        height: "45px",
+                                        // ถ้าเป็น cobroke สีส้ม, ถ้าไม่ใช่ สีน้ำเงิน
+                                        backgroundColor: item.type === 'cobroke' ? "#fff7ed" : "#eef2ff",
+                                        color: item.type === 'cobroke' ? "#f97316" : "#4f46e5",
+                                        borderRadius: "50%",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        marginRight: "15px",
                                       }}
                                     >
-                                      มีข้อความใหม่!
-                                    </span>
-                                    <span
-                                      style={{
-                                        fontSize: "11px",
-                                        color: "#999",
-                                        whiteSpace: "nowrap",
-                                      }}
-                                    >
-                                      2 นาที
-                                    </span>
+                                      <i
+                                        className={item.type === 'cobroke' ? "fas fa-handshake" : "flaticon-chat"}
+                                        style={{ fontSize: "20px" }}
+                                      />
+                                    </div>
+
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          justifyContent: "space-between",
+                                          alignItems: "baseline",
+                                          marginBottom: "4px",
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            fontSize: "15px",
+                                            fontWeight: "bold",
+                                            color: "#333",
+                                          }}
+                                        >
+                                          {item.title}
+                                        </span>
+                                        <span
+                                          style={{
+                                            fontSize: "11px",
+                                            color: "#999",
+                                            whiteSpace: "nowrap",
+                                          }}
+                                        >
+                                          {timeAgo(item.time)}
+                                        </span>
+                                      </div>
+
+                                      <p
+                                        style={{
+                                          fontSize: "13px",
+                                          lineHeight: "1.6",
+                                          color: "#666",
+                                          margin: 0,
+                                          wordBreak: "break-word",
+                                        }}
+                                      >
+                                        {item.message}
+                                      </p>
+                                    </div>
                                   </div>
-
-                                  <p
-                                    style={{
-                                      fontSize: "13px",
-                                      lineHeight: "1.6",
-                                      color: "#666",
-                                      margin: 0,
-                                      wordBreak: "break-word",
-                                    }}
-                                  >
-                                    คุณมีข้อความใหม่จากผู้สนใจทรัพย์สิน
-                                  </p>
-                                </div>
-                              </div>
-                            </Link>
-
-                            <Link
-                              href="/dashboard-my-properties"
-                              className="dropdown-item"
-                              style={{
-                                height: "auto",
-                                width: "100%",
-                                lineHeight: "normal",
-                                whiteSpace: "normal",
-                                padding: "15px 20px",
-                                display: "block",
-                                backgroundColor: "#fff",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "flex-start",
-                                  width: "100%",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    flexShrink: 0,
-                                    width: "45px",
-                                    height: "45px",
-                                    backgroundColor: "#ecfdf5",
-                                    color: "#10b981",
-                                    borderRadius: "50%",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    marginRight: "15px",
-                                  }}
-                                >
-                                  <i
-                                    className="flaticon-home"
-                                    style={{ fontSize: "20px" }}
-                                  />
-                                </div>
-
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div
-                                    style={{
-                                      display: "flex",
-                                      justifyContent: "space-between",
-                                      alignItems: "baseline",
-                                      marginBottom: "4px",
-                                    }}
-                                  >
-                                    <span
-                                      style={{
-                                        fontSize: "15px",
-                                        fontWeight: "bold",
-                                        color: "#333",
-                                      }}
-                                    >
-                                      อนุมัติประกาศแล้ว
-                                    </span>
-                                    <span
-                                      style={{
-                                        fontSize: "11px",
-                                        color: "#999",
-                                        whiteSpace: "nowrap",
-                                      }}
-                                    >
-                                      1 ชม.
-                                    </span>
-                                  </div>
-
-                                  <p
-                                    style={{
-                                      fontSize: "13px",
-                                      lineHeight: "1.6",
-                                      color: "#666",
-                                      margin: 0,
-                                      wordBreak: "break-word",
-                                    }}
-                                  >
-                                    คอนโด สุขุมวิท 24 ออนไลน์แล้ว
-                                  </p>
-                                </div>
-                              </div>
-                            </Link>
-
-                            <Link
-                              href="/dashboard-message"
-                              className="dropdown-item border-bottom-0"
-                              style={{
-                                height: "auto",
-                                width: "100%",
-                                lineHeight: "normal",
-                                whiteSpace: "normal",
-                                padding: "15px 20px",
-                                display: "block",
-                                backgroundColor: "#fff",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "flex-start",
-                                  width: "100%",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    flexShrink: 0,
-                                    width: "45px",
-                                    height: "45px",
-                                    backgroundColor: "#fff7ed",
-                                    color: "#f97316",
-                                    borderRadius: "50%",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    marginRight: "15px",
-                                  }}
-                                >
-                                  <i
-                                    className="flaticon-chat-1"
-                                    style={{ fontSize: "20px" }}
-                                  />
-                                </div>
-
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div
-                                    style={{
-                                      display: "flex",
-                                      justifyContent: "space-between",
-                                      alignItems: "baseline",
-                                      marginBottom: "4px",
-                                    }}
-                                  >
-                                    <span
-                                      style={{
-                                        fontSize: "15px",
-                                        fontWeight: "bold",
-                                        color: "#333",
-                                      }}
-                                    >
-                                      ข้อความใหม่จากเอเจนท์
-                                    </span>
-                                    <span
-                                      style={{
-                                        fontSize: "11px",
-                                        color: "#999",
-                                        whiteSpace: "nowrap",
-                                      }}
-                                    >
-                                      3 ชม.
-                                    </span>
-                                  </div>
-                                  <p
-                                    style={{
-                                      fontSize: "13px",
-                                      lineHeight: "1.6",
-                                      color: "#666",
-                                      margin: 0,
-                                      wordBreak: "break-word",
-                                    }}
-                                  >
-                                    เอเจนท์ A ได้ส่งข้อความถึงคุณ
-                                  </p>
-                                </div>
-                              </div>
-                            </Link>
+                                </Link>
+                              ))
+                            )}
 
                           </div>
 
                           <div className="p-3 text-center border-top bg-white">
                             <Link
-                              href="#"
+                              href="/dashboard-message"
                               className="text-decoration-none text-primary fw-bold"
                               style={{
                                 fontSize: "14px",
