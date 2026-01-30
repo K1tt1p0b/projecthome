@@ -93,6 +93,10 @@ function normalizeAutoStore(raw) {
     cooldownEndAt: Number(cooldownEndAt || 0),
 
     cancelAfterCooldown: !!s.cancelAfterCooldown,
+
+    // ✅ NEW: เก็บเวลารอบล่าสุดรายโพส (timestamp)
+    lastRunAtById:
+      s?.lastRunAtById && typeof s.lastRunAtById === "object" ? s.lastRunAtById : {},
   };
 }
 
@@ -319,6 +323,9 @@ export default function BootAuto({ property, packageKey = "pro", onDone, onCance
           cooldownEndAt: startAt + intervalNow,
 
           cancelAfterCooldown: false,
+
+          // ✅ NEW: รอบแรกถือว่าเริ่มดันจริงทันที
+          lastRunAtById: { ...(store.lastRunAtById || {}), [pId]: startAt },
         };
 
         writeLS(LS_AUTO, next);
