@@ -1,6 +1,6 @@
 import { listingItems, pageItems, blogItems } from "@/data/navItems";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation"; // ✅ เพิ่ม useSearchParams
 import { useEffect, useMemo, useState } from "react";
 
 const getGroup = (title) =>
@@ -11,6 +11,9 @@ const getGroup = (title) =>
 
 const MainMenu = () => {
   const pathname = usePathname();
+  const searchParams = useSearchParams(); // ✅ ดึง Params
+  const currentCategory = searchParams.get("category"); // ✅ ค่า category ปัจจุบัน
+
   const [topMenu, setTopMenu] = useState("");
   const [submenu, setSubmenu] = useState("");
 
@@ -19,20 +22,20 @@ const MainMenu = () => {
   const servicesGroup = useMemo(() => getGroup("บริการเพิ่มเติม"), []);
   const coursesGroup = useMemo(() => getGroup("คอร์สเรียน"), []);
 
-  // ✅ บทความ: ใช้ blog list v3
+  // ✅ บทความ
   const articleLink = useMemo(() => {
     const v3 = (blogItems || []).find((b) => b?.href === "/blog-list-v3");
     return v3?.href || "/blog-list-v3";
   }, []);
 
-  // ✅ FAQ: แยกเป็นเมนูบนสุด
+  // ✅ FAQ
   const faqLink = useMemo(() => {
     const faq =
       (pageItems || []).find((x) => x?.href === "/faq") || { href: "/faq" };
     return faq.href || "/faq";
   }, []);
 
-  // ✅ ข้อมูลเพิ่มเติม: เอา FAQ ออก
+  // ✅ ข้อมูลเพิ่มเติม
   const infoItems = useMemo(() => {
     const docs =
       (pageItems || []).find((x) => x?.href === "/download-documents") || {
@@ -51,6 +54,7 @@ const MainMenu = () => {
     return [docs, article, about];
   }, [articleLink]);
 
+  // ✅ Logic การเปลี่ยนสี Parent Menu (เมนูบนสุด)
   useEffect(() => {
     const sameRoot = (href) =>
       String(href || "").split("/")[1] === pathname.split("/")[1];
@@ -78,8 +82,30 @@ const MainMenu = () => {
     setTopMenu(nextTop);
   }, [pathname, assetsGroup, servicesGroup, coursesGroup, infoItems, faqLink]);
 
+  // 🔥🔥🔥 ฟังก์ชัน handleActive ฉบับแก้ไข 🔥🔥🔥
   const handleActive = (link) => {
-    if (link === pathname) return "menuActive";
+    if (!link) return "";
+
+    // 1. กรณี Link ที่เป็นตัวเลือกหมวดหมู่ (มี ?category=...)
+    if (link.includes("category=")) {
+      const linkCategory = link.split("category=")[1];
+      // ถ้า category ตรงกัน -> Active
+      return linkCategory === currentCategory ? "menuActive text-thm" : "";
+    }
+
+    // 2. กรณี Link ปกติ หรือปุ่ม "ทั้งหมด" (ไม่มี ?category=)
+    if (link === pathname) {
+      // ⛔️ จุดสำคัญที่แก้: 
+      // ถ้า URL ปัจจุบันมีการเลือกหมวดหมู่อยู่ (currentCategory มีค่า)
+      // แสดงว่าเราไม่ได้ดู "ทั้งหมด" -> ให้ return ว่าง (ไม่ Active)
+      if (currentCategory) {
+        return "";
+      }
+
+      // ถ้า URL ไม่มี category เลย -> ให้ Active ตามปกติ
+      return "menuActive text-thm";
+    }
+
     return "";
   };
 
@@ -105,7 +131,11 @@ const MainMenu = () => {
         <ul className="sub-menu">
           {(assetsGroup.submenu || []).map((item, idx) => (
             <li key={idx}>
-              <Link className={handleActive(item.href)} href={item.href || "/"}>
+              {/* ✅ เรียกใช้ handleActive ที่แก้แล้ว */}
+              <Link
+                className={handleActive(item.href)}
+                href={item.href || "/"}
+              >
                 {item.label}
               </Link>
             </li>
@@ -113,7 +143,7 @@ const MainMenu = () => {
         </ul>
       </li>
 
-      {/* ✅ บริการเพิ่มเติม (ใช้ megamenu style แบบเดิม เพื่อให้ “ประเภทบริการ” โผล่เหมือนรูป 2) */}
+      {/* บริการเพิ่มเติม */}
       <li className="megamenu_style dropitem">
         <a className="list-item" href="#">
           <span
@@ -124,7 +154,6 @@ const MainMenu = () => {
           <span className="arrow"></span>
         </a>
 
-        {/* ✅ 2 คอลัมน์: ซ้าย=บริการ, ขวา=คอร์สเรียน */}
         <ul className="row dropdown-megamenu sub-menu">
           {/* ซ้าย: ประเภทบริการเพิ่มเติม */}
           <li className="col mega_menu_list">
@@ -162,7 +191,7 @@ const MainMenu = () => {
         </ul>
       </li>
 
-      {/* ✅ FAQ แยกเป็นเมนูบนสุด */}
+      {/* FAQ */}
       <li className="visible_list dropitem">
         <Link className="list-item" href={faqLink}>
           <span className={topMenu === "faq" ? "title menuActive" : "title"}>

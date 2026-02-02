@@ -1,65 +1,19 @@
-import Header from "@/components/home/home-v10/Header";
-
-import Footer from "@/components/common/default-footer";
-import MobileMenu from "@/components/common/mobile-menu";
-
-import ProperteyFiltering from "@/components/listing/grid-view/grid-full-3-col/ProperteyFiltering";
-
 import React from "react";
+import ListingContent from "@/components/listing/grid-view/grid-full-3-col/ListingContent";
 
+// ✅ 1. Metadata สามารถใช้งานได้แล้ว (Server Component)
 export const metadata = {
-  title: "Gird Full 3 Column || Homez - Real Estate NextJS Template",
+  title: "ค้นหาอสังหาริมทรัพย์ || LandX",
+  description: "รวมบ้าน คอนโด ที่ดิน คุณภาพดี",
 };
 
-const GridFull3Col = () => {
+const GridFull3ColPage = () => {
   return (
     <>
-      {/* Main Header Nav */}
-      <Header />
-      {/* End Main Header Nav */}
-
-      {/* Mobile Nav  */}
-      <MobileMenu />
-      {/* End Mobile Nav  */}
-
-      {/* Breadcumb Sections */}
-      <section className="breadcumb-section bgc-f7">
-        <div className="container">
-          <div className="row">
-            <div className="col-lg-12">
-              <div className="breadcumb-style1">
-                <h2 className="title">New York Homes for Sale</h2>
-                <div className="breadcumb-list">
-                  <a href="#">Home</a>
-                  <a href="#">For Rent</a>
-                </div>
-                <a
-                  className="filter-btn-left mobile-filter-btn d-block d-lg-none"
-                  data-bs-toggle="offcanvas"
-                  href="#listingSidebarFilter"
-                  role="button"
-                  aria-controls="listingSidebarFilter"
-                >
-                  <span className="flaticon-settings" /> Filter
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      {/* End Breadcumb Sections */}
-
-      {/* Property Filtering */}
-      <ProperteyFiltering/>
-      {/* Property Filtering */}
-
-      {/* Start Our Footer */}
-      <section className="footer-style1 pt60 pb-0">
-        <Footer />
-      </section>
-      {/* End Our Footer */}
+      {/* ✅ 2. เรียกใช้ Client Component ที่เราแยกไว้ */}
+      <ListingContent />
     </>
   );
 };
 
-export default GridFull3Col;
+export default GridFull3ColPage;
