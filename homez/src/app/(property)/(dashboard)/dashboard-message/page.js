@@ -3,9 +3,7 @@ import MobileMenu from "@/components/common/mobile-menu";
 import DboardMobileNavigation from "@/components/property/dashboard/DboardMobileNavigation";
 import Footer from "@/components/property/dashboard/Footer";
 import SidebarDashboard from "@/components/property/dashboard/SidebarDashboard";
-import SearchBox from "@/components/property/dashboard/dashboard-message/SearchBox";
-import UserInboxList from "@/components/property/dashboard/dashboard-message/UserInboxList";
-import UserChatBoxContent from "@/components/property/dashboard/dashboard-message/UserChatBoxContent";
+import ChatDashboardClient from "./ChatDashboardClient"; // ✅ Import ตัวลูกเข้ามา
 
 export const metadata = {
   title: "ข้อความ | Homez Dashboard",
@@ -24,6 +22,7 @@ const DashboardMessage = () => {
           <div className="dashboard__main pl0-md">
             <div className="dashboard__content bgc-f7">
 
+              {/* Header Title Area */}
               <div className="row pb40">
                 <div className="col-lg-12">
                   <DboardMobileNavigation />
@@ -36,31 +35,8 @@ const DashboardMessage = () => {
                 </div>
               </div>
 
-              {/* ✅✅ REDESIGN: แยกเป็น 2 กล่อง (ซ้าย/ขวา) เว้นห่างกัน */}
-              <div className="row mb40">
-
-                {/* 👈 กล่องซ้าย: รายชื่อ (Sidebar) */}
-                <div className="col-lg-5 col-xl-4">
-                  <div className="bg-white border rounded-4 shadow-sm overflow-hidden d-flex flex-column h-100" style={{ maxHeight: '80vh', minHeight: '600px' }}>
-                    <div className="p-3 border-bottom bg-white">
-                      <h4 className="mb-3 fw-bold">Chats</h4>
-                      <SearchBox />
-                    </div>
-                    <div className="flex-grow-1 overflow-auto custom-scrollbar">
-                      <UserInboxList />
-                    </div>
-                  </div>
-                </div>
-
-                {/* 👉 กล่องขวา: ห้องแชท (Chat Room) */}
-                <div className="col-lg-7 col-xl-8">
-                  <div className="bg-white border rounded-4 shadow-sm overflow-hidden h-100" style={{ maxHeight: '80vh', minHeight: '600px' }}>
-                    <UserChatBoxContent />
-                  </div>
-                </div>
-
-              </div>
-              {/* END REDESIGN */}
+              {/* ✅ เรียกใช้ Client Component ตรงนี้ */}
+              <ChatDashboardClient />
 
             </div>
             <Footer />

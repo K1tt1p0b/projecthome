@@ -1,29 +1,37 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { propertyData } from "@/data/propertyData";
+import propertyData from "@/data/propertyData";
 import Image from "next/image";
 import Link from "next/link";
-import Select from "react-select";
+import Select from "react-select"; // ✅ Import react-select
 
 const PRIMARY = "#eb6753";
 const PILL_BG = "#fff";
 const TEXT_DARK = "#111827";
 
 const CoBrokeListings = () => {
+  // 1. กรองเฉพาะรายการที่รับ Co-Broke
   const source = propertyData.filter(item =>
     item.acceptCoBroke === true || String(item.acceptCoBroke) === "true"
   );
 
+  // 2. State ต่างๆ
   const [statusFilter, setStatusFilter] = useState("all");
   const [propertyTypeFilter, setPropertyTypeFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest");
-
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isMounted, setIsMounted] = useState(false); // ✅ เพิ่ม state เช็ค Client Side
+
   const PER_PAGE = 8;
 
-  // ✅ 2. ตัวเลือกสำหรับ Dropdown (Format ของ react-select)
+  // ✅ ป้องกัน Hydration Error (ให้ Render react-select หลัง mount แล้ว)
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // ตัวเลือก Dropdown
   const sortOptions = [
     { value: 'newest', label: 'อัปเดตล่าสุด' },
     { value: 'oldest', label: 'เก่าที่สุด' },
@@ -31,15 +39,15 @@ const CoBrokeListings = () => {
     { value: 'price-desc', label: 'ราคา: สูง - ต่ำ' },
   ];
 
-  // ✅ 3. สไตล์ Dropdown (ก๊อปมาจากหน้า Contact Admin เป๊ะๆ)
+  // สไตล์ Dropdown (ปรับแต่งให้เหมือน Contact Admin)
   const customStyles = {
     control: (provided, state) => ({
       ...provided,
-      backgroundColor: '#f8f9fa', // สีพื้นหลังเทาอ่อนแบบ Contact Admin
-      border: '1px solid #ced4da', // สีขอบ
+      backgroundColor: '#f8f9fa',
+      border: '1px solid #ced4da',
       borderRadius: '8px',
-      padding: '4px', // ปรับ Padding นิดหน่อยให้สูงใกล้เคียงช่องค้นหา
-      minHeight: '50px', // ✅ บังคับความสูงให้เท่าช่องค้นหา
+      padding: '0 8px', // ปรับ padding
+      minHeight: '50px', // ความสูงเท่าช่องค้นหา
       boxShadow: 'none',
       cursor: 'pointer',
       '&:hover': { borderColor: '#a8b3c4' }
@@ -47,14 +55,9 @@ const CoBrokeListings = () => {
     menu: (provided) => ({
       ...provided,
       borderRadius: '12px',
-      overflow: 'hidden',
       zIndex: 9999,
       marginTop: '8px',
       boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
-    }),
-    menuList: (provided) => ({
-      ...provided,
-      padding: '0',
     }),
     option: (provided, state) => ({
       ...provided,
@@ -67,17 +70,17 @@ const CoBrokeListings = () => {
     singleValue: (provided) => ({
       ...provided,
       color: '#212529',
-      fontWeight: '600', // ตัวหนาหน่อย
+      fontWeight: '600',
       fontSize: '14px'
     }),
     placeholder: (provided) => ({
       ...provided,
       color: '#6c757d',
     }),
-    indicatorSeparator: () => ({ display: 'none' }), // ซ่อนเส้นคั่น
+    indicatorSeparator: () => ({ display: 'none' }),
   };
 
-  // --- Logic Filter (เหมือนเดิม) ---
+  // --- Logic Filter ---
   const filteredListings = useMemo(() => {
     let list = [...source];
 
@@ -174,17 +177,19 @@ const CoBrokeListings = () => {
                 </div>
               </div>
 
-              {/* ✅ 4. เปลี่ยนมาใช้ react-select (สวยเหมือนหน้า Contact Admin) */}
+              {/* ✅ Render Dropdown เมื่อ Client Mount แล้วเท่านั้น */}
               <div style={{ minWidth: 220 }}>
-                <Select
-                  instanceId="sort-select"
-                  defaultValue={sortOptions[0]}
-                  options={sortOptions}
-                  styles={customStyles}
-                  onChange={(selectedOption) => setSortOrder(selectedOption.value)}
-                  isSearchable={false}
-                  placeholder="เรียงลำดับ..."
-                />
+                {isMounted && (
+                  <Select
+                    instanceId="sort-select"
+                    defaultValue={sortOptions[0]}
+                    options={sortOptions}
+                    styles={customStyles}
+                    onChange={(selectedOption) => setSortOrder(selectedOption.value)}
+                    isSearchable={false}
+                    placeholder="เรียงลำดับ..."
+                  />
+                )}
               </div>
             </div>
 
@@ -196,16 +201,16 @@ const CoBrokeListings = () => {
         <p className="text-muted fz14 mb-0">พบ {filteredListings.length} รายการที่เปิดรับ Co-Broker</p>
       </div>
 
-      {/* --- Listings List View (เหมือนเดิม) --- */}
+      {/* --- Listings List View --- */}
       <div className="row g-3">
-        {paginatedListings.map((listing, index) => (
+        {paginatedListings.map((listing) => (
           <div className="col-12" key={listing.id}>
             <div
-              className="d-md-flex align-items-center bg-white p-3 rounded-3"
+              className="d-md-flex align-items-center bg-white p-3 rounded-3 listing-card-hover" // เพิ่ม class hover
               style={{
                 boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
                 border: '1px solid #f0f0f0',
-                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                transition: 'all 0.2s ease',
                 cursor: 'pointer'
               }}
             >
