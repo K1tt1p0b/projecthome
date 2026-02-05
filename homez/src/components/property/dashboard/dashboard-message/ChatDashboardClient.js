@@ -5,15 +5,13 @@ import { useSearchParams } from "next/navigation";
 import SearchBox from "@/components/property/dashboard/dashboard-message/SearchBox";
 import UserInboxList from "@/components/property/dashboard/dashboard-message/UserInboxList";
 import UserChatBoxContent from "@/components/property/dashboard/dashboard-message/UserChatBoxContent";
-
-// ✅ 1. ดึงข้อมูลจริงมาใช้ (เพื่อให้ ID ตรงกับหน้า Listing แน่นอน)
 import propertyData from "@/data/propertyData";
 
 const ChatDashboardClient = () => {
     const searchParams = useSearchParams();
     const interestPropertyId = searchParams.get("interest_property");
 
-    // State เก็บรายชื่อคนคุย (Mock เริ่มต้น)
+    // State เก็บรายชื่อคนคุย
     const [users, setUsers] = useState([
         {
             id: 1,
@@ -35,22 +33,26 @@ const ChatDashboardClient = () => {
         },
     ]);
 
-    const [activeUser, setActiveUser] = useState(null); // เริ่มต้นยังไม่เลือกใคร
+    const [activeUser, setActiveUser] = useState(null);
+
+    // ✅ เพิ่มฟังก์ชันลบตรงนี้
+    const handleDeleteChat = (idToDelete) => {
+        setUsers((prevUsers) => prevUsers.filter(user => user.id !== idToDelete));
+
+        if (activeUser && activeUser.id === idToDelete) {
+            setActiveUser(null);
+        }
+    };
 
     // Logic: สร้างแชทใหม่จาก URL
     useEffect(() => {
-        // 🔍 Debug: เช็คว่า ID ส่งมาไหม (กด F12 ดู Console)
         console.log("Interest ID from URL:", interestPropertyId);
 
         if (interestPropertyId) {
-            // ✅ 2. ค้นหาจากข้อมูลจริง (propertyData)
-            // แปลงเป็น String ทั้งคู่ก่อนเทียบ เพื่อความชัวร์
             const targetProperty = propertyData.find((p) => String(p.id) === String(interestPropertyId));
-
-            console.log("Found Property:", targetProperty); // 🔍 ดูว่าเจอทรัพย์ไหม
+            console.log("Found Property:", targetProperty);
 
             if (targetProperty) {
-                // เช็คว่าเคยคุยกันยัง (Mock เช็คจากชื่อทรัพย์ที่อยู่ในชื่อคน)
                 const isExist = users.find((u) => u.name.includes(targetProperty.title));
 
                 if (!isExist) {
@@ -64,18 +66,9 @@ const ChatDashboardClient = () => {
                         notif: 1,
                     };
 
-                    // ❌ ของเดิม: setUsers((prev) => [newUser, ...prev]); 
-                    // (แบบเดิมมันยัดเลย ไม่เช็คว่ามีของเก่าซ้ำไหมในวินาทีนั้น)
-
-                    // ✅ แก้เป็นแบบนี้: เช็คซ้ำอีกทีก่อนยัดเข้า State
                     setUsers((prevUsers) => {
-                        // เช็คว่าใน list ปัจจุบัน มีคนชื่อนี้หรือยัง?
                         const alreadyInList = prevUsers.find(u => u.name === newUser.name);
-
-                        // ถ้ามีแล้ว ให้คืนค่าเดิมกลับไป (ไม่เพิ่ม)
                         if (alreadyInList) return prevUsers;
-
-                        // ถ้ายังไม่มี ค่อยเพิ่มตัวใหม่เข้าไป
                         return [newUser, ...prevUsers];
                     });
 
@@ -100,7 +93,6 @@ const ChatDashboardClient = () => {
                         <SearchBox />
                     </div>
                     <div className="flex-grow-1 overflow-auto custom-scrollbar">
-                        {/* ส่ง props ไปให้ List */}
                         <UserInboxList
                             data={users}
                             activeUser={activeUser}
@@ -116,8 +108,11 @@ const ChatDashboardClient = () => {
                     className="bg-white border rounded-4 shadow-sm overflow-hidden h-100"
                     style={{ maxHeight: "80vh", minHeight: "600px" }}
                 >
-                    {/* ส่ง props ไปให้ Content */}
-                    <UserChatBoxContent activeUser={activeUser} />
+                    {/* ✅ ส่ง onDelete ไปให้ลูกใช้ */}
+                    <UserChatBoxContent
+                        activeUser={activeUser}
+                        onDelete={handleDeleteChat}
+                    />
                 </div>
             </div>
         </div>

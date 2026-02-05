@@ -45,7 +45,7 @@ const ChatMessage = ({ message }) => {
   );
 };
 
-const UserChatBoxContent = () => {
+const UserChatBoxContent = ({ activeUser, onDelete }) => {
   const searchParams = useSearchParams();
   const interestId = searchParams.get('interest_property');
   const type = searchParams.get('type');
@@ -135,7 +135,18 @@ const UserChatBoxContent = () => {
             <small className="text-success fz12"><i className="fas fa-circle fz8 me-1"></i> Active Now</small>
           </div>
         </div>
-        <button className="btn btn-light btn-sm text-danger rounded-pill px-3"><i className="flaticon-delete me-1"></i> ลบแชท</button>
+        <button
+          className="btn btn-light btn-sm text-danger rounded-pill px-3"
+          type="button"
+          onClick={() => {
+            // แจ้งเตือนยืนยันก่อนลบ
+            if (window.confirm("คุณแน่ใจหรือไม่ว่าจะลบแชทนี้?")) {
+              onDelete(activeUser.id);
+            }
+          }}
+        >
+          <i className="flaticon-delete me-1"></i> ลบแชท
+        </button>
       </div>
 
       {/* Chat Area */}

@@ -57,6 +57,8 @@ const DashboardHeader = () => {
     }
   };
 
+  const [currentPackage, setCurrentPackage] = useState("Starter");
+
   // 2. ทำงานเมื่อโหลดหน้าเว็บ + เฝ้าฟัง Event
   useEffect(() => {
     loadNotifs(); // โหลดครั้งแรก
@@ -65,6 +67,13 @@ const DashboardHeader = () => {
     window.addEventListener("storage_update", loadNotifs);
     // ฟังเผื่อเปิดหลาย Tab
     window.addEventListener("storage", loadNotifs);
+
+    // ✅ ดึงข้อมูลแพ็กเกจจากเครื่อง
+    const savedRank = localStorage.getItem("my_agent_rank");
+    if (savedRank) {
+      // แปลงตัวอักษรแรกเป็นพิมพ์ใหญ่ (pro -> Pro)
+      setCurrentPackage(savedRank.charAt(0).toUpperCase() + savedRank.slice(1));
+    }
 
     return () => {
       window.removeEventListener("storage_update", loadNotifs);
@@ -384,35 +393,109 @@ const DashboardHeader = () => {
                     </li>
                     {/* End notification icon */}
 
-                    {/* เมนูโปรไฟล์ผู้ใช้ */}
+                    {/* 👤 เมนูโปรไฟล์ผู้ใช้ (ส่วนที่แก้ไข UI) */}
                     <li className="user_setting">
                       <div className="dropdown">
-                        <a className="btn" href="#" data-bs-toggle="dropdown">
-                          <Image
-                            width={44}
-                            height={44}
-                            src="/images/resource/user.png"
-                            alt="user.png"
-                          />
+                        <a className="btn position-relative" href="#" data-bs-toggle="dropdown">
+                          <Image width={44} height={44} src="/images/resource/user.png" alt="user.png" />
+                          {currentPackage !== 'Starter' && (
+                            <span className="position-absolute bottom-0 end-0 p-1 bg-success border border-light rounded-circle"></span>
+                          )}
                         </a>
-                        <div className="dropdown-menu">
-                          <div className="user_setting_content">
+
+                        {/* ✅ กล่อง Dropdown ดีไซน์ใหม่ (แก้บัคสีส้ม + ปุ่มดำ) */}
+                        <div className="dropdown-menu shadow-lg border-0"
+                          style={{
+                            minWidth: '300px',
+                            marginTop: '15px',
+                            backgroundColor: '#fff',
+                            borderRadius: '12px',
+                            maxHeight: '75vh',
+                            overflowY: 'auto',
+                            padding: 0
+                          }}>
+
+                          {/* ส่วนหัว: แสดงแพ็กเกจ */}
+                          <div className="package-header p-4 text-center"
+                            style={{
+                              backgroundColor: '#f7f7f7',
+                              borderBottom: '1px solid #eee'
+                            }}>
+                            <p className="text-muted fz12 mb-1 text-uppercase fw-bold" style={{ letterSpacing: '1px' }}>Current Plan</p>
+
+                            <h4 className="title text-dark fw-bold mb-3" style={{ fontSize: '20px' }}>
+                              {currentPackage === 'Business' && <i className="fas fa-crown text-warning me-2"></i>}
+                              {currentPackage === 'Pro' && <i className="fas fa-check-circle text-success me-2"></i>}
+                              {currentPackage}
+                            </h4>
+
+                            {currentPackage !== 'Business' ? (
+                              <Link
+                                href="/pricing"
+                                // ✅ ใช้ Inline Style ล้วนๆ เพื่อแก้บัคปุ่มดำ
+                                className="d-flex align-items-center justify-content-center w-100 rounded-pill text-decoration-none"
+                                style={{
+                                  backgroundColor: '#212529',
+                                  color: '#fff',
+                                  padding: '10px 20px',
+                                  fontSize: '14px',
+                                  fontWeight: '600',
+                                  transition: '0.3s'
+                                }}
+                                onMouseEnter={(e) => e.target.style.backgroundColor = '#000'}
+                                onMouseLeave={(e) => e.target.style.backgroundColor = '#212529'}
+                              >
+                                <i className="fas fa-arrow-up me-2"></i>อัปเกรดตอนนี้
+                              </Link>
+                            ) : (
+                              <div className="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                                <i className="fas fa-star me-1"></i> สูงสุดแล้ว
+                              </div>
+                            )}
+                          </div>
+
+                          {/* ส่วนรายการเมนู */}
+                          <div className="user_setting_content p-3"
+                            style={{ backgroundColor: '#fff', maxHeight: 'calc(100vh-200px)', overflowY: 'auto' }}>
                             {menuItems.map((section, sectionIndex) => (
-                              <div key={sectionIndex}>
-                                <p
-                                  className={`fz15 fw400 ff-heading ${sectionIndex === 0 ? "mb20" : "mt30"
-                                    }`}
-                                >
+                              <div key={sectionIndex} className="mb-3">
+                                <p className="fz12 text-uppercase fw-bold text-muted mb-2 px-2">
                                   {section.title}
                                 </p>
                                 {section.items.map((item, itemIndex) => (
                                   <Link
                                     key={itemIndex}
-                                    className={`dropdown-item ${pathname === item.href ? "-is-active" : ""
-                                      } `}
+                                    // ✅ ลบ class 'dropdown-item' ออกไปเลย เพื่อไม่ให้ style ของธีมมาตีกัน
+                                    // ✅ ใช้ class พื้นฐานจัด layout แทน
+                                    className="d-flex align-items-center rounded-2 px-3 py-2 text-decoration-none"
                                     href={item.href}
+                                    style={{
+                                      fontSize: '14px',
+                                      fontWeight: '500',
+                                      // ถ้าเป็นหน้าปัจจุบัน ให้พื้นหลังสีส้มอ่อน ตัวหนังสือสีส้ม
+                                      backgroundColor: pathname === item.href ? '#fff0ec' : 'transparent',
+                                      color: pathname === item.href ? '#eb6753' : '#333',
+                                      transition: 'all 0.2s',
+                                      cursor: 'pointer'
+                                    }}
+                                    // ✅ ใช้ Event ควบคุมสีตอน Hover เอง ไม่พึ่ง CSS
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.backgroundColor = '#fff0ec'; // พื้นหลังสีส้มอ่อน
+                                      e.currentTarget.style.color = '#eb6753'; // ตัวหนังสือสีส้ม
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      // ถ้าไม่ใช่หน้าปัจจุบัน ให้กลับเป็นสีเดิม
+                                      if (pathname !== item.href) {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.color = '#333';
+                                      } else {
+                                        // ถ้าเป็นหน้าปัจจุบัน ให้คงสี Active ไว้
+                                        e.currentTarget.style.backgroundColor = '#fff0ec';
+                                        e.currentTarget.style.color = '#eb6753';
+                                      }
+                                    }}
                                   >
-                                    <i className={`${item.icon} mr10`} />
+                                    <i className={`${item.icon} me-3 fz16 opacity-75`} style={{ width: '20px', textAlign: 'center' }} />
                                     {item.text}
                                   </Link>
                                 ))}

@@ -3,7 +3,7 @@ import MobileMenu from "@/components/common/mobile-menu";
 import DboardMobileNavigation from "@/components/property/dashboard/DboardMobileNavigation";
 import Footer from "@/components/property/dashboard/Footer";
 import SidebarDashboard from "@/components/property/dashboard/SidebarDashboard";
-import ChatDashboardClient from "./ChatDashboardClient"; // ✅ Import ตัวลูกเข้ามา
+import ChatDashboardClient from "../../../../components/property/dashboard/dashboard-message/ChatDashboardClient"; // ✅ Import ตัวลูกเข้ามา
 
 export const metadata = {
   title: "ข้อความ | Homez Dashboard",

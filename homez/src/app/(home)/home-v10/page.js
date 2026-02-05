@@ -1,19 +1,12 @@
 import MobileMenu from "@/components/common/mobile-menu";
 import Footer from "@/components/home/home-v10/footer";
-import ApartmentType from "@/components/home/home-v10/ApartmentType";
-import WhyChoose from "@/components/home/home-v10/why-choose";
 import Blog from "@/components/common/Blog";
 import Link from "next/link";
 import Map from "@/components/home/home-v10/Map";
 import Header from "@/components/home/home-v10/Header";
-import FilterWithProperties from "@/components/home/home-v10/filter-with-property";
-import Explore from "@/components/common/Explore";
-import FeaturedListings from "@/components/home/home-v10/FeatuerdListings";
-import FunFact from "@/components/home/home-v10/FunFact";
-import PropertiesByCities from "@/components/home/home-v10/PropertiesByCities";
-import Testimonial from "@/components/home/home-v10/Testimonial";
 import Agents from "@/components/home/home-v10/Agents";
-import BannerSlider from "@/components/home/home-v10/BannerSlider";
+import FeaturedListings from "@/components/listing/grid-view/grid-full-3-col/FeatuerdListings";
+import propertyData from "@/data/propertyData";
 
 export const metadata = {
   title: "Home v10 || Homez - Real Estate NextJS Template",
@@ -44,7 +37,7 @@ const Home_V10 = () => {
       </section>
       {/* End Hero map finder */}
 
-      {/* Featured Listings */}
+      {/* Featured Listings - แปลงเป็น Grid แล้ว */}
       <section className="pb50-md bgc-f7">
         <div className="container">
           <div className="row align-items-center" data-aos="fade-up">
@@ -52,7 +45,7 @@ const Home_V10 = () => {
               <div className="main-title2">
                 <h2 className="title">สินทรัพย์ที่นายหน้าได้ประกาศ</h2>
                 <p className="paragraph">
-                  Aliquam lacinia diam quis lacus euismod
+                  เลือกดูรายการทรัพย์ล่าสุด
                 </p>
               </div>
             </div>
@@ -65,18 +58,17 @@ const Home_V10 = () => {
               </div>
             </div>
           </div>
-          {/* End header */}
 
-          <div className="row">
-            <div className="col-lg-12" data-aos="fade-up" data-aos-delay="200">
-              <div className="feature-listing-slider">
-                <FeaturedListings />
-              </div>
-            </div>
+          {/* ✅ ส่วนที่แก้ไข: ใช้ Grid Component */}
+          <div className="row" data-aos="fade-up" data-aos-delay="200">
+            {/* ไม่ต้องมี div class slider ครอบแล้ว */}
+            <FeaturedListings
+              data={propertyData.slice(0, 6)} // ตัดมาโชว์แค่ 6 อันแรกพอก่อน (เดี๋ยวหน้า Home จะยาวเกิน)
+              colstyle={false}
+            />
           </div>
         </div>
       </section>
-      {/* End Featured Listings */}
 
       {/* Explore property-city */}
       <section className="pb50-md">
@@ -89,7 +81,7 @@ const Home_V10 = () => {
             <div className="col-lg-9">
               <div className="main-title2">
                 <h2 className="title">ตัวแทน / นายหน้า</h2>
-                
+
                 <p className="paragraph">
                   Aliquam lacinia diam quis lacus euismod
                 </p>

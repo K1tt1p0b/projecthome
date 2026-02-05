@@ -4,10 +4,26 @@ import React, { useState } from "react";
 import Link from "next/link";
 
 const Pricing = () => {
+  // Config ปุ่มตัวเลือก
+  const cycles = [
+    { id: "monthly", label: "รายเดือน" },
+    { id: "quarterly", label: "3 เดือน" },
+    { id: "semiannually", label: "6 เดือน" },
+    { id: "yearly", label: "รายปี (คุ้มสุด)" },
+  ];
+
+  const [billingCycle, setBillingCycle] = useState("monthly");
+  const [hoveredCycle, setHoveredCycle] = useState(null); // ✅ เพิ่ม State เช็ค Hover เอง
+
   const pricingPackages = [
     {
       packageTitle: "Starter",
-      price: "ฟรี",
+      prices: {
+        monthly: "ฟรี",
+        quarterly: "ฟรี",
+        semiannually: "ฟรี",
+        yearly: "ฟรี",
+      },
       pricePerMonth: "ตลอดชีพ",
       priceIcon: "/images/icon/pricing-icon-2.svg",
       features: [
@@ -19,14 +35,17 @@ const Pricing = () => {
     },
     {
       packageTitle: "Pro Agent",
-      price: "฿99",          // ราคาเดือน
-      priceYearly: "฿1,080", // ราคาปี (ตาม Data)
-      pricePerMonth: "/ เดือน",
-      pricePerYear: "/ ปี (ตกเดือนละ 90 บ.)",
+      prices: {
+        monthly: "฿99",
+        quarterly: "฿280",
+        semiannually: "฿550",
+        yearly: "฿1,080",
+      },
+      pricePerMonth: "/ รอบบิล",
       priceIcon: "/images/icon/pricing-icon-1.svg",
       uniqueClass: "unique-class",
       features: [
-        "✅ ได้รับป้าย Verified Agent",
+        "ได้รับป้าย Pro Agent",
         "ลงประกาศฟรี 24 โพส",
         "ดันทุก 5 ชม. (Auto 1 โพส)",
         "Map Page (แผนที่ของฉัน)",
@@ -39,13 +58,16 @@ const Pricing = () => {
     },
     {
       packageTitle: "Business",
-      price: "฿159",          // ราคาเดือน
-      priceYearly: "฿1,800",  // ราคาปี (ตาม Data)
-      pricePerMonth: "/ เดือน",
-      pricePerYear: "/ ปี (ตกเดือนละ 150 บ.)",
+      prices: {
+        monthly: "฿159",
+        quarterly: "฿450",
+        semiannually: "฿850",
+        yearly: "฿1,800",
+      },
+      pricePerMonth: "/ รอบบิล",
       priceIcon: "/images/icon/pricing-icon-3.svg",
       features: [
-        "🏆 ได้รับป้าย Premium Agency",
+        "ได้รับป้าย Business",
         "ลงประกาศฟรี 50 โพส",
         "ดันทุก 3 ชม. (Auto 5 โพส)",
         "Map Page (แผนที่ของฉัน)",
@@ -58,54 +80,65 @@ const Pricing = () => {
     },
   ];
 
-  const [isYearlyBilling, setIsYearlyBilling] = useState(false);
-
-  const handleBillingToggle = () => {
-    setIsYearlyBilling((prevIsYearlyBilling) => !prevIsYearlyBilling);
-  };
-
   return (
     <>
-      <div className="row" data-aos="fade-up" data-aos-delay="200">
+      <div className="row">
         <div className="col-lg-12">
-          <div className="pricing_packages_top d-flex align-items-center justify-content-center mb60">
-            <div className="toggle-btn">
-              <span className="pricing_save1 ff-heading">จ่ายรายเดือน</span>
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  id="checkbox"
-                  checked={isYearlyBilling}
-                  onChange={handleBillingToggle}
-                />
-                <span className="pricing_table_switch_slide round" />
-              </label>
-              <span className="pricing_save2 ff-heading">จ่ายรายปี</span>
-              <span className="pricing_save3">ลด 20%</span>
+
+          {/* ✅✅✅ กล่องขาว (บังคับทับแถบแดง) ✅✅✅ */}
+          <div className="d-flex justify-content-center mb-5 mt-4" style={{ position: 'relative', zIndex: 1 }}>
+
+            <div
+              className="bg-white p-2 rounded-pill shadow-sm border d-inline-flex gap-2"
+              style={{ backgroundColor: '#ffffff !important' }} // บังคับสีขาว
+            >
+              {cycles.map((cycle) => {
+                const isActive = billingCycle === cycle.id;
+                const isHovered = hoveredCycle === cycle.id;
+
+                return (
+                  <button
+                    key={cycle.id}
+                    onClick={() => setBillingCycle(cycle.id)}
+                    onMouseEnter={() => setHoveredCycle(cycle.id)}
+                    onMouseLeave={() => setHoveredCycle(null)}
+                    // ✅ ใช้ Style กำหนดเอง ไม่พึ่ง Class Bootstrap/Theme
+                    style={{
+                      minWidth: '100px',
+                      padding: '8px 20px',
+                      borderRadius: '50px',
+                      border: 'none',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      // Logic สีปุ่ม: ถ้าเลือก = ดำ, ถ้าชี้ = เทาอ่อน, ปกติ = ขาว
+                      backgroundColor: isActive ? '#111' : isHovered ? '#f0f0f0' : '#fff',
+                      color: isActive ? '#fff' : '#666',
+                      boxShadow: 'none' // ลบเงาที่อาจจะติดมา
+                    }}
+                  >
+                    {cycle.label}
+                  </button>
+                )
+              })}
             </div>
+
           </div>
+          {/* ✅✅✅ จบส่วนแก้ไข ✅✅✅ */}
+
         </div>
       </div>
-      {/* End .row */}
 
       <div className="row" data-aos="fade-up" data-aos-delay="300">
         {pricingPackages.map((item, index) => {
 
-          let displayPrice = item.price;
-          let cycleValue = "monthly";
-
-          if (isYearlyBilling) {
-            if (index !== 0) {
-              displayPrice = item.priceYearly;
-              cycleValue = "yearly";
-            }
-          }
+          const displayPrice = item.prices[billingCycle];
+          const cycleLabel = cycles.find(c => c.id === billingCycle)?.label;
 
           return (
             <div className="col-md-6 col-xl-4" key={index}>
-              {/* ✅ 1. เพิ่ม h-100 d-flex flex-column ที่นี่ (เพื่อให้กรอบสูงเต็มและจัดแนวตั้ง) */}
               <div className={`pricing_packages h-100 d-flex flex-column ${index === 1 ? "active" : ""}`}>
-
                 <div className="heading mb60">
                   <h4 className={`package_title ${item.uniqueClass || ""}`}>
                     {item.packageTitle}
@@ -114,8 +147,9 @@ const Pricing = () => {
                   <h1 className="text2">{displayPrice}</h1>
 
                   <p className="text">
-                    {isYearlyBilling && index !== 0 ? "/ ปี" : item.pricePerMonth}
+                    {index === 0 ? "ตลอดชีพ" : `จ่าย${cycleLabel}`}
                   </p>
+
                   <Image
                     width={70}
                     height={70}
@@ -125,11 +159,8 @@ const Pricing = () => {
                   />
                 </div>
 
-                {/* ✅ 2. เพิ่ม flex-grow-1 d-flex flex-column ที่นี่ (เพื่อให้ส่วนเนื้อหายืดเต็มพื้นที่ที่เหลือ) */}
                 <div className="details flex-grow-1 d-flex flex-column">
-                  <p className="text mb35">
-                    {item.features[0]}
-                  </p>
+                  <p className="text mb35">{item.features[0]}</p>
 
                   <div className="list-style1 mb40">
                     <ul>
@@ -142,7 +173,6 @@ const Pricing = () => {
                     </ul>
                   </div>
 
-                  {/* ✅ 3. เพิ่ม mt-auto ที่นี่ (เพื่อดันปุ่มลงไปติดขอบล่างสุด) */}
                   <div className="d-grid mt-auto">
                     <Link
                       href={{
@@ -150,6 +180,7 @@ const Pricing = () => {
                         query: {
                           package: item.packageTitle,
                           price: displayPrice,
+                          cycle: cycleLabel,
                         }
                       }}
                       className="ud-btn btn-thm-border text-thm"
@@ -158,14 +189,12 @@ const Pricing = () => {
                       <i className="fal fa-arrow-right-long" />
                     </Link>
                   </div>
-
                 </div>
               </div>
             </div>
           );
         })}
       </div>
-      {/* End .row */}
     </>
   );
 };
