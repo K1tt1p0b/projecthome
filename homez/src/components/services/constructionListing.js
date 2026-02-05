@@ -11,7 +11,6 @@ import { toast } from "react-toastify";
 // ✅ 1. ตั้งค่าตัวเลือกสถานะ (ให้ตรงกับหน้า Add Listing)
 const STATUS_OPTIONS = [
   { value: "active", label: "เผยแพร่ (Active)", class: "style2" }, // สีเขียว
-  { value: "pending", label: "รอตรวจสอบ (Pending)", class: "style1" }, // สีส้ม
   { value: "hidden", label: "ซ่อน (Hidden)", class: "style3" }, // สีฟ้า/เทา (สมมติว่าใช้ style3)
 ];
 
