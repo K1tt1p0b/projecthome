@@ -7,15 +7,21 @@ import Link from "next/link";
 
 const Agents = () => {
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState("name-asc"); // name-asc | name-desc
+  const [sortBy, setSortBy] = useState("name-asc");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const PER_PAGE = 12; // จำนวน agent ต่อหน้า
+  const PER_PAGE = 12;
 
   const filteredAgents = useMemo(() => {
-    let list = [...agents];
+    // ✅✅✅ 1. Mock Data: แอบเติมยศให้ Agent บางคนตรงนี้เลย (เพื่อทดสอบ)
+    let list = agents.map((agent) => ({
+      ...agent,
+      // สมมติให้คนที่มี ID 1, 2, 3, 5 เป็น Verified Agent
+      isVerified: [1, 2, 3, 5].includes(Number(agent.id))
+    }));
+    // ✅✅✅ จบส่วน Mock
 
-    // ค้นหาตามชื่อ / id
+    // ค้นหา
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter((agent) => {
@@ -26,7 +32,7 @@ const Agents = () => {
       });
     }
 
-    // เรียงตามชื่อ A→Z หรือ Z→A
+    // เรียงลำดับ
     list.sort((a, b) => {
       if (sortBy === "name-asc") {
         return a.name.localeCompare(b.name, "th");
@@ -38,10 +44,7 @@ const Agents = () => {
     return list;
   }, [search, sortBy]);
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredAgents.length / PER_PAGE)
-  );
+  const totalPages = Math.max(1, Math.ceil(filteredAgents.length / PER_PAGE));
   const currentPageSafe = Math.min(currentPage, totalPages);
 
   const paginatedAgents = useMemo(() => {
@@ -49,25 +52,21 @@ const Agents = () => {
     return filteredAgents.slice(start, start + PER_PAGE);
   }, [filteredAgents, currentPageSafe]);
 
-  // เวลาเปลี่ยน search / sort ให้เด้งกลับมาหน้า 1
   useEffect(() => {
     setCurrentPage(1);
   }, [search, sortBy]);
 
   return (
     <section className="our-agent pt-0">
-      {/* แถบค้นหา + sort */}
+      {/* Search & Sort UI */}
       <div className="row align-items-center mb20">
         <div className="col-md-6">
           <p className="text-muted mb-0 fz14">
-            พบ {filteredAgents.length} คน • หน้า {currentPageSafe} /{" "}
-            {totalPages}
+            พบ {filteredAgents.length} คน • หน้า {currentPageSafe} / {totalPages}
           </p>
         </div>
-
         <div className="col-md-6">
           <div className="d-flex gap-2 justify-content-md-end mt-3 mt-md-0">
-            {/* ช่องค้นหา */}
             <div className="flex-grow-1">
               <input
                 type="text"
@@ -77,8 +76,6 @@ const Agents = () => {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-
-            {/* เลือกการเรียง */}
             <select
               className="form-select"
               style={{ maxWidth: 180 }}
@@ -92,17 +89,11 @@ const Agents = () => {
         </div>
       </div>
 
-      {/* กริดรายการ Agent */}
+      {/* Grid */}
       <div className="row">
         {paginatedAgents.map((agent) => (
-          <div
-            key={agent.id}
-            className="col-6 col-sm-4 col-md-3 col-xl-2 mb30"
-          >
-            <Link
-              href={`/agent-single/${agent.id}`}
-              className="text-decoration-none"
-            >
+          <div key={agent.id} className="col-6 col-sm-4 col-md-3 col-xl-2 mb30">
+            <Link href={`/agent-single/${agent.id}`} className="text-decoration-none">
               <div className="team-style1 h-100">
                 <div className="team-img">
                   <Image
@@ -114,7 +105,25 @@ const Agents = () => {
                   />
                 </div>
                 <div className="team-content pt15 text-center">
-                  <h6 className="name mb-1 text-truncate">{agent.name}</h6>
+
+                  {/* ✅✅✅ ส่วนแสดงชื่อ + ไอคอน Verified (ที่ Mock มา) */}
+                  <h6 className="name mb-1 text-truncate d-flex align-items-center justify-content-center gap-2">
+                    {agent.name}
+
+                    {agent.isVerified && (
+                      <span
+                        className="text-primary"
+                        title="ยืนยันตัวตนแล้ว (Verified Agent)"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="top"
+                        style={{ color: '#1da1f2' }}
+                      >
+                        <i className="fas fa-check-circle fz12" />
+                      </span>
+                    )}
+                  </h6>
+                  {/* ✅✅✅ */}
+
                   <p className="text fz13 mb-0">{agent.city}</p>
                 </div>
               </div>
@@ -124,61 +133,41 @@ const Agents = () => {
 
         {!paginatedAgents.length && (
           <div className="col-12">
-            <p className="text-center text-muted mt-3">
-              ไม่พบนายหน้าที่ตรงกับคำค้นหา
-            </p>
+            <p className="text-center text-muted mt-3">ไม่พบนายหน้าที่ตรงกับคำค้นหา</p>
           </div>
         )}
       </div>
 
-      {/* PAGINATION */}
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="row mt20">
           <div className="col-12 d-flex align-items-center justify-content-center">
-            {/* Prev */}
             <button
               className="btn btn-light rounded-circle d-flex align-items-center justify-content-center me-2"
               style={{ width: 32, height: 32 }}
-              onClick={() =>
-                setCurrentPage((p) => (p > 1 ? p - 1 : p))
-              }
+              onClick={() => setCurrentPage((p) => (p > 1 ? p - 1 : p))}
               disabled={currentPageSafe === 1}
             >
               <i className="fa-regular fa-chevron-left" />
             </button>
-
-            {/* ตัวเลขหน้า */}
             {Array.from({ length: totalPages }).map((_, idx) => {
               const page = idx + 1;
               const isActive = page === currentPageSafe;
               return (
                 <button
                   key={page}
-                  className={`btn rounded-circle me-1 ${
-                    isActive ? "text-white" : "btn-light"
-                  }`}
-                  style={{
-                    width: 32,
-                    height: 32,
-                    padding: 0,
-                    background: isActive ? "#E95E4A" : undefined,
-                  }}
+                  className={`btn rounded-circle me-1 ${isActive ? "text-white" : "btn-light"}`}
+                  style={{ width: 32, height: 32, padding: 0, background: isActive ? "#E95E4A" : undefined }}
                   onClick={() => setCurrentPage(page)}
                 >
                   {page}
                 </button>
               );
             })}
-
-            {/* Next */}
             <button
               className="btn btn-light rounded-circle d-flex align-items-center justify-content-center ms-1"
               style={{ width: 32, height: 32 }}
-              onClick={() =>
-                setCurrentPage((p) =>
-                  p < totalPages ? p + 1 : p
-                )
-              }
+              onClick={() => setCurrentPage((p) => (p < totalPages ? p + 1 : p))}
               disabled={currentPageSafe === totalPages}
             >
               <i className="fa-regular fa-chevron-right" />
@@ -186,7 +175,6 @@ const Agents = () => {
           </div>
         </div>
       )}
-      {/* END PAGINATION */}
     </section>
   );
 };

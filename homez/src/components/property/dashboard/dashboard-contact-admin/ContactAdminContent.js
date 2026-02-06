@@ -11,8 +11,8 @@ const ContactAdminContent = () => {
   const fileInputRef = useRef(null);
 
   const tickets = [
-    { id: "#TK-8852", subject: "สอบถามเรื่องการลงประกาศ", category: "General", date: "22/01/2024", status: "Closed", detail: "อยากทราบว่าลงประกาศฟรีได้กี่รายการครับ?" },
-    { id: "#TK-9931", subject: "แจ้งปัญหาอัปโหลดรูปภาพไม่ได้", category: "Technical", date: "25/01/2024", status: "Open", detail: "พอกดอัปโหลดแล้วหมุนติ้วๆ ไม่ไปไหนเลยครับ ช่วยดูหน่อย" },
+    { id: "#TK-8852", subject: "สอบถามเรื่องการลงประกาศ", category: "General", date: "22/01/2024", status: "Replied", detail: "อยากทราบว่าลงประกาศฟรีได้กี่รายการครับ?" },
+    { id: "#TK-9931", subject: "แจ้งปัญหาอัปโหลดรูปภาพไม่ได้", category: "Technical", date: "25/01/2024", status: "Resolved", detail: "พอกดอัปโหลดแล้วหมุนติ้วๆ ไม่ไปไหนเลยครับ ช่วยดูหน่อย" },
     { id: "#TK-9945", subject: "ขอใบกำกับภาษีย้อนหลัง", category: "Billing", date: "26/01/2024", status: "Pending", detail: "ต้องการขอใบกำกับภาษีของเดือนธันวาคมครับ" },
   ];
 
@@ -71,10 +71,14 @@ const ContactAdminContent = () => {
 
   const getStatusBadge = (status) => {
     switch (status) {
-      case "Open": return <span className="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">Open</span>;
-      case "Pending": return <span className="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill">Pending</span>;
-      case "Closed": return <span className="badge bg-secondary bg-opacity-10 text-secondary px-3 py-2 rounded-pill">Closed</span>;
-      default: return <span className="badge bg-light text-dark">Unknown</span>;
+      case "Pending":
+        return <span className="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill">Pending</span>;
+      case "Replied":
+        return <span className="badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill">Replied</span>;
+      case "Resolved":
+        return <span className="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">Resolved</span>;
+      default:
+        return <span className="badge bg-light text-dark px-3 py-2 rounded-pill">Unknown</span>;
     }
   };
 
